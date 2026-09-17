@@ -1,0 +1,33 @@
+# .NET / Blazor build output
+bin/
+obj/
+out/
+publish/
+wwwroot/dist/
+
+# Visual Studio / VS Code / Rider
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# User-specific files
+*.DotSettings.user
+
+# Test / coverage output
+TestResults/
+coverage/
+*.trx
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# External game data (BSData sources, assets) — see CODING_GUIDELINES.md "Data & Assets"
+/data/
