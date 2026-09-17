@@ -8,7 +8,7 @@ All code, identifiers, comments, commit messages, and technical documentation ar
 
 ## Stack
 
-- .NET 8 (LTS), Blazor WebAssembly (standalone, PWA-capable)
+- .NET 10 (LTS), Blazor WebAssembly (standalone, PWA-capable)
 - Nullable reference types: enabled (`<Nullable>enable</Nullable>`), warnings as errors in release builds
 - Tests: xUnit for business logic, bUnit for component tests
 
