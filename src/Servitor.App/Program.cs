@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Servitor.App;
+using Servitor.App.ArmyBuilder.State;
 using Servitor.App.RulesData.Loading;
 using Servitor.App.RulesData.Merging;
 using Servitor.App.RulesData.Storage;
+using Servitor.App.RulesData.Updating;
+using Servitor.App.Shared.Backdrop;
+using Servitor.App.Shared.Effects;
 using Servitor.App.Shared.Files;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -14,8 +18,12 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IRulesDataStore, IndexedDbRulesDataStore>();
 builder.Services.AddScoped<IMergedRulesDataProvider, MergedRulesDataProvider>();
 builder.Services.AddScoped<IDatasheetCatalog, DatasheetCatalog>();
+builder.Services.AddScoped<IArmyBuilderState, ArmyBuilderState>();
 builder.Services.AddScoped<IRulesDataMergeService, RulesDataMergeService>();
+builder.Services.AddScoped<IDataUpdateService, HttpDataUpdateService>();
 builder.Services.AddScoped<IFileDownloadService, JsFileDownloadService>();
+builder.Services.AddScoped<IFactionBackdrop, FactionBackdrop>();
+builder.Services.AddScoped<ICrtEffectsService, JsCrtEffectsService>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 await builder.Build().RunAsync();

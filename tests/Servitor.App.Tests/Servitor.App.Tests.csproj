@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Servitor.App\Servitor.App.csproj" />
+    <ProjectReference Include="..\..\src\Servitor.DataUpdate\Servitor.DataUpdate.csproj" />
   </ItemGroup>
 
 </Project>

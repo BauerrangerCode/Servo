@@ -1,5 +1,8 @@
-@using Servitor.App.RulesData.Components
+@using Servitor.App.Shared.Backdrop
+@using Servitor.App.Shared.Settings
 @inherits LayoutComponentBase
+
+<FactionBackdropView />
 
 <div class="page">
     <nav class="top-nav">
@@ -8,7 +11,7 @@
         <NavLink href="scry">Scry</NavLink>
         <NavLink href="scoring">Scoring</NavLink>
         <NavLink href="play">Play</NavLink>
-        <MergeDataButton />
+        <SettingsMenu />
     </nav>
 
     <main>

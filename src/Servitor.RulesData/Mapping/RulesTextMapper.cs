@@ -15,6 +15,7 @@ public sealed record FactionRulesTextMappingResult(
     IReadOnlyList<Stratagem> Stratagems,
     IReadOnlyList<DetachmentAbility> Abilities,
     IReadOnlyList<Enhancement> Enhancements,
+    IReadOnlyList<Detachment> Detachments,
     FactionIdentity Identity,
     IReadOnlyList<DatasheetReference> Datasheets,
     IReadOnlyList<string> Warnings);
@@ -101,9 +102,12 @@ public static class RulesTextMapper
         var stratagems = new List<Stratagem>();
         var abilities = new List<DetachmentAbility>();
         var enhancements = new List<Enhancement>();
+        var detachments = new List<Detachment>();
 
         foreach (var detachment in faction.Detachments)
         {
+            detachments.Add(BuildDetachment(detachment));
+
             foreach (var entry in detachment.Stratagems)
             {
                 try
@@ -150,6 +154,7 @@ public static class RulesTextMapper
             stratagems,
             abilities,
             enhancements,
+            detachments,
             new FactionIdentity(faction.Slug, faction.Name, faction.DataVersion),
             datasheets,
             warnings);
@@ -169,7 +174,7 @@ public static class RulesTextMapper
     }
 
     private static FactionRulesTextMappingResult EmptyFactionResult(string warning) =>
-        new([], [], [], new FactionIdentity("", "", ""), [], [warning]);
+        new([], [], [], [], new FactionIdentity("", "", ""), [], [warning]);
 
     public static CoreRulesMappingResult MapCoreRules(string coreRulesJson)
     {
@@ -243,6 +248,25 @@ public static class RulesTextMapper
             entry.Upgrade,
             entry.SupportLeader is null ? null : HtmlSanitizer.Sanitize(entry.SupportLeader));
     }
+
+    private static Detachment BuildDetachment(RtDetachment entry) => new(
+        entry.Id,
+        entry.Name,
+        entry.Legend,
+        int.TryParse(entry.Dp, out var points) ? points : 0,
+        ClassifyArchetype(entry.ForceDisposition),
+        entry.Enhancements.Count,
+        ClassifyGameMode(entry.Type));
+
+    private static MissionArchetype? ClassifyArchetype(string label) => label switch
+    {
+        "Take and Hold" => MissionArchetype.TakeAndHold,
+        "Disruption" => MissionArchetype.Disruption,
+        "Priority Assets" => MissionArchetype.PriorityAssets,
+        "Purge the Foe" => MissionArchetype.PurgeTheFoe,
+        "Reconnaissance" => MissionArchetype.Reconnaissance,
+        _ => null,
+    };
 
     private static GameMode ClassifyGameMode(string typeLabel)
     {

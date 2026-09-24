@@ -2,12 +2,17 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.RulesData.Loading;
 using Servitor.App.RulesData.Pages;
+using Servitor.App.Shared.Backdrop;
 using Servitor.RulesData.Domain;
 
 namespace Servitor.App.Tests.RulesData.Pages;
 
 public class ScryTests : BunitContext
 {
+    private readonly FactionBackdrop _backdrop = new();
+
+    public ScryTests() => Services.AddSingleton<IFactionBackdrop>(_backdrop);
+
     private sealed class FakeDatasheetCatalog(IReadOnlyList<Datasheet> datasheets) : IDatasheetCatalog
     {
         private IReadOnlyList<Datasheet> _datasheets = datasheets;
@@ -52,6 +57,17 @@ public class ScryTests : BunitContext
         Assert.Contains("2 results", cut.Markup);
         Assert.Contains("Cadian Shock Troops", cut.Markup);
         Assert.Contains("Boyz", cut.Markup);
+    }
+
+    [Fact]
+    public void Clicking_a_faction_chip_makes_that_faction_the_backdrop()
+    {
+        Services.AddSingleton<IDatasheetCatalog>(new FakeDatasheetCatalog([Sheet("Boyz", "Xenos - Orks")]));
+        var cut = Render<Scry>();
+
+        cut.FindAll(".facet-group")[1].QuerySelector(".chip")!.Click();
+
+        Assert.Equal("orks", _backdrop.FactionSlug);
     }
 
     [Fact]

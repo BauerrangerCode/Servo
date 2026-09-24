@@ -1,5 +1,129 @@
 @page "/build"
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.RulesData.Loading
+@using Servitor.App.Shared.Backdrop
+@using Servitor.RulesData.Domain
+@using Servitor.RulesData.Merging
+@implements IDisposable
+@inject IArmyBuilderState State
+@inject IFactionBackdrop Backdrop
+@inject IMergedRulesDataProvider RulesData
 
 <PageTitle>Build</PageTitle>
 
 <h1>Build</h1>
+
+@if (!_isLoaded)
+{
+    <p>Loading rules data…</p>
+}
+else if (_data is null || _data.Factions.Count == 0)
+{
+    <p class="build-empty">No rules data yet. Use “Merge data” in the top bar to build it.</p>
+}
+else if (State.Setup.IsSkipped)
+{
+    <p class="build-skipped">Army setup skipped.</p>
+    <button type="button" @onclick="State.ResumeSetup">Back to setup</button>
+}
+else
+{
+    var setup = State.Setup;
+
+    <section class="build-step">
+        <h2>Battle Size</h2>
+        @foreach (var size in BattleSizes.All)
+        {
+            <button type="button" class="chip @(setup.BattleSize == size ? "selected" : "")" @onclick="() => State.SelectBattleSize(size)">
+                @size.Name — @size.PointsLimit pts · @size.DetachmentPointsLimit DP · @size.EnhancementLimit enh
+            </button>
+        }
+    </section>
+
+    @if (setup.BattleSize is { } battleSize)
+    {
+        <section class="build-step">
+            <h2>Faction</h2>
+            <select class="faction-select" value="@setup.FactionId" @onchange="OnFactionChanged">
+                <option value="">(choose a faction)</option>
+                @foreach (var faction in _data.Factions.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    <option value="@faction.FactionId">@faction.Name</option>
+                }
+            </select>
+        </section>
+
+        @if (CurrentFaction is { } current)
+        {
+            <section class="build-step">
+                <h2>Detachments</h2>
+                <p class="dp-progress @(setup.DetachmentPointsUsed > battleSize.DetachmentPointsLimit ? "over-budget" : "")">
+                    @setup.DetachmentPointsUsed/@battleSize.DetachmentPointsLimit DP
+                </p>
+
+                <ul class="detachment-list">
+                    @foreach (var detachment in current.Detachments.Where(d => d.Mode == GameMode.Standard))
+                    {
+                        var selected = setup.Detachments.Any(d => d.Id == detachment.Id);
+                        <li class="detachment @(selected ? "selected" : "")">
+                            <span class="detachment-name">@detachment.Name</span>
+                            <span class="detachment-dp">@detachment.DetachmentPoints DP</span>
+                            @if (detachment.Archetype is { } archetype)
+                            {
+                                <span class="detachment-tag">@ArchetypeLabel(archetype)</span>
+                            }
+                            <span class="detachment-enh">@detachment.EnhancementCount enh</span>
+                            @if (selected)
+                            {
+                                <button type="button" @onclick="() => State.RemoveDetachment(detachment.Id)">Remove</button>
+                            }
+                            else
+                            {
+                                <button type="button" disabled="@(DetachmentRules.CanAdd(setup, detachment) != DetachmentAddResult.Added)"
+                                        @onclick="() => State.AddDetachment(detachment)">Add</button>
+                            }
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    }
+
+    <button type="button" class="skip-setup" @onclick="State.SkipSetup">Skip for now</button>
+}
+
+@code {
+    private MergedRulesData? _data;
+    private bool _isLoaded;
+
+    private MergedFactionRules? CurrentFaction =>
+        _data?.Factions.FirstOrDefault(f => f.FactionId == State.Setup.FactionId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnStateChanged;
+        _data = await RulesData.GetAsync();
+        _isLoaded = true;
+    }
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnFactionChanged(ChangeEventArgs args)
+    {
+        if (args.Value?.ToString() is { Length: > 0 } factionId)
+        {
+            State.SelectFaction(factionId);
+            Backdrop.ShowFaction(factionId);
+        }
+    }
+
+    private static string ArchetypeLabel(MissionArchetype archetype) => archetype switch
+    {
+        MissionArchetype.TakeAndHold => "Take and Hold",
+        MissionArchetype.PriorityAssets => "Priority Assets",
+        MissionArchetype.PurgeTheFoe => "Purge the Foe",
+        _ => archetype.ToString(),
+    };
+}

@@ -1,0 +1,19 @@
+@implements IDisposable
+@inject IFactionBackdrop Backdrop
+
+@if (Backdrop.FactionSlug is { } slug)
+{
+    @* The image files are local, gitignored assets. A missing faction image falls back to the generic one once;
+       if that is missing too, the background stays empty. *@
+    <img @key="slug" class="faction-backdrop" alt="" src="@(FactionBackdropPaths.ImagePath(slug))"
+         data-generic="@FactionBackdropPaths.GenericImagePath"
+         onerror="if (this.dataset.fellBack) { this.style.display = 'none'; } else { this.dataset.fellBack = '1'; this.src = this.dataset.generic; }" />
+}
+
+@code {
+    protected override void OnInitialized() => Backdrop.Changed += OnChanged;
+
+    public void Dispose() => Backdrop.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

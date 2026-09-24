@@ -1,0 +1,46 @@
+.build-step {
+    margin-bottom: 1rem;
+}
+
+.chip {
+    border: 1px solid var(--crt-fg-dim);
+    background: transparent;
+    color: inherit;
+    border-radius: 0;
+    padding: 0.2rem 0.75rem;
+    margin: 0 0.25rem 0.25rem 0;
+    cursor: pointer;
+}
+
+.chip.selected,
+.detachment.selected {
+    border-color: var(--crt-fg);
+    background: var(--crt-selected);
+}
+
+.detachment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detachment {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid transparent;
+}
+
+.detachment-name {
+    flex: 1;
+}
+
+.detachment-tag {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.dp-progress.over-budget {
+    color: var(--crt-danger);
+}

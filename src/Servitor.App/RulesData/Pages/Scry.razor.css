@@ -19,10 +19,10 @@
 }
 
 .chip {
-    border: 1px solid #555;
+    border: 1px solid var(--crt-fg-dim);
     background: transparent;
     color: inherit;
-    border-radius: 999px;
+    border-radius: 0;
     padding: 0.15rem 0.6rem;
     margin: 0 0.25rem 0.25rem 0;
     cursor: pointer;
@@ -30,22 +30,24 @@
 }
 
 .chip-include {
-    background: #2e7d32;
-    border-color: #2e7d32;
-    color: #fff;
+    background: var(--crt-fg);
+    border-color: var(--crt-fg);
+    color: var(--crt-bg);
+    text-shadow: none;
 }
 
 .chip-exclude {
-    background: #b32121;
-    border-color: #b32121;
-    color: #fff;
+    background: var(--crt-danger);
+    border-color: var(--crt-danger);
+    color: var(--crt-bg);
+    text-shadow: none;
     text-decoration: line-through;
 }
 
 .result-list {
     height: 480px;
     overflow-y: auto;
-    border: 1px solid #444;
+    border: 1px solid var(--crt-fg-dim);
 }
 
 /* Fixed layout: column widths come from the <col> elements, never from the current content, so they cannot jump. */
@@ -71,7 +73,7 @@
 .result-list thead th {
     position: sticky;
     top: 0;
-    background: #1b1b1b;
+    background: var(--crt-panel);
     z-index: 1;
 }
 
@@ -86,12 +88,12 @@
 }
 
 .result-list tbody tr:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--crt-hover);
     cursor: pointer;
 }
 
 .result-list tbody tr.selected {
-    background: rgba(74, 144, 217, 0.25);
+    background: var(--crt-selected);
 }
 
 /* Terminal-style block cursor in front of the selected unit. */

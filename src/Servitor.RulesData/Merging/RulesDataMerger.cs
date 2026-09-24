@@ -50,7 +50,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
         var dataVersion = BuildDataVersion(factions);
         var mergedFactions = factions
             .Select(f => new MergedFactionRules(
-                f.Slug, f.Mapping.Identity.Name, f.Mapping.Stratagems, f.Mapping.Abilities, f.Mapping.Enhancements))
+                f.Slug, f.Mapping.Identity.Name, f.Mapping.Stratagems, f.Mapping.Abilities, f.Mapping.Enhancements, f.Mapping.Detachments))
             .ToList();
 
         var data = new MergedRulesData(dataVersion, generatedAt, joined.Datasheets, coreStratagems.Kept, mergedFactions, coreRules);

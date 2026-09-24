@@ -1,0 +1,114 @@
+@using Servitor.App.RulesData.Merging
+@using Servitor.App.RulesData.Updating
+@inject IDataUpdateService UpdateService
+@inject IRulesDataMergeService MergeService
+
+<div class="update-data">
+    <button type="button" class="update-data-button" disabled="@_isRunning" @onclick="RunUpdateAsync">
+        @(_isRunning ? "Updating…" : "Update data")
+    </button>
+
+    @if (_progressLines.Count > 0)
+    {
+        <ul class="update-progress">
+            @foreach (var line in _progressLines)
+            {
+                <li>@line</li>
+            }
+        </ul>
+    }
+
+    @if (_notAvailable)
+    {
+        <p class="update-message update-error">
+            The update service is not running. Start it in a terminal in the repository, then try again:
+            <code>@HttpDataUpdateService.StartCommand</code>
+        </p>
+    }
+
+    @if (_result is { } result)
+    {
+        <p class="update-message @(result.Success ? "" : "update-error")">@(result.Success ? "Update finished." : "Update failed.")</p>
+        <ul class="update-summary">
+            @foreach (var line in result.Summary)
+            {
+                <li>@line</li>
+            }
+            @if (_mergeSummary is not null)
+            {
+                <li>@_mergeSummary</li>
+            }
+        </ul>
+        @if (result.Warnings.Count > 0)
+        {
+            <ul class="update-warnings">
+                @foreach (var warning in result.Warnings)
+                {
+                    <li>@warning</li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+@code {
+    private bool _isRunning;
+    private bool _notAvailable;
+    private DataUpdateResult? _result;
+    private string? _mergeSummary;
+    private readonly List<string> _progressLines = [];
+
+    private async Task RunUpdateAsync()
+    {
+        _isRunning = true;
+        _notAvailable = false;
+        _result = null;
+        _mergeSummary = null;
+        _progressLines.Clear();
+
+        try
+        {
+            if (!await UpdateService.IsAvailableAsync())
+            {
+                _notAvailable = true;
+                return;
+            }
+
+            var progress = new Progress<DataUpdateProgress>(step =>
+            {
+                _progressLines.Add($"{step.Step}: {step.Message}");
+                InvokeAsync(StateHasChanged);
+            });
+
+            _result = await UpdateService.UpdateAsync(progress);
+            if (_result.Success)
+            {
+                _mergeSummary = await MergeAfterUpdateAsync();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _result = new DataUpdateResult(false, [], [$"The update service could not be reached: {ex.Message}"]);
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    // The update replaced the source files, so the merged data the app works with is rebuilt from them right away.
+    private async Task<string> MergeAfterUpdateAsync()
+    {
+        try
+        {
+            var merge = await MergeService.MergeAsync();
+            return merge.Stored
+                ? $"Merge: {merge.Outcome.Report.Summary.BsDataDatasheets} datasheets merged and stored."
+                : "Merge: no datasheets found, nothing was stored.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or System.Text.Json.JsonException or Microsoft.JSInterop.JSException)
+        {
+            return $"Merge failed: {ex.Message}";
+        }
+    }
+}

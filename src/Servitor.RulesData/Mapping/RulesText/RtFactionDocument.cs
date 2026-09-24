@@ -46,6 +46,21 @@ public sealed class RtDatasheetDocument
 
 public sealed class RtDetachment
 {
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("legend")]
+    public string Legend { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
+
+    [JsonPropertyName("dp")]
+    public string Dp { get; set; } = "";
+
+    [JsonPropertyName("forceDisposition")]
+    public string ForceDisposition { get; set; } = "";
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
 

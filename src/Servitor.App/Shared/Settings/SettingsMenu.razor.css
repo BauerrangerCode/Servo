@@ -1,0 +1,35 @@
+.settings-menu {
+    position: relative;
+    margin-left: auto;
+}
+
+.settings-toggle {
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0.15rem 0.5rem;
+}
+
+.settings-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    z-index: 1000;
+    min-width: 20rem;
+    padding: 0.75rem 1rem;
+    background: var(--crt-panel);
+    border: 1px solid var(--crt-fg);
+}
+
+.settings-panel[hidden] {
+    display: none;
+}
+
+.settings-section + .settings-section {
+    margin-top: 1rem;
+}
+
+.settings-section h3 {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}

@@ -54,6 +54,27 @@ public class RulesTextMapperTests
     }
 
     [Fact]
+    public void Maps_detachment_dp_mission_tag_and_enhancement_count()
+    {
+        var result = RulesTextMapper.MapFaction(FactionFile("orks"));
+
+        var blitz = Assert.Single(result.Detachments, d => d.Name == "Blitz Brigade");
+        Assert.Equal(1, blitz.DetachmentPoints);
+        Assert.Equal(MissionArchetype.TakeAndHold, blitz.Archetype);
+        Assert.Equal(2, blitz.EnhancementCount);
+        Assert.Equal(GameMode.Standard, blitz.Mode);
+    }
+
+    [Fact]
+    public void Boarding_actions_detachments_are_marked_as_such()
+    {
+        var result = RulesTextMapper.MapFaction(FactionFile("orks"));
+
+        Assert.Contains(result.Detachments, d => d.Mode == GameMode.BoardingActions);
+        Assert.All(result.Detachments.Where(d => d.Mode == GameMode.Standard), d => Assert.NotNull(d.Archetype));
+    }
+
+    [Fact]
     public void Splits_a_stratagem_description_into_markdown_fields()
     {
         var result = RulesTextMapper.MapFaction(FactionFile("orks"));

@@ -21,7 +21,8 @@ public sealed record MergedFactionRules(
     string Name,
     IReadOnlyList<Stratagem> Stratagems,
     IReadOnlyList<DetachmentAbility> Abilities,
-    IReadOnlyList<Enhancement> Enhancements);
+    IReadOnlyList<Enhancement> Enhancements,
+    IReadOnlyList<Detachment> Detachments);
 
 /// <summary>
 /// The small header stored next to the (large) merged data so a consumer can decide which copy is newer without

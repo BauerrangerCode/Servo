@@ -1,16 +1,109 @@
 :root {
-    --nav-background: #1b1b1b;
-    --nav-foreground: #d0d0d0;
-    --nav-foreground-active: #ffffff;
-    --nav-accent: #4a90d9;
+    /* Monochrome green phosphor display (Adeptus Mechanicus cogitator look). */
+    --crt-bg: #010b04;
+    --crt-panel: #03150a;
+    --crt-fg: #33ff66;
+    --crt-fg-dim: #1fa146;
+    --crt-fg-faint: #0f5a26;
+    --crt-fg-bright: #b8ffcb;
+    --crt-glow: 0 0 6px rgba(51, 255, 102, 0.55);
+    --crt-hover: rgba(51, 255, 102, 0.1);
+    --crt-selected: rgba(51, 255, 102, 0.22);
+    --crt-warning: #ffb000;
+    --crt-danger: #ff5a4d;
+    --crt-font: "Cascadia Mono", "Consolas", "Lucida Console", "Courier New", monospace;
+
+    --nav-background: var(--crt-panel);
+    --nav-foreground: var(--crt-fg-dim);
+    --nav-foreground-active: var(--crt-fg-bright);
+    --nav-accent: var(--crt-fg);
 }
 
 html, body {
     margin: 0;
-    font-family: sans-serif;
+    min-height: 100%;
+    background: var(--crt-bg);
+    color: var(--crt-fg);
+    font-family: var(--crt-font);
+    text-shadow: var(--crt-glow);
+    color-scheme: dark;
 }
 
+/* Scanlines and a soft vignette over the whole screen; never intercepts input. */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0.28) 3px),
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%);
+    animation: crt-flicker 6s infinite steps(1);
+}
+
+@keyframes crt-flicker {
+    0%, 100% { opacity: 1; }
+    47% { opacity: 1; }
+    48% { opacity: 0.92; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::after { animation: none; }
+}
+
+::selection {
+    background: var(--crt-fg);
+    color: var(--crt-bg);
+    text-shadow: none;
+}
+
+h1, h2, h3, h4 {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+}
+
+h1::before { content: "> "; }
+
+a { color: var(--crt-fg-bright); }
+
+button, select, input, textarea {
+    font: inherit;
+    color: var(--crt-fg);
+    background: var(--crt-bg);
+    border: 1px solid var(--crt-fg-dim);
+    border-radius: 0;
+    padding: 0.2rem 0.6rem;
+    text-shadow: inherit;
+}
+
+button { cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; }
+
+button:hover:not(:disabled) {
+    background: var(--crt-fg);
+    color: var(--crt-bg);
+    text-shadow: none;
+}
+
+button:disabled { color: var(--crt-fg-faint); border-color: var(--crt-fg-faint); cursor: not-allowed; }
+
+input::placeholder { color: var(--crt-fg-faint); }
+
+:focus-visible { outline: 1px dashed var(--crt-fg-bright); outline-offset: 2px; }
+
+table { border-collapse: collapse; }
+
+th { color: var(--crt-fg-bright); text-transform: uppercase; letter-spacing: 0.08em; }
+
+hr { border: 0; border-top: 1px solid var(--crt-fg-faint); }
+
+* { scrollbar-color: var(--crt-fg-dim) var(--crt-bg); }
+
 .page {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -21,6 +114,7 @@ html, body {
     gap: 1rem;
     padding: 0.75rem 1rem;
     background: var(--nav-background);
+    border-bottom: 1px solid var(--crt-fg-dim);
 }
 
     .top-nav a {
@@ -36,8 +130,17 @@ html, body {
         border-bottom: 2px solid var(--nav-accent);
     }
 
-.top-nav .merge-data-button {
-    margin-left: auto;
+#crt-glitch {
+    position: fixed;
+    inset: 0;
+    z-index: 1999;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+@keyframes crt-roll {
+    from { transform: translateY(-20vh); }
+    to { transform: translateY(20vh); }
 }
 
 .merge-report-dialog {
@@ -47,7 +150,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.75);
 }
 
 .merge-report-panel {
@@ -58,8 +161,8 @@ html, body {
     width: min(60rem, 92vw);
     max-height: 85vh;
     padding: 1rem 1.25rem;
-    background: #ffffff;
-    border-radius: 0.5rem;
+    background: var(--crt-panel);
+    border: 1px solid var(--crt-fg);
 }
 
 .merge-report-text {
@@ -67,13 +170,13 @@ html, body {
     overflow: auto;
     margin: 0;
     padding: 0.75rem;
-    background: #f4f4f4;
+    background: var(--crt-bg);
     font-size: 0.85rem;
     white-space: pre-wrap;
 }
 
 .merge-report-error {
-    color: #b00020;
+    color: var(--crt-danger);
 }
 
 .merge-report-actions {
@@ -88,7 +191,7 @@ main {
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: 1px solid var(--crt-fg);
 }
 
 .invalid {
@@ -96,12 +199,14 @@ main {
 }
 
 .validation-message {
-    color: red;
+    color: var(--crt-danger);
 }
 
 #blazor-error-ui {
     color-scheme: light only;
-    background: lightyellow;
+    background: var(--crt-warning);
+    color: #000;
+    text-shadow: none;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
@@ -141,14 +246,14 @@ main {
 
     .loading-progress circle {
         fill: none;
-        stroke: #e0e0e0;
+        stroke: var(--crt-fg-faint);
         stroke-width: 0.6rem;
         transform-origin: 50% 50%;
         transform: rotate(-90deg);
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: var(--crt-fg);
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -165,7 +270,7 @@ main {
     }
 
 code {
-    color: #c02d76;
+    color: var(--crt-fg-bright);
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {

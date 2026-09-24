@@ -1,0 +1,40 @@
+@using System.Globalization
+@inject ICrtEffectsService Effects
+
+<div class="crt-effects-control">
+    <label>
+        <input type="checkbox" class="fx-enabled" checked="@_settings.Enabled" @onchange="OnEnabledChanged" />
+        FX
+    </label>
+    <label>
+        every
+        <input type="number" class="fx-min" min="@CrtEffectsSettings.LowestSeconds" step="0.5"
+               value="@Format(_settings.MinSeconds)" disabled="@(!_settings.Enabled)" @onchange="OnMinChanged" />
+        –
+        <input type="number" class="fx-max" min="@CrtEffectsSettings.LowestSeconds" step="0.5"
+               value="@Format(_settings.MaxSeconds)" disabled="@(!_settings.Enabled)" @onchange="OnMaxChanged" />
+        s
+    </label>
+</div>
+
+@code {
+    private CrtEffectsSettings _settings = CrtEffectsSettings.Default;
+
+    protected override async Task OnInitializedAsync() => _settings = await Effects.LoadAsync();
+
+    private Task OnEnabledChanged(ChangeEventArgs args) =>
+        ApplyAsync(_settings with { Enabled = args.Value is true });
+
+    private Task OnMinChanged(ChangeEventArgs args) =>
+        ApplyAsync(_settings with { MinSeconds = Parse(args.Value, _settings.MinSeconds) });
+
+    private Task OnMaxChanged(ChangeEventArgs args) =>
+        ApplyAsync(_settings with { MaxSeconds = Parse(args.Value, _settings.MaxSeconds) });
+
+    private async Task ApplyAsync(CrtEffectsSettings settings) => _settings = await Effects.ApplyAsync(settings);
+
+    private static double Parse(object? value, double fallback) =>
+        double.TryParse(value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
+
+    private static string Format(double seconds) => seconds.ToString(CultureInfo.InvariantCulture);
+}

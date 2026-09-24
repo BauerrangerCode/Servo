@@ -1,0 +1,27 @@
+@using Servitor.App.RulesData.Components
+@using Servitor.App.Shared.Effects
+
+<div class="settings-menu">
+    <button type="button" class="settings-toggle" aria-label="Settings" aria-expanded="@_isOpen" title="Settings"
+            @onclick="Toggle">⚙</button>
+
+    @* Always rendered, only hidden: the effects control starts the screen effects when it initializes. *@
+    <div class="settings-panel" hidden="@(!_isOpen)" role="menu" aria-label="Settings">
+        <section class="settings-section">
+            <h3>Screen effects</h3>
+            <CrtEffectsControl />
+        </section>
+
+        <section class="settings-section">
+            <h3>Rules data</h3>
+            <UpdateDataButton />
+            <MergeDataButton />
+        </section>
+    </div>
+</div>
+
+@code {
+    private bool _isOpen;
+
+    private void Toggle() => _isOpen = !_isOpen;
+}

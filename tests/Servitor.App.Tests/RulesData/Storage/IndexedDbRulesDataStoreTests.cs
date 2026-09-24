@@ -37,7 +37,8 @@ public class IndexedDbRulesDataStoreTests : BunitContext
                 "Astra Militarum",
                 [new Stratagem("s1", "Command Re-roll", StratagemCategory.Other, 1, "", "Any", "Any Phase", "Any phase.", "One unit.", "Re-roll a roll.", "", "", "")],
                 [new DetachmentAbility("a1", "Steel Discipline", "", "Some passive rule.", "Combined Regiment")],
-                [new Enhancement("e1", "Kurov's Aquila", "", "Ignore the first mortal wound.", 30, "Combined Regiment", false, null)]),
+                [new Enhancement("e1", "Kurov's Aquila", "", "Ignore the first mortal wound.", 30, "Combined Regiment", false, null)],
+                [new Detachment("d1", "Combined Regiment", "", 2, MissionArchetype.TakeAndHold, 4, GameMode.Standard)]),
         ],
         CoreRules: [new CoreRule("r1", "Deep Strike", null, "Set up **anywhere**.", CoreRuleSource.BsData)]);
 

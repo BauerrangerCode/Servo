@@ -10,7 +10,7 @@ public static class RulesSourceManifest
     /// <summary>
     /// The BSData source repository's commit at the time of copying; part of the merged data version.
     /// </summary>
-    public const string BsDataVersion = "8f5b01a";
+    public const string BsDataVersion = "18afd24";
 
     public const string BsDataDirectory = "bsdata/wh40k-11e";
 
