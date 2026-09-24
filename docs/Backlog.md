@@ -28,7 +28,7 @@ This backlog follows the delivery order set by the project owner: Scry first (bu
 
 6 stories · 23 pts · folder: Common / RulesData
 
-Foundation every other epic depends on: a running Blazor WASM shell and two parallel mapping pipelines into the same IndexedDB store. BSData wh40k-11e (E1.3) supplies the machine-readable constraints Build's (E3) validation engine needs (wargear option limits, DP/enhancement/unit limits per Battle Size, force organization); `/data/core/` and `/data/factions/<faction>/faction.json` (E1.3b) supply the rules-text content (stratagems, detachment abilities, enhancements) that Scry/Action Queue (E2, E6.2/E6.2b/E6.3) need. The two sources overlap on basic datasheet data (points, stats, keywords) but neither replaces the other – confirmed by direct inspection, see [Reference-App-Analysis.md](Reference-App-Analysis.md) Section 12. Not explicitly requested on its own, but a strict prerequisite for delivering Scry (E2) as the first working feature.
+Foundation every other epic depends on: a running Blazor WASM shell and two parallel mapping pipelines (since merged into one single source of truth, see "Data source merge" below). BSData wh40k-11e (E1.3) supplies the machine-readable constraints Build's (E3) validation engine needs (wargear option limits, DP/enhancement/unit limits per Battle Size, force organization); `core/` and `factions/<faction>/faction.json` under `src/Servitor.App/wwwroot/data/` (E1.3b) supply the rules-text content (stratagems, detachment abilities, enhancements) that Scry/Action Queue (E2, E6.2/E6.2b/E6.3) need. The two sources overlap on basic datasheet data (points, stats, keywords) but neither replaces the other – confirmed by direct inspection, see [Reference-App-Analysis.md](Reference-App-Analysis.md) Section 12. Not explicitly requested on its own, but a strict prerequisite for delivering Scry (E2) as the first working feature.
 
 ### E1.1 Solution & feature-folder scaffold — 3 pts
 As a developer, I want a Blazor WebAssembly (standalone, PWA-capable) solution scaffolded with the feature-based folder layout from CODING_GUIDELINES.md, so that every later feature has a consistent place to live from day one.
@@ -54,7 +54,7 @@ As a developer, I want an explicit mapper from a BSData wh40k-11e catalogue file
 - ✓ Reads each unit's force/roster-scope `max` constraint plus any Incursion-conditioned modifier generically (see [Open-Questions-Catalog.md](Open-Questions-Catalog.md) Q9) — no hardcoded per-battle-size lookup table
 
 ### E1.3b Rules-text mapping layer (stratagems, abilities, enhancements) — 5 pts
-As a developer, I want an explicit mapper from `/data/core/core-stratagems.json` and each faction's `/data/factions/<faction>/faction.json` (detachment abilities/enhancements/stratagems arrays) into domain records, so that Scry and the Action Queue have real stratagem/ability/enhancement content without depending on this second external source's file shape directly, mirroring E1.3's separation for BSData.
+As a developer, I want an explicit mapper from `core/core-stratagems.json` and each faction's `factions/<faction>/faction.json` (both under `src/Servitor.App/wwwroot/data/`) (detachment abilities/enhancements/stratagems arrays) into domain records, so that Scry and the Action Queue have real stratagem/ability/enhancement content without depending on this second external source's file shape directly, mirroring E1.3's separation for BSData.
 
 - ✓ Mapper is a distinct class/module from E1.3's BSData mapper, not inline deserialization onto domain types
 - ✓ Domain records for Stratagem/Ability/Enhancement are immutable, in the same feature folder as E1.2's datasheet records, with no business logic inside them
@@ -63,11 +63,11 @@ As a developer, I want an explicit mapper from `/data/core/core-stratagems.json`
 - ✓ Unit-tested against `core-stratagems.json` and at least one faction's detachment stratagems/abilities/enhancements
 
 ### E1.4 IndexedDB storage service — 5 pts
-As a developer, I want an `IRulesDataStore` service backed by a thin JS interop wrapper around IndexedDB, storing parsed faction data as JSON keyed by faction id + data version, so that rules data survives reloads and the app works fully offline after first load.
+As a developer, I want an `IRulesDataStore` service backed by a thin JS interop wrapper around IndexedDB, storing the merged rules data as JSON documents under fixed keys next to a manifest (data version + generation time), so that rules data survives reloads and the app works fully offline after first load.
 
 - ✓ Service interface hides IndexedDB/JS interop details from all consumers
-- ✓ Stores the output of both E1.3 (BSData-mapped constraints) and E1.3b (rules-text content) under the same per-faction key, not two parallel stores with separate versioning
-- ✓ Round-trip test: store a parsed faction, reload, read it back unchanged
+- ✓ Stores the output of both E1.3 (BSData-mapped constraints) and E1.3b (rules-text content) as one merged document with one version, not two parallel stores (revised by the data source merge: originally one key per faction)
+- ✓ Round-trip test: store the merged data, reload, read it back unchanged
 - ✓ No ORM-style dependency added, per CODING_GUIDELINES.md
 
 ### E1.5 App shell & primary navigation — 2 pts
@@ -114,6 +114,34 @@ As a player, I want to add an ad-hoc filter on a numeric characteristic (e.g. mi
 
 - ✓ At least one characteristic is filterable end-to-end
 - ✓ Filter combines with the facet filters from E2.1
+
+---
+
+## Data source merge between E2 and E3 — implemented, follow-ups open
+
+**Status: implemented (unsized, not part of the "7 epics · 31 stories · 146 points" total above). Not yet committed or independently reviewed.**
+Raised by the project owner while reviewing E2 (Scry): the BSData wh40k-11e catalogues (E1.3), `core/` and `factions/<faction>/faction.json` (E1.3b) overlap on datasheet data without one replacing the other. They are now reconciled into one merged single source of truth that the app reads instead of the raw files. Design details: [CODING_GUIDELINES.md](../CODING_GUIDELINES.md) "Data & Assets"; current numbers: `merge-report.md` next to the generated data.
+
+**Delivered:**
+
+- New class library `Servitor.RulesData` (domain, mappers, `RulesDataMerger`), console tool `Servitor.DataMerge` and an MSBuild target `MergeRulesData`, so the merge runs at build time and produces `wwwroot/data/merged/{rules-data.json, manifest.json, merge-report.md}`.
+- "Merge data" button in the top navigation: runs the same merge in the browser, stores the result in IndexedDB, shows the report and offers it as a download. At startup the newer of the IndexedDB copy and the shipped files wins.
+- Raw source files are never modified. `core/` and `factions/` moved into `src/Servitor.App/wwwroot/data/`; BSData stays as the clone in `/data/bsdata/`.
+- Join key: faction + normalized name + Legends flag only. Ambiguous matches take the union of stratagem ids; unresolved ids are dropped and reported.
+
+**Merge rules (project owner):**
+
+- BSData is authoritative for units. From the rules-text source, units only receive stratagem ids.
+- Stratagems (core and faction) are taken over from the rules-text source and adapted to BSData-style Markdown (When/Target/Effect/Restrictions).
+- BSData core rules stay untouched. Core rules that BSData lacks are added from `core/`. Non-unit rules (movement, weapon abilities such as Devastating Wounds or Sustained Hits) come from BSData where present and from `core/` otherwise.
+
+**Open follow-ups:**
+
+- Core stratagem count (resolved by project owner decision): only entries with a CP cost are stratagems. The 30 cost-free Move/Shoot/Fight entries of `core-stratagems.json` became core rules of kind Action (22 after removing duplicates). Weapon rules (e.g. Blast, Hazardous) and unit rules (e.g. Deep Strike) are kinds of their own (`CoreRuleKind`), so datasheets can link to them later. Older duplicates (same name and game mode, lower id) are dropped and listed in the merge report: 28 core stratagems remain. Boarding Actions and Challenger stratagems (14 of the 28) are identifiable by `GameMode` and stay in the data set but are out of scope for V0.1. Tank Shock, Go to Ground and Grenade have no 11th-edition counterpart of the same name; by project owner decision they stay as Standard-mode stratagems.
+- Detachments with zero or one stratagem in the source (7 of them, see the merge report) are source gaps, not merge losses.
+- BSData vs. factions+core as the unit source: undecided by the project owner; for now BSData is the unit source.
+- Army-building (E3) must derive "one unit, several armies" from the rules-text faction files: BSData lists a shared unit (e.g. Astra Militarum units in Genestealer Cults) only under one catalogue.
+
 
 ---
 

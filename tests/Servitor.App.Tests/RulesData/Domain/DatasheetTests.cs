@@ -1,4 +1,4 @@
-using Servitor.App.RulesData.Domain;
+using Servitor.RulesData.Domain;
 
 namespace Servitor.App.Tests.RulesData.Domain;
 
@@ -28,7 +28,8 @@ public class DatasheetTests
         WargearAbilities: NoAbilities,
         CoreAbilities: NoAbilities,
         Keywords: Keywords,
-        CompositionConstraint: new CompositionConstraint(6, 4));
+        CompositionConstraint: new CompositionConstraint(6, 4),
+        StratagemIds: []);
 
     [Fact]
     public void Construction_exposes_all_supplied_values()

@@ -1,4 +1,4 @@
-using Servitor.App.Shared.Html;
+using Servitor.RulesData.Html;
 
 namespace Servitor.App.Tests.Shared.Html;
 

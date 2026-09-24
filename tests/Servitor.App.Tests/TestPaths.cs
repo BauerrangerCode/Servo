@@ -8,8 +8,15 @@ internal static class TestPaths
     /// </summary>
     public static string RepoRoot { get; } = FindRepoRoot();
 
+    /// <summary>The BSData clone under the repo-root /data/ directory.</summary>
     public static string DataFile(params string[] relativeSegments) =>
         Path.Combine([RepoRoot, "data", .. relativeSegments]);
+
+    /// <summary>The copy of the data the browser fetches and the merge tool reads.</summary>
+    public static string WwwrootDataDirectory { get; } = Path.Combine(RepoRoot, "src", "Servitor.App", "wwwroot", "data");
+
+    public static string WwwrootDataFile(params string[] relativeSegments) =>
+        Path.Combine([WwwrootDataDirectory, .. relativeSegments]);
 
     private static string FindRepoRoot()
     {

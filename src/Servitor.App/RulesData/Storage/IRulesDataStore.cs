@@ -6,7 +6,7 @@ namespace Servitor.App.RulesData.Storage;
 /// </summary>
 public interface IRulesDataStore
 {
-    Task SaveFactionAsync(FactionRulesData data, CancellationToken cancellationToken = default);
+    Task SaveAsync<T>(string key, T value, CancellationToken cancellationToken = default);
 
-    Task<FactionRulesData?> LoadFactionAsync(string factionId, string dataVersion, CancellationToken cancellationToken = default);
+    Task<T?> LoadAsync<T>(string key, CancellationToken cancellationToken = default);
 }

@@ -1,5 +1,219 @@
 @page "/scry"
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Servitor.App.RulesData.Components
+@using Servitor.RulesData.Domain
+@using Servitor.App.RulesData.Loading
+@using Servitor.App.RulesData.Search
+@implements IDisposable
+@inject IDatasheetCatalog Catalog
 
 <PageTitle>Scry</PageTitle>
 
 <h1>Scry</h1>
+
+@if (_allDatasheets is null)
+{
+    <p>Loading rules data…</p>
+}
+else if (_allDatasheets.Count == 0)
+{
+    <p class="scry-empty">No rules data yet. Use “Merge data” in the top bar to build it.</p>
+}
+else
+{
+    <div class="scry-search">
+        <input type="text" placeholder="Search…" value="@_query" @oninput="OnQueryChanged" />
+
+        <select value="@_mode" @onchange="OnModeChanged">
+            <option value="@DatasheetSearchMode.All">All</option>
+            <option value="@DatasheetSearchMode.Name">Name</option>
+            <option value="@DatasheetSearchMode.RulesText">Rules text</option>
+        </select>
+
+        <button @onclick="ToggleLegends">@(_showLegends ? "Legends" : "Current")</button>
+    </div>
+
+    <div class="scry-facets">
+        <div class="facet-group">
+            <h4>Role</h4>
+            @foreach (var role in RoleFilterOptions.All)
+            {
+                <button type="button" class="chip @ChipClass(GetState(_roleFilters, role))" @onclick="() => CycleFacet(_roleFilters, role)">
+                    @role
+                </button>
+            }
+        </div>
+
+        <div class="facet-group">
+            <h4>Faction</h4>
+            @foreach (var faction in _factions)
+            {
+                <button type="button" class="chip @ChipClass(GetState(_factionFilters, faction))" @onclick="() => CycleFacet(_factionFilters, faction)">
+                    @faction
+                </button>
+            }
+        </div>
+
+        <div class="facet-group">
+            <h4>Characteristics</h4>
+            <select value="@_characteristicKindValue" @onchange="OnCharacteristicKindChanged">
+                <option value="">(none)</option>
+                <option value="@nameof(CharacteristicKind.Toughness)">Toughness</option>
+                <option value="@nameof(CharacteristicKind.Wounds)">Wounds</option>
+            </select>
+            @if (_characteristicKind is not null)
+            {
+                <span>&ge;</span>
+                <input type="number" min="0" value="@_characteristicMinimum" @oninput="OnCharacteristicMinimumChanged" />
+            }
+        </div>
+    </div>
+
+    <p class="result-count">@_filtered.Count result@(_filtered.Count == 1 ? "" : "s")</p>
+
+    <div class="result-list">
+        <table>
+            <colgroup>
+                <col class="col-name" />
+                <col class="col-faction" />
+                <col class="col-points" />
+                <col span="6" class="col-stat" />
+            </colgroup>
+            <thead>
+                <tr><th>Name</th><th>Faction</th><th>Pts</th><th>M</th><th>T</th><th>Sv</th><th>W</th><th>Ld</th><th>OC</th></tr>
+            </thead>
+            <tbody>
+                <Virtualize Items="_filtered" Context="sheet" ItemSize="32" SpacerElement="tr">
+                    <tr @onclick="() => _selected = sheet" class="@(ReferenceEquals(_selected, sheet) ? "selected" : "")">
+                        <td class="cell-name" title="@sheet.Name">@sheet.Name</td>
+                        <td title="@sheet.Faction">@sheet.Faction</td>
+                        <td>@sheet.Points</td>
+                        <td>@sheet.StatLine.Movement</td>
+                        <td>@sheet.StatLine.Toughness</td>
+                        <td>@sheet.StatLine.Save</td>
+                        <td>@sheet.StatLine.Wounds</td>
+                        <td>@sheet.StatLine.Leadership</td>
+                        <td>@sheet.StatLine.ObjectiveControl</td>
+                    </tr>
+                </Virtualize>
+            </tbody>
+        </table>
+    </div>
+
+    <DatasheetDetail Datasheet="_selected" />
+}
+
+@code {
+    private IReadOnlyList<Datasheet>? _allDatasheets;
+    private IReadOnlyList<string> _factions = [];
+
+    private string _query = "";
+    private DatasheetSearchMode _mode = DatasheetSearchMode.All;
+    private bool _showLegends;
+    private readonly Dictionary<string, TriState> _roleFilters = [];
+    private readonly Dictionary<string, TriState> _factionFilters = [];
+    private CharacteristicKind? _characteristicKind;
+    private int _characteristicMinimum = 1;
+
+    private Datasheet? _selected;
+    private List<Datasheet> _filtered = [];
+
+    private string _characteristicKindValue => _characteristicKind?.ToString() ?? "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Catalog.Changed += OnCatalogChanged;
+        await LoadAsync();
+    }
+
+    public void Dispose() => Catalog.Changed -= OnCatalogChanged;
+
+    private async Task LoadAsync()
+    {
+        _allDatasheets = await Catalog.GetAllAsync();
+        _factions = _allDatasheets
+            .Select(d => d.Faction)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _selected = null;
+        RunSearch();
+    }
+
+    private void OnCatalogChanged() => InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private static TriState GetState(Dictionary<string, TriState> filters, string key) =>
+        filters.TryGetValue(key, out var state) ? state : TriState.Neutral;
+
+    private static string ChipClass(TriState state) => state switch
+    {
+        TriState.Include => "chip-include",
+        TriState.Exclude => "chip-exclude",
+        _ => "chip-neutral",
+    };
+
+    private void CycleFacet(Dictionary<string, TriState> filters, string key)
+    {
+        filters[key] = GetState(filters, key).Cycle();
+        RunSearch();
+    }
+
+    private void ToggleLegends()
+    {
+        _showLegends = !_showLegends;
+        RunSearch();
+    }
+
+    private void OnQueryChanged(ChangeEventArgs args)
+    {
+        _query = args.Value?.ToString() ?? "";
+        RunSearch();
+    }
+
+    private void OnModeChanged(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<DatasheetSearchMode>(args.Value?.ToString(), out var mode))
+        {
+            _mode = mode;
+            RunSearch();
+        }
+    }
+
+    private void OnCharacteristicKindChanged(ChangeEventArgs args)
+    {
+        var raw = args.Value?.ToString();
+        _characteristicKind = string.IsNullOrEmpty(raw) ? null : Enum.Parse<CharacteristicKind>(raw);
+        RunSearch();
+    }
+
+    private void OnCharacteristicMinimumChanged(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var value))
+        {
+            _characteristicMinimum = value;
+            RunSearch();
+        }
+    }
+
+    private void RunSearch()
+    {
+        if (_allDatasheets is null)
+        {
+            return;
+        }
+
+        var criteria = new DatasheetSearchCriteria(
+            _query,
+            _mode,
+            _roleFilters,
+            _factionFilters,
+            _showLegends,
+            _characteristicKind is { } kind ? new CharacteristicFilter(kind, _characteristicMinimum) : null);
+
+        _filtered = DatasheetSearchService.Search(_allDatasheets, criteria);
+    }
+}

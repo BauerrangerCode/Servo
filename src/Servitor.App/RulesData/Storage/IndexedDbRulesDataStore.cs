@@ -1,11 +1,12 @@
 using System.Text.Json;
 using Microsoft.JSInterop;
+using Servitor.RulesData.Merging;
 
 namespace Servitor.App.RulesData.Storage;
 
 /// <summary>
 /// Thin JS-interop wrapper around the native IndexedDB API (see wwwroot/js/indexedDbInterop.js) — no ORM-style
-/// NuGet dependency, per CODING_GUIDELINES.md. Faction data is stored as one compact JSON document per key.
+/// NuGet dependency, per CODING_GUIDELINES.md. Each value is stored as one compact JSON document per key.
 /// </summary>
 public sealed class IndexedDbRulesDataStore(IJSRuntime jsRuntime) : IRulesDataStore, IAsyncDisposable
 {
@@ -14,24 +15,19 @@ public sealed class IndexedDbRulesDataStore(IJSRuntime jsRuntime) : IRulesDataSt
     private readonly Lazy<Task<IJSObjectReference>> _module = new(() =>
         jsRuntime.InvokeAsync<IJSObjectReference>("import", ModulePath).AsTask());
 
-    public async Task SaveFactionAsync(FactionRulesData data, CancellationToken cancellationToken = default)
+    public async Task SaveAsync<T>(string key, T value, CancellationToken cancellationToken = default)
     {
         var module = await _module.Value;
-        var key = BuildKey(data.FactionId, data.DataVersion);
-        var json = JsonSerializer.Serialize(data);
-        await module.InvokeVoidAsync("putFaction", cancellationToken, key, json);
+        var json = JsonSerializer.Serialize(value, MergedDataJson.Options);
+        await module.InvokeVoidAsync("putDocument", cancellationToken, key, json);
     }
 
-    public async Task<FactionRulesData?> LoadFactionAsync(
-        string factionId, string dataVersion, CancellationToken cancellationToken = default)
+    public async Task<T?> LoadAsync<T>(string key, CancellationToken cancellationToken = default)
     {
         var module = await _module.Value;
-        var key = BuildKey(factionId, dataVersion);
-        var json = await module.InvokeAsync<string?>("getFaction", cancellationToken, key);
-        return json is null ? null : JsonSerializer.Deserialize<FactionRulesData>(json);
+        var json = await module.InvokeAsync<string?>("getDocument", cancellationToken, key);
+        return json is null ? default : JsonSerializer.Deserialize<T>(json, MergedDataJson.Options);
     }
-
-    private static string BuildKey(string factionId, string dataVersion) => $"{factionId}::{dataVersion}";
 
     public async ValueTask DisposeAsync()
     {

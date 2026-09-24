@@ -13,12 +13,43 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Markdig" Version="1.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.11" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Servitor.RulesData\Servitor.RulesData.csproj" />
+    <ProjectReference Include="..\Servitor.DataMerge\Servitor.DataMerge.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
+
+  <!--
+    Build-time run of the rules data merge: reads the raw sources under wwwroot/data and writes the merged single
+    source of truth to wwwroot/data/merged (see CODING_GUIDELINES.md "Data & Assets"). Incremental — it only runs
+    when a source file or the merge code itself is newer than the last merge — and skipped in IDE design-time builds, when the gitignored
+    data is not present, or when building with -p:SkipRulesDataMerge=true.
+  -->
+  <PropertyGroup>
+    <!-- The tool is only built (ReferenceOutputAssembly=false), never linked; the SDK's self-contained check for referenced executables does not apply. -->
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+    <RulesDataRoot>$(MSBuildProjectDirectory)\wwwroot\data</RulesDataRoot>
+    <DataMergeToolDir>$(MSBuildProjectDirectory)\..\Servitor.DataMerge\bin\$(Configuration)\$(TargetFramework)\</DataMergeToolDir>
+    <DataMergeToolDll>$(DataMergeToolDir)Servitor.DataMerge.dll</DataMergeToolDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <RulesDataSource Include="wwwroot\data\bsdata\**\*.json;wwwroot\data\core\**\*.json;wwwroot\data\factions\**\*.json" />
+  </ItemGroup>
+
+  <Target Name="MergeRulesData" AfterTargets="ResolveProjectReferences" Condition="'$(SkipRulesDataMerge)' != 'true' And '$(DesignTimeBuild)' != 'true' And Exists('$(RulesDataRoot)\bsdata\wh40k-11e')" Inputs="@(RulesDataSource);$(DataMergeToolDll);$(DataMergeToolDir)Servitor.RulesData.dll" Outputs="$(RulesDataRoot)\merged\manifest.json">
+    <Exec Command="dotnet &quot;$(DataMergeToolDll)&quot; &quot;$(RulesDataRoot)&quot;" />
+    <ItemGroup>
+      <Content Include="wwwroot\data\merged\**" Exclude="@(Content)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

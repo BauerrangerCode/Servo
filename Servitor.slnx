@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Servitor.App/Servitor.App.csproj" />
+    <Project Path="src/Servitor.DataMerge/Servitor.DataMerge.csproj" />
+    <Project Path="src/Servitor.RulesData/Servitor.RulesData.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Servitor.App.Tests/Servitor.App.Tests.csproj" />

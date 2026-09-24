@@ -31,3 +31,8 @@ Thumbs.db
 
 # External game data (BSData sources, assets) — see CODING_GUIDELINES.md "Data & Assets"
 /data/
+
+# Runtime data served to the Blazor WASM app via wwwroot (HttpClient can only fetch from wwwroot): the BSData JSON
+# copy, the rules-text source (core/, factions/) and the generated merged/ output. Same external, never-committed
+# game data as /data/ above.
+/src/Servitor.App/wwwroot/data/

@@ -18,12 +18,22 @@ Feature-based, not layer-based. No project-wide top-level `Controllers/`, `Model
 
 Rationale: the reference app has clearly separated feature areas (import, build, battle tracker/scry, scoring). Feature folders keep related code together instead of spreading one feature's change across three layer folders.
 
+Projects: `Servitor.App` (Blazor WebAssembly UI, feature folders as above), `Servitor.RulesData` (class library without any Blazor dependency: rules domain records, source mappers, the data merge), `Servitor.DataMerge` (console tool that runs the merge at build time). Code that both the app and the build tool need lives in `Servitor.RulesData`, never in `Servitor.App`.
+
 ## Data & Assets
 
-- All Warhammer-rules-related data and other assets (images, 3D models, etc.) live under `/data/` at the repo root. `/data/` is gitignored — it is never committed.
-- Source for rules data (this iteration): [BSData/wh40k-11e](https://github.com/BSData/wh40k-11e). Planned to extend to Age of Sigmar and Spearhead BSData repositories later.
-- Suggested layout: `/data/bsdata/<game-system>/` (e.g. `/data/bsdata/wh40k-11e/`) for cloned/pulled BSData catalogues, `/data/assets/` for images/3D models, kept separate since they have different lifecycles and storage needs.
-- A future feature will let the user refresh this data via a button or command (re-pull the BSData source, re-parse into the internal format). Not part of V0.1 — do not build this ahead of being asked (see [CLAUDE.md](CLAUDE.md) Scope Discipline).
+- All Warhammer-rules-related data and other assets (images, 3D models, etc.) are external and gitignored — never committed.
+- Two homes, because Blazor WebAssembly can only fetch static files via `HttpClient` from `wwwroot`:
+  - `/data/` (repo root): the pull source. Currently only the clone of [BSData/wh40k-11e](https://github.com/BSData/wh40k-11e) at `/data/bsdata/wh40k-11e/` (a git repository — never copy its `.git` into `wwwroot`). Planned to extend to Age of Sigmar and Spearhead BSData repositories later; `/data/assets/` is reserved for images/3D models.
+  - `src/Servitor.App/wwwroot/data/`: everything the app and the merge tool read at runtime.
+    - `bsdata/wh40k-11e/*.json`: the catalogue JSON files copied from the clone. After pulling a newer BSData source, copy them here (no automated copy step yet) and update `RulesSourceManifest.BsDataVersion`.
+    - `core/` and `factions/<faction>/`: the rules-text source (core rules, stratagems, faction/detachment/datasheet files). It is delivered directly into `wwwroot` and has no copy under `/data/`.
+    - `merged/`: generated, see below. Never edit by hand.
+- Raw source files are never modified. `Servitor.RulesData.Merging.RulesDataMerger` builds a separate merged single source of truth from them (`merged/rules-data.json`, `manifest.json`, `merge-report.md`), and the app reads only that.
+- Merge rules: BSData is authoritative. Its datasheets and core rules pass through unchanged. From the rules-text source, the merge takes over (1) the stratagem ids per datasheet, joined by faction and normalized name (`FactionCatalogueMap` maps each BSData catalogue to its rules-text factions), (2) all stratagems (core and faction), converted from HTML to BSData-style Markdown and split into When/Target/Effect/Restrictions, and (3) the core rules BSData has no rule of that name for. Core rules carry a kind (`CoreRuleKind`: general, weapon rule, unit rule, action) so datasheets can link to them; cost-free entries of `core-stratagems.json` are actions, not stratagems (a stratagem always has CP). Stratagems carry a `GameMode` (standard, Boarding Actions, Challenger). Older duplicates in the core file are dropped by the merge and listed in the report. Everything that could not be matched is listed in the merge report, not guessed.
+- The merge runs in two places with the same code: at build time (MSBuild target `MergeRulesData` in `Servitor.App.csproj`, incremental, skipped when the data is absent or with `-p:SkipRulesDataMerge=true`; manual run: `dotnet run --project src/Servitor.DataMerge`) and in the browser via the "Merge data" button in the top navigation, which stores the result in IndexedDB and shows/downloads the report. At startup the newer of the IndexedDB copy and the shipped `merged/` files wins.
+- `RulesSourceManifest` lists every source file by hand (the browser cannot list a folder); tests keep it in sync with `wwwroot/data`.
+- Not part of V0.1: a feature that re-pulls the BSData source itself (the merge only re-reads what is already in `wwwroot/data`) — do not build this ahead of being asked (see [CLAUDE.md](CLAUDE.md) Scope Discipline).
 
 ## Architecture / State Management
 
@@ -41,7 +51,7 @@ Rationale: the reference app has clearly separated feature areas (import, build,
 
 No embedded SQL database for V0.1. Instead:
 
-- Parsed rules data (from BSData catalogues) is stored as compact JSON documents in IndexedDB, one entry per faction/catalogue, keyed by faction id + data version.
+- The merged rules data (see Data & Assets) is stored as compact JSON documents in IndexedDB under fixed keys, next to a small manifest (data version + generation time) that decides whether the stored copy or the shipped files are newer.
 - Binary assets (images, 3D models) are stored as Blobs in IndexedDB, keyed by asset id/path.
 - Access goes through a thin, hand-written JS interop wrapper around the native IndexedDB API — no heavy ORM-style NuGet dependency.
 - At runtime, the relevant faction's data is loaded into memory as C# records; search/filtering uses in-memory LINQ. No query engine is needed at this data volume.

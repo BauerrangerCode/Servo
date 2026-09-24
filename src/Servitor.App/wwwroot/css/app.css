@@ -36,6 +36,52 @@ html, body {
         border-bottom: 2px solid var(--nav-accent);
     }
 
+.top-nav .merge-data-button {
+    margin-left: auto;
+}
+
+.merge-report-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.merge-report-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    box-sizing: border-box;
+    width: min(60rem, 92vw);
+    max-height: 85vh;
+    padding: 1rem 1.25rem;
+    background: #ffffff;
+    border-radius: 0.5rem;
+}
+
+.merge-report-text {
+    flex: 1;
+    overflow: auto;
+    margin: 0;
+    padding: 0.75rem;
+    background: #f4f4f4;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+}
+
+.merge-report-error {
+    color: #b00020;
+}
+
+.merge-report-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
 main {
     flex: 1;
     padding: 1rem;
