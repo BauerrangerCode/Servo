@@ -143,7 +143,7 @@ public class RulesTextMapperTests
     {
         var json = File.ReadAllText(TestPaths.WwwrootDataFile("factions", "orks", "datasheets", "000000001.json"));
 
-        var links = RulesTextMapper.MapDatasheetStratagemLinks(json);
+        var links = RulesTextMapper.MapDatasheetDetails(json);
 
         Assert.NotNull(links);
         Assert.Equal("000000001", links.Id);
@@ -153,7 +153,7 @@ public class RulesTextMapperTests
     [Fact]
     public void An_unreadable_datasheet_file_yields_null_instead_of_throwing()
     {
-        Assert.Null(RulesTextMapper.MapDatasheetStratagemLinks("<html>not json</html>"));
+        Assert.Null(RulesTextMapper.MapDatasheetDetails("<html>not json</html>"));
     }
 
     [Fact]

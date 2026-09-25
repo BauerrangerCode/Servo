@@ -11,14 +11,20 @@ public interface IArmyBuilderState
 
     ArmySetup Setup { get; }
 
+    IReadOnlyList<ArmyUnit> Units { get; }
+
     void SelectBattleSize(BattleSize battleSize);
 
-    /// <summary>Switching faction discards the selected detachments, which belong to the previous one.</summary>
+    /// <summary>Switching faction discards the selected detachments and the units, which belong to the previous army.</summary>
     void SelectFaction(string factionId);
 
     DetachmentAddResult AddDetachment(Detachment detachment);
 
     void RemoveDetachment(string detachmentId);
+
+    AddUnitResult AddUnit(Datasheet datasheet, UnitSize size);
+
+    void RemoveUnit(Guid unitId);
 
     void SkipSetup();
 

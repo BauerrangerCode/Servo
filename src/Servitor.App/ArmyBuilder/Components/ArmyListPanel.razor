@@ -1,0 +1,40 @@
+@using Servitor.App.ArmyBuilder.State
+@implements IDisposable
+@inject IArmyBuilderState State
+
+@if (State.Setup.FactionId is not null)
+{
+    <section class="army-list">
+        <h2>Army list (@State.Units.Count)</h2>
+
+        @if (State.Units.Count == 0)
+        {
+            <p class="army-empty">No units yet. Add units from the catalog.</p>
+        }
+        else
+        {
+            <ul class="army-units">
+                @foreach (var unit in State.Units)
+                {
+                    <li class="army-unit">
+                        <span class="army-unit-name">@unit.Datasheet.Name</span>
+                        @if (unit.Size.Models > 0)
+                        {
+                            <span class="army-unit-models">@unit.Size.Models models</span>
+                        }
+                        <span class="army-unit-points">@unit.Size.Points pts</span>
+                        <button type="button" class="remove-unit" @onclick="() => State.RemoveUnit(unit.Id)">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+}
+
+@code {
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    public void Dispose() => State.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

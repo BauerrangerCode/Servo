@@ -1,0 +1,26 @@
+.army-list {
+    margin-top: 1.5rem;
+}
+
+.army-units {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.army-unit {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.army-unit-name {
+    flex: 1;
+}
+
+.army-unit-models,
+.army-unit-points {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}

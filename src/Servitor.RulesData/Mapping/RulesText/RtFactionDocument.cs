@@ -42,6 +42,21 @@ public sealed class RtDatasheetDocument
 
     [JsonPropertyName("stratagemIds")]
     public List<string> StratagemIds { get; set; } = [];
+
+    [JsonPropertyName("modelCosts")]
+    public List<RtModelCost> ModelCosts { get; set; } = [];
+}
+
+public sealed class RtModelCost
+{
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("cost")]
+    public string Cost { get; set; } = "";
+
+    [JsonPropertyName("section")]
+    public string? Section { get; set; }
 }
 
 public sealed class RtDetachment

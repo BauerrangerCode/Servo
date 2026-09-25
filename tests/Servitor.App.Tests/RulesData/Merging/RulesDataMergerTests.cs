@@ -283,7 +283,7 @@ public class RulesDataMergerTests
 
         var stages = reports.Select(r => r.Stage).Distinct().ToList();
         Assert.Equal(
-            ["BSData catalogues", "Core rules", "Factions", "Datasheet stratagem links"],
+            ["BSData catalogues", "Core rules", "Factions", "Datasheet details"],
             stages);
         Assert.All(reports, r => Assert.InRange(r.Completed, 1, r.Total));
     }

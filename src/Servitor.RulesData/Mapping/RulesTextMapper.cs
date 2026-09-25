@@ -25,8 +25,8 @@ public sealed record FactionIdentity(string Slug, string Name, string DataVersio
 /// <summary>A datasheet as listed in <c>faction.json</c>; its detail file is <c>datasheets/&lt;Id&gt;.json</c> beside it.</summary>
 public sealed record DatasheetReference(string Id, string Name, bool IsLegends);
 
-/// <summary>The only part of a per-datasheet detail file the data merge needs.</summary>
-public sealed record DatasheetStratagemLinks(string Id, IReadOnlyList<string> StratagemIds);
+/// <summary>The parts of a per-datasheet detail file the data merge needs: its stratagems and the sizes it can be fielded in.</summary>
+public sealed record DatasheetDetails(string Id, IReadOnlyList<string> StratagemIds, IReadOnlyList<UnitSize> Sizes);
 
 /// <summary>
 /// Maps the rules-text source (<c>core/*.json</c> and each faction's <c>faction.json</c> with its per-datasheet
@@ -160,12 +160,14 @@ public static class RulesTextMapper
             warnings);
     }
 
-    public static DatasheetStratagemLinks? MapDatasheetStratagemLinks(string datasheetJson)
+    public static DatasheetDetails? MapDatasheetDetails(string datasheetJson)
     {
         try
         {
             var datasheet = JsonSerializer.Deserialize<RtDatasheetDocument>(datasheetJson);
-            return datasheet is null ? null : new DatasheetStratagemLinks(datasheet.Id, datasheet.StratagemIds);
+            return datasheet is null
+                ? null
+                : new DatasheetDetails(datasheet.Id, datasheet.StratagemIds, UnitSizeParser.Parse(datasheet.ModelCosts));
         }
         catch (JsonException)
         {

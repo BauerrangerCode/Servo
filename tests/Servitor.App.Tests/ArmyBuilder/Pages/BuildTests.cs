@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.ArmyBuilder.Pages;
 using Servitor.App.ArmyBuilder.State;
 using Servitor.App.RulesData.Loading;
+using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Shared.Backdrop;
 using Servitor.RulesData.Domain;
 using Servitor.RulesData.Merging;
@@ -13,7 +14,11 @@ public class BuildTests : BunitContext
 {
     private readonly FactionBackdrop _backdrop = new();
 
-    public BuildTests() => Services.AddSingleton<IFactionBackdrop>(_backdrop);
+    public BuildTests()
+    {
+        Services.AddSingleton<IFactionBackdrop>(_backdrop);
+        Services.AddSingleton<IDatasheetCatalog>(new FakeDatasheetCatalog());
+    }
 
     private sealed class FakeProvider(MergedRulesData? data) : IMergedRulesDataProvider
     {

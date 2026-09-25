@@ -16,7 +16,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
     private const string StageCatalogues = "BSData catalogues";
     private const string StageCoreRules = "Core rules";
     private const string StageFactions = "Factions";
-    private const string StageDatasheetLinks = "Datasheet stratagem links";
+    private const string StageDatasheetDetails = "Datasheet details";
 
     private sealed record LoadedFaction(string Slug, FactionRulesTextMappingResult Mapping);
 
@@ -32,7 +32,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
         var coreFile = await LoadCoreStratagemsFileAsync(warnings, cancellationToken);
         var rulesTextCoreRules = await LoadRulesTextCoreRulesAsync(progress, warnings, cancellationToken);
         var factions = await LoadFactionsAsync(progress, warnings, cancellationToken);
-        var stratagemLinks = await LoadStratagemLinksAsync(factions, progress, warnings, cancellationToken);
+        var datasheetDetails = await LoadDatasheetDetailsAsync(factions, progress, warnings, cancellationToken);
 
         var coreStratagems = CoreDuplicateConsolidator.Stratagems(coreFile.Stratagems);
         var coreActions = CoreDuplicateConsolidator.Actions(coreFile.Actions);
@@ -42,7 +42,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
             .Select(s => s.Id)
             .ToHashSet();
 
-        var joined = JoinDatasheets(catalogues, factions, stratagemLinks, knownStratagemIds);
+        var joined = JoinDatasheets(catalogues, factions, datasheetDetails, knownStratagemIds);
         var (proseRules, keptFromBsData) = MergeCoreRules(bsDataRules, rulesTextCoreRules);
         var coreRules = proseRules.Concat(coreActions.Kept).ToList();
 
@@ -185,8 +185,8 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
         return loaded;
     }
 
-    private async Task<IReadOnlyDictionary<(string FactionSlug, string DatasheetId), IReadOnlyList<string>>>
-        LoadStratagemLinksAsync(
+    private async Task<IReadOnlyDictionary<(string FactionSlug, string DatasheetId), DatasheetDetails>>
+        LoadDatasheetDetailsAsync(
             IReadOnlyList<LoadedFaction> factions,
             IProgress<MergeProgress>? progress,
             List<string> warnings,
@@ -195,7 +195,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
         var requests = factions
             .SelectMany(f => f.Mapping.Datasheets.Select(d => (f.Slug, d.Id)))
             .ToList();
-        var links = new ConcurrentDictionary<(string, string), IReadOnlyList<string>>();
+        var details = new ConcurrentDictionary<(string, string), DatasheetDetails>();
         var concurrentWarnings = new ConcurrentBag<string>();
         var completed = 0;
 
@@ -210,9 +210,9 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                 {
                     concurrentWarnings.Add($"Source file missing: {path}");
                 }
-                else if (RulesTextMapper.MapDatasheetStratagemLinks(json) is { } parsed)
+                else if (RulesTextMapper.MapDatasheetDetails(json) is { } parsed)
                 {
-                    links[(request.Slug, request.Id)] = parsed.StratagemIds;
+                    details[(request.Slug, request.Id)] = parsed;
                 }
                 else
                 {
@@ -220,17 +220,17 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                 }
 
                 progress?.Report(new MergeProgress(
-                    StageDatasheetLinks, Interlocked.Increment(ref completed), requests.Count));
+                    StageDatasheetDetails, Interlocked.Increment(ref completed), requests.Count));
             });
 
         warnings.AddRange(concurrentWarnings.Order(StringComparer.Ordinal));
-        return links;
+        return details;
     }
 
     private static JoinResult JoinDatasheets(
         IReadOnlyList<(string FileName, IReadOnlyList<Datasheet> Datasheets)> catalogues,
         IReadOnlyList<LoadedFaction> factions,
-        IReadOnlyDictionary<(string FactionSlug, string DatasheetId), IReadOnlyList<string>> stratagemLinks,
+        IReadOnlyDictionary<(string FactionSlug, string DatasheetId), DatasheetDetails> datasheetDetails,
         IReadOnlySet<string> knownStratagemIds)
     {
         var index = new Dictionary<(string Slug, string Key, bool IsLegends), List<RulesTextDatasheet>>();
@@ -246,6 +246,20 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
 
                 bucket.Add(new RulesTextDatasheet(faction.Slug, reference));
             }
+        }
+
+        // Every army that lists a unit of this name, so a unit the rules-text source shares between armies
+        // (BSData lists it in one catalogue only) is available in all of them.
+        var slugsByName = new Dictionary<(string Key, bool IsLegends), List<string>>();
+        foreach (var (key, bucket) in index)
+        {
+            var nameKey = (key.Key, key.IsLegends);
+            if (!slugsByName.TryGetValue(nameKey, out var slugList))
+            {
+                slugsByName[nameKey] = slugList = [];
+            }
+
+            slugList.AddRange(bucket.Select(h => h.FactionSlug).Where(slug => !slugList.Contains(slug)));
         }
 
         var datasheets = new List<Datasheet>();
@@ -279,11 +293,12 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                 var hits = slugs
                     .SelectMany(slug => index.GetValueOrDefault((slug, name, isLegends)) ?? [])
                     .ToList();
+                var sharedSlugs = (IReadOnlyList<string>)(slugsByName.GetValueOrDefault((name, isLegends)) ?? []);
 
                 if (hits.Count == 0)
                 {
                     unmatched.Add(new UnmatchedDatasheet(fileName, sheet.Name));
-                    datasheets.Add(sheet);
+                    datasheets.Add(sheet with { FactionSlugs = sharedSlugs.Count > 0 ? sharedSlugs : slugs });
                     continue;
                 }
 
@@ -301,7 +316,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                 foreach (var hit in hits)
                 {
                     referenced.Add((hit.FactionSlug, hit.Reference.Id));
-                    foreach (var id in stratagemLinks.GetValueOrDefault((hit.FactionSlug, hit.Reference.Id)) ?? [])
+                    foreach (var id in datasheetDetails.GetValueOrDefault((hit.FactionSlug, hit.Reference.Id))?.StratagemIds ?? [])
                     {
                         if (knownStratagemIds.Contains(id))
                         {
@@ -317,7 +332,10 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                     }
                 }
 
-                datasheets.Add(sheet with { StratagemIds = stratagemIds });
+                var sizes = hits
+                    .Select(h => datasheetDetails.GetValueOrDefault((h.FactionSlug, h.Reference.Id))?.Sizes ?? [])
+                    .FirstOrDefault(s => s.Count > 0) ?? [];
+                datasheets.Add(sheet with { StratagemIds = stratagemIds, Sizes = sizes, FactionSlugs = sharedSlugs });
             }
         }
 

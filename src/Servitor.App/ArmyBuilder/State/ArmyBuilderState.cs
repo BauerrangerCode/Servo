@@ -8,6 +8,8 @@ public sealed class ArmyBuilderState : IArmyBuilderState
 
     public ArmySetup Setup { get; private set; } = ArmySetup.Empty;
 
+    public IReadOnlyList<ArmyUnit> Units { get; private set; } = [];
+
     public void SelectBattleSize(BattleSize battleSize) => Update(Setup with { BattleSize = battleSize });
 
     public void SelectFaction(string factionId)
@@ -17,6 +19,7 @@ public sealed class ArmyBuilderState : IArmyBuilderState
             return;
         }
 
+        Units = [];
         Update(Setup with { FactionId = factionId, Detachments = [] });
     }
 
@@ -33,6 +36,24 @@ public sealed class ArmyBuilderState : IArmyBuilderState
 
     public void RemoveDetachment(string detachmentId) =>
         Update(Setup with { Detachments = Setup.Detachments.Where(d => d.Id != detachmentId).ToList() });
+
+    public AddUnitResult AddUnit(Datasheet datasheet, UnitSize size)
+    {
+        var result = UnitRules.CanAdd(Setup, Units, datasheet);
+        if (result == AddUnitResult.Added)
+        {
+            Units = [.. Units, new ArmyUnit(Guid.NewGuid(), datasheet, size)];
+            Changed?.Invoke();
+        }
+
+        return result;
+    }
+
+    public void RemoveUnit(Guid unitId)
+    {
+        Units = Units.Where(u => u.Id != unitId).ToList();
+        Changed?.Invoke();
+    }
 
     public void SkipSetup() => Update(Setup with { IsSkipped = true });
 
