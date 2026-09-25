@@ -24,3 +24,9 @@
     font-size: 0.85rem;
     white-space: nowrap;
 }
+
+.army-unit-loadout {
+    margin: 0 0 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.75;
+}

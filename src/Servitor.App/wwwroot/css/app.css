@@ -91,6 +91,9 @@ button:disabled { color: var(--crt-fg-faint); border-color: var(--crt-fg-faint);
 
 input::placeholder { color: var(--crt-fg-faint); }
 
+/* Native radio buttons and checkboxes in the phosphor green instead of the browser blue. */
+input[type="radio"], input[type="checkbox"] { accent-color: var(--crt-fg); }
+
 :focus-visible { outline: 1px dashed var(--crt-fg-bright); outline-offset: 2px; }
 
 table { border-collapse: collapse; }

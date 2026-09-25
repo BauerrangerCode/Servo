@@ -173,6 +173,7 @@ As a player, I want to configure a unit's wargear: a single-slot radio choice fo
 - ✓ Both configuration shapes are supported (single-model radio choice and pool quantity-stepper), matching [Reference-App-Analysis.md](Reference-App-Analysis.md) Section 4
 - ✓ A model/unit with no configurable wargear shows no configuration entry point at all
 - ✓ Chosen wargear is reflected in the unit's card and in the list's points total
+- **Status / scope (project owner decision):** implemented for the two shapes above, read from BSData's selection tree (`BsDataWargearMapper`): weapon slots of unique models (a group of which exactly one choice is taken) and pools of models taking a weapon, with limits that follow the unit size where BSData expresses them as model-count modifiers. About 650 of 1,519 units have options in these shapes. **Not covered** (no wargear button for units that only have these): nested loadout packages, optional single upgrades (yes/no), per-model choices in non-unique models, hidden options, a cap on the sum of several pools. Points: the per-item prices ("per X") of the rules-text source are added when an item's name matches a chosen weapon; about a third of those prices match an option in the supported shapes, the rest have no effect yet.
 
 ### E3.3 Running totals & validity indicator — 3 pts
 As a player, I want to see live totals for points used, units, models, and wounds, plus a clear valid/invalid indicator for my list, so that I always know whether my list is legal before I try to play it.

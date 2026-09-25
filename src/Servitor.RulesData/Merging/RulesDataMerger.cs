@@ -335,9 +335,13 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                 var brackets = hits
                     .Select(h => datasheetDetails.GetValueOrDefault((h.FactionSlug, h.Reference.Id))?.CostBrackets ?? [])
                     .FirstOrDefault(b => b.Count > 0) ?? [];
+                var wargearCosts = hits
+                    .Select(h => datasheetDetails.GetValueOrDefault((h.FactionSlug, h.Reference.Id))?.WargearCosts ?? [])
+                    .FirstOrDefault(c => c.Count > 0) ?? [];
                 datasheets.Add(sheet with
                 {
                     StratagemIds = stratagemIds,
+                    WargearCosts = wargearCosts,
                     Sizes = brackets.FirstOrDefault()?.Sizes ?? [],
                     CostBrackets = brackets,
                     FactionSlugs = sharedSlugs,

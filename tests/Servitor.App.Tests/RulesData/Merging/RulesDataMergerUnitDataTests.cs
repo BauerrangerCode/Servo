@@ -67,6 +67,14 @@ public class RulesDataMergerUnitDataTests
     }
 
     [Fact]
+    public async Task The_per_item_wargear_prices_of_the_matched_datasheet_are_attached()
+    {
+        var boyz = Assert.Single((await MergeAsync()).Data.Datasheets, d => d.Name == "Boyz");
+
+        Assert.Equal([new WargearCost("Big shoota", 5)], boyz.WargearCosts);
+    }
+
+    [Fact]
     public async Task A_unit_the_rules_text_source_lists_in_several_armies_belongs_to_all_of_them()
     {
         var boyz = Assert.Single((await MergeAsync()).Data.Datasheets, d => d.Name == "Boyz");

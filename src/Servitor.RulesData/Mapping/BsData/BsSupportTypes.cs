@@ -69,12 +69,28 @@ public sealed class BsModifier
 
     [JsonPropertyName("conditions")]
     public List<BsCondition> Conditions { get; set; } = [];
+
+    /// <summary>Nested and/or groups of conditions; a modifier that has any is not interpreted.</summary>
+    [JsonPropertyName("conditionGroups")]
+    public List<JsonElement> ConditionGroups { get; set; } = [];
 }
 
 public sealed class BsCondition
 {
     [JsonPropertyName("childName")]
     public string? ChildName { get; set; }
+
+    [JsonPropertyName("childId")]
+    public string? ChildId { get; set; }
+
+    [JsonPropertyName("field")]
+    public string? Field { get; set; }
+
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("value")]
+    public JsonElement Value { get; set; }
 }
 
 public static class BsValue

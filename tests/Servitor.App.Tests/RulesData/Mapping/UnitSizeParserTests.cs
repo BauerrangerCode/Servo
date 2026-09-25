@@ -67,6 +67,22 @@ public class UnitSizeParserTests
     }
 
     [Fact]
+    public void Per_item_rows_of_the_wargear_section_become_wargear_costs()
+    {
+        var costs = UnitSizeParser.ParseWargearCosts(
+        [
+            Row("5 models", "70"),
+            Row("per Multi-melta", "20", "WARGEAR OPTIONS"),
+            Row("per Lascannon", "25", "WARGEAR OPTIONS"),
+            Row("per Lascannon", "99", "WARGEAR OPTIONS"),
+            Row("2 models", "9", "WARGEAR OPTIONS"),
+            Row("per Plasma", "n/a", "WARGEAR OPTIONS"),
+        ]);
+
+        Assert.Equal([new WargearCost("Multi-melta", 20), new WargearCost("Lascannon", 25)], costs);
+    }
+
+    [Fact]
     public void A_bracket_covers_its_copies_only()
     {
         var bracket = new CostBracket(1, 2, []);

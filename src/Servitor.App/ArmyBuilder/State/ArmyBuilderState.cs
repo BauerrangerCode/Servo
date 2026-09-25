@@ -49,6 +49,12 @@ public sealed class ArmyBuilderState : IArmyBuilderState
         return result;
     }
 
+    public void SetWargear(Guid unitId, WargearSelection wargear)
+    {
+        Units = Units.Select(u => u.Id == unitId ? u with { Wargear = wargear } : u).ToList();
+        Changed?.Invoke();
+    }
+
     public void RemoveUnit(Guid unitId)
     {
         Units = Units.Where(u => u.Id != unitId).ToList();

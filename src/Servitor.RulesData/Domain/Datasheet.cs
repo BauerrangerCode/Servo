@@ -26,5 +26,11 @@ public sealed record Datasheet(
 
     public IReadOnlyList<CostBracket> CostBrackets { get; init; } = [];
 
+    /// <summary>The wargear the unit can configure, read from the BSData selection tree; null when it has none.</summary>
+    public WargearOptions? Wargear { get; init; }
+
+    /// <summary>What individual wargear items add to the unit's points, from the rules-text source's per-item prices.</summary>
+    public IReadOnlyList<WargearCost> WargearCosts { get; init; } = [];
+
     public IReadOnlyList<string> FactionSlugs { get; init; } = [];
 }

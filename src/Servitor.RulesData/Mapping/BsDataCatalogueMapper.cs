@@ -56,6 +56,14 @@ public static class BsDataCatalogueMapper
             profilesById[profile.Id] = profile;
         }
 
+        // Wargear options also live in the catalogue's shared selection groups; they are indexed for the wargear
+        // mapper only, so the weapon profiles of the datasheet stay as they were.
+        var wargearIndex = new Dictionary<string, BsEntry>(entriesById);
+        foreach (var group in catalogue.SharedSelectionEntryGroups)
+        {
+            IndexEntries(group, wargearIndex);
+        }
+
         // Only direct (top-level) entries of sharedSelectionEntries are standalone datasheets. "model"-typed
         // entries also occur nested inside a unit's own subtree (e.g. per-model loadout variants within a
         // squad) — entriesById indexes those too, so filtering entriesById.Values here would wrongly promote
@@ -65,7 +73,7 @@ public static class BsDataCatalogueMapper
         {
             try
             {
-                datasheets.Add(MapUnit(entry, faction, entriesById, profilesById));
+                datasheets.Add(MapUnit(entry, faction, entriesById, profilesById, wargearIndex));
             }
             catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException or NullReferenceException)
             {
@@ -103,7 +111,8 @@ public static class BsDataCatalogueMapper
         BsEntry unit,
         string faction,
         IReadOnlyDictionary<string, BsEntry> entriesById,
-        IReadOnlyDictionary<string, BsProfile> profilesById)
+        IReadOnlyDictionary<string, BsProfile> profilesById,
+        IReadOnlyDictionary<string, BsEntry> wargearIndex)
     {
         var points = (int)(unit.Costs.FirstOrDefault(c => c.Name == "pts")?.Value ?? 0);
         var keywords = unit.CategoryLinks.Select(c => c.Name).ToList();
@@ -194,7 +203,10 @@ public static class BsDataCatalogueMapper
             coreAbilities,
             keywords,
             BuildCompositionConstraint(unit),
-            []);
+            [])
+        {
+            Wargear = BsDataWargearMapper.Map(unit, wargearIndex),
+        };
     }
 
     private static StatLine BuildStatLine(BsProfile profile)

@@ -21,6 +21,10 @@ public sealed class BsEntry
     [JsonPropertyName("targetId")]
     public string? TargetId { get; set; }
 
+    /// <summary>On a selection group: the id of the choice that is selected unless the player picks another.</summary>
+    [JsonPropertyName("defaultSelectionEntryId")]
+    public string? DefaultSelectionEntryId { get; set; }
+
     [JsonPropertyName("categoryLinks")]
     public List<BsCategoryLink> CategoryLinks { get; set; } = [];
 

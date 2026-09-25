@@ -19,6 +19,24 @@ public static partial class UnitSizeParser
     public static IReadOnlyList<UnitSize> Parse(IEnumerable<RtModelCost> rows) =>
         ParseBrackets(rows).FirstOrDefault()?.Sizes ?? [];
 
+    /// <summary>The per-item prices ("per Multi-melta" = 20 pts) of the wargear rows.</summary>
+    public static IReadOnlyList<WargearCost> ParseWargearCosts(IEnumerable<RtModelCost> rows)
+    {
+        var costs = new List<WargearCost>();
+        foreach (var row in rows.Where(r => string.Equals(r.Section, WargearSection, StringComparison.OrdinalIgnoreCase)))
+        {
+            var match = PerItemRegex().Match(row.Description.Trim());
+            if (match.Success
+                && int.TryParse(row.Cost, NumberStyles.None, CultureInfo.InvariantCulture, out var points)
+                && costs.All(c => !string.Equals(c.Item, match.Groups["item"].Value, StringComparison.OrdinalIgnoreCase)))
+            {
+                costs.Add(new WargearCost(match.Groups["item"].Value.Trim(), points));
+            }
+        }
+
+        return costs;
+    }
+
     /// <returns>The brackets in source order; brackets without a readable size are left out.</returns>
     public static IReadOnlyList<CostBracket> ParseBrackets(IEnumerable<RtModelCost> rows)
     {
@@ -83,4 +101,7 @@ public static partial class UnitSizeParser
 
     [GeneratedRegex(@"\d+")]
     private static partial Regex OrdinalRegex();
+
+    [GeneratedRegex(@"^per\s+(?<item>.+)$", RegexOptions.IgnoreCase)]
+    private static partial Regex PerItemRegex();
 }

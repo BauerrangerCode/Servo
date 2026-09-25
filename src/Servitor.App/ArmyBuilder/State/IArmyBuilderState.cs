@@ -26,6 +26,8 @@ public interface IArmyBuilderState
 
     void RemoveUnit(Guid unitId);
 
+    void SetWargear(Guid unitId, WargearSelection wargear);
+
     void SkipSetup();
 
     void ResumeSetup();

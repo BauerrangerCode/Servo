@@ -1,0 +1,57 @@
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.RulesData.Domain
+@inject IArmyBuilderState State
+
+@if (Unit.Datasheet.Wargear is { } options)
+{
+    <div class="wargear-editor">
+        @foreach (var model in options.Models)
+        {
+            <fieldset class="wargear-model">
+                <legend>@model.ModelName</legend>
+                @foreach (var slot in model.Slots)
+                {
+                    var selected = WargearConfig.ChoiceOf(Unit, model, slot);
+                    var slotName = $"{Unit.Id}-{WargearConfig.SlotKey(model, slot)}";
+                    <div class="wargear-slot">
+                        <span class="wargear-slot-name">@slot.Name</span>
+                        @for (var i = 0; i < slot.Choices.Count; i++)
+                        {
+                            var index = i;
+                            var price = WargearConfig.PriceOf(Unit.Datasheet, slot.Choices[index]);
+                            <label class="wargear-choice">
+                                <input type="radio" name="@slotName" checked="@(selected == index)"
+                                       @onchange="() => State.SetWargear(Unit.Id, WargearConfig.Choose(Unit, model, slot, index))" />
+                                @slot.Choices[index]@(price > 0 ? $" (+{price} pts)" : "")
+                            </label>
+                        }
+                    </div>
+                }
+            </fieldset>
+        }
+
+        @foreach (var pool in options.Pools)
+        {
+            var count = WargearConfig.CountOf(Unit, pool);
+            var max = WargearConfig.MaxOf(Unit, pool);
+            var price = WargearConfig.PriceOf(Unit.Datasheet, pool.Item);
+            <div class="wargear-pool">
+                <span class="wargear-pool-name">
+                    @(pool.Replaces is null ? "Take" : $"Replace {pool.Replaces} with"): @pool.Item@(price > 0 ? $" (+{price} pts each)" : "")
+                </span>
+                <span class="wargear-stepper">
+                    <button type="button" class="wargear-minus" disabled="@(count <= 0)"
+                            @onclick="() => State.SetWargear(Unit.Id, WargearConfig.SetCount(Unit, pool, count - 1))">−</button>
+                    <span class="wargear-count">@count/@max</span>
+                    <button type="button" class="wargear-plus" disabled="@(count >= max)"
+                            @onclick="() => State.SetWargear(Unit.Id, WargearConfig.SetCount(Unit, pool, count + 1))">+</button>
+                </span>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ArmyUnit Unit { get; set; } = default!;
+}

@@ -17,14 +17,32 @@
                 @foreach (var priced in ArmyPricing.Price(State.Units))
                 {
                     var unit = priced.Unit;
-                    <li class="army-unit">
-                        <span class="army-unit-name">@unit.Datasheet.Name</span>
-                        @if (unit.Size.Models > 0)
+                    var hasWargear = WargearConfig.HasOptions(unit.Datasheet);
+                    <li class="army-unit-card">
+                        <div class="army-unit">
+                            <span class="army-unit-name">@unit.Datasheet.Name</span>
+                            @if (unit.Size.Models > 0)
+                            {
+                                <span class="army-unit-models">@unit.Size.Models models</span>
+                            }
+                            <span class="army-unit-points">@priced.Points pts</span>
+                            @if (hasWargear)
+                            {
+                                <button type="button" class="edit-wargear" aria-expanded="@_editing.Contains(unit.Id)"
+                                        @onclick="() => ToggleEditor(unit.Id)">Wargear</button>
+                            }
+                            <button type="button" class="remove-unit" @onclick="() => State.RemoveUnit(unit.Id)">Remove</button>
+                        </div>
+                        @if (hasWargear)
                         {
-                            <span class="army-unit-models">@unit.Size.Models models</span>
+                            <p class="army-unit-loadout">
+                                @WargearConfig.Loadout(unit)@(priced.WargearPoints > 0 ? $" (wargear +{priced.WargearPoints} pts)" : "")
+                            </p>
+                            @if (_editing.Contains(unit.Id))
+                            {
+                                <WargearEditor Unit="unit" />
+                            }
                         }
-                        <span class="army-unit-points">@priced.Points pts</span>
-                        <button type="button" class="remove-unit" @onclick="() => State.RemoveUnit(unit.Id)">Remove</button>
                     </li>
                 }
             </ul>
@@ -35,9 +53,19 @@
 }
 
 @code {
+    private readonly HashSet<Guid> _editing = [];
+
     protected override void OnInitialized() => State.Changed += OnChanged;
 
     public void Dispose() => State.Changed -= OnChanged;
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void ToggleEditor(Guid unitId)
+    {
+        if (!_editing.Remove(unitId))
+        {
+            _editing.Add(unitId);
+        }
+    }
 }

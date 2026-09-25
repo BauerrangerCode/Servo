@@ -16,6 +16,9 @@ public sealed class BsCatalogue
     [JsonPropertyName("sharedSelectionEntries")]
     public List<BsEntry> SharedSelectionEntries { get; set; } = [];
 
+    [JsonPropertyName("sharedSelectionEntryGroups")]
+    public List<BsEntry> SharedSelectionEntryGroups { get; set; } = [];
+
     [JsonPropertyName("sharedProfiles")]
     public List<BsProfile> SharedProfiles { get; set; } = [];
 }
