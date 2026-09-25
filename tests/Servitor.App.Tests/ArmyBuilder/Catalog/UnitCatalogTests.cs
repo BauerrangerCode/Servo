@@ -12,12 +12,14 @@ internal static class Units
         int points = 100,
         UnitSize[]? sizes = null,
         CompositionConstraint? constraint = null,
-        string catalogue = "Xenos - Orks") =>
+        string catalogue = "Xenos - Orks",
+        CostBracket[]? brackets = null,
+        string wounds = "1") =>
         new(
             name,
             catalogue,
             points,
-            new StatLine("6\"", "3", "5+", null, "1", "7+", "2"),
+            new StatLine("6\"", "3", "5+", null, wounds, "7+", "2"),
             [],
             [],
             [],
@@ -29,6 +31,7 @@ internal static class Units
         {
             FactionSlugs = factions ?? ["orks"],
             Sizes = sizes ?? [],
+            CostBrackets = brackets ?? [],
         };
 }
 

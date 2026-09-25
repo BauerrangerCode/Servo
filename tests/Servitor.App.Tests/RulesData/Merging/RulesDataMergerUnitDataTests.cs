@@ -49,6 +49,24 @@ public class RulesDataMergerUnitDataTests
     }
 
     [Fact]
+    public async Task All_cost_brackets_of_the_matched_datasheet_are_kept()
+    {
+        var sources = Sources();
+        sources["factions/orks/datasheets/orks-0.json"] = DatasheetWithCosts(
+            "orks-0",
+            ("10 models", "90", "YOUR 1ST TO 2ND UNITS COST"),
+            ("10 models", "100", "YOUR 3RD + UNIT COSTS"));
+
+        var boyz = Assert.Single(
+            (await new RulesDataMerger(new InMemoryRulesSourceReader(sources), new FixedTimeProvider(FixedNow)).MergeAsync()).Data.Datasheets,
+            d => d.Name == "Boyz");
+
+        Assert.Equal(2, boyz.CostBrackets.Count);
+        Assert.Equal([new UnitSize(10, 90)], boyz.Sizes);
+        Assert.Equal([new UnitSize(10, 100)], boyz.CostBrackets[1].Sizes);
+    }
+
+    [Fact]
     public async Task A_unit_the_rules_text_source_lists_in_several_armies_belongs_to_all_of_them()
     {
         var boyz = Assert.Single((await MergeAsync()).Data.Datasheets, d => d.Name == "Boyz");

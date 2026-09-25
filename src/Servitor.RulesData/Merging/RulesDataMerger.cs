@@ -332,10 +332,16 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
                     }
                 }
 
-                var sizes = hits
-                    .Select(h => datasheetDetails.GetValueOrDefault((h.FactionSlug, h.Reference.Id))?.Sizes ?? [])
-                    .FirstOrDefault(s => s.Count > 0) ?? [];
-                datasheets.Add(sheet with { StratagemIds = stratagemIds, Sizes = sizes, FactionSlugs = sharedSlugs });
+                var brackets = hits
+                    .Select(h => datasheetDetails.GetValueOrDefault((h.FactionSlug, h.Reference.Id))?.CostBrackets ?? [])
+                    .FirstOrDefault(b => b.Count > 0) ?? [];
+                datasheets.Add(sheet with
+                {
+                    StratagemIds = stratagemIds,
+                    Sizes = brackets.FirstOrDefault()?.Sizes ?? [],
+                    CostBrackets = brackets,
+                    FactionSlugs = sharedSlugs,
+                });
             }
         }
 

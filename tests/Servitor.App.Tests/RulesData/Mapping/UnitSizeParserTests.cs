@@ -36,6 +36,47 @@ public class UnitSizeParserTests
     }
 
     [Fact]
+    public void Every_bracket_is_read_with_the_copies_it_covers()
+    {
+        var brackets = UnitSizeParser.ParseBrackets(
+        [
+            Row("10 models", "90", "YOUR 1ST TO 2ND UNITS COST"),
+            Row("20 models", "180", "YOUR 1ST TO 2ND UNITS COST"),
+            Row("10 models", "100", "YOUR 3RD + UNIT COSTS"),
+        ]);
+
+        Assert.Equal(2, brackets.Count);
+        Assert.Equal((1, 2), (brackets[0].FirstCopy, brackets[0].LastCopy));
+        Assert.Equal([new UnitSize(10, 90), new UnitSize(20, 180)], brackets[0].Sizes);
+        Assert.Equal((3, null), (brackets[1].FirstCopy, brackets[1].LastCopy));
+        Assert.Equal([new UnitSize(10, 100)], brackets[1].Sizes);
+    }
+
+    [Theory]
+    [InlineData("YOUR UNIT COSTS", 1, null)]
+    [InlineData("YOUR 1ST UNIT COSTS", 1, 1)]
+    [InlineData("YOUR 2ND + UNIT COSTS", 2, null)]
+    [InlineData("YOUR 1ST TO 3RD UNITS COST", 1, 3)]
+    [InlineData("YOUR 4TH + UNIT COSTS", 4, null)]
+    [InlineData(null, 1, null)]
+    public void The_copy_range_comes_from_the_bracket_heading(string? section, int first, int? last)
+    {
+        var bracket = Assert.Single(UnitSizeParser.ParseBrackets([Row("5 models", "50", section)]));
+
+        Assert.Equal((first, last), (bracket.FirstCopy, bracket.LastCopy));
+    }
+
+    [Fact]
+    public void A_bracket_covers_its_copies_only()
+    {
+        var bracket = new CostBracket(1, 2, []);
+
+        Assert.True(bracket.Covers(2));
+        Assert.False(bracket.Covers(3));
+        Assert.True(new CostBracket(3, null, []).Covers(99));
+    }
+
+    [Fact]
     public void Wargear_rows_are_not_sizes()
     {
         var sizes = UnitSizeParser.Parse([Row("5 models", "70"), Row("per Lascannon", "20", "WARGEAR OPTIONS"), Row("2 models", "9", "WARGEAR OPTIONS")]);

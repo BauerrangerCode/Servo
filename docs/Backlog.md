@@ -180,6 +180,7 @@ As a player, I want to see live totals for points used, units, models, and wound
 - ✓ Totals update immediately on every add/remove
 - ✓ Exceeding the points budget (per the chosen Battle Size, E3.1) flips the indicator to invalid with a visible reason
 - ✓ A mandatory-attachment violation (e.g. a Support unit with no bodyguard) also flips the indicator, matching confirmed reference-app behavior ([Reference-App-Analysis.md](Reference-App-Analysis.md) Section 12) – this is a real, tested rule, not just points/DP
+- **Status:** totals, points-budget check and the valid/invalid indicator are implemented (prices follow the cost brackets by copy number). The mandatory-attachment check is **not yet implemented**: it needs the "Attach Leader" feature, which no E3 story covers — to be scheduled together with it.
 
 ### E3.4 Composition rules engine — 8 pts
 As a player, I want my list checked against composition rules: points cap tied to Battle Size, detachment DP budget, same-datasheet unit limits (base value per unit from its own BSData constraint, with an Incursion-tier override read from that unit's modifiers — see [Open-Questions-Catalog.md](Open-Questions-Catalog.md) Q9, resolved), per-unit model-count bands, faction/chapter-keyword exclusions, and enhancement rules (unique per army, EXCEPT "Upgrade"-tagged enhancements which allow up to 3 copies and may go on non-Character units), so that the validity indicator in E3.3 reflects real rules, not just a points total.

@@ -14,20 +14,23 @@
         else
         {
             <ul class="army-units">
-                @foreach (var unit in State.Units)
+                @foreach (var priced in ArmyPricing.Price(State.Units))
                 {
+                    var unit = priced.Unit;
                     <li class="army-unit">
                         <span class="army-unit-name">@unit.Datasheet.Name</span>
                         @if (unit.Size.Models > 0)
                         {
                             <span class="army-unit-models">@unit.Size.Models models</span>
                         }
-                        <span class="army-unit-points">@unit.Size.Points pts</span>
+                        <span class="army-unit-points">@priced.Points pts</span>
                         <button type="button" class="remove-unit" @onclick="() => State.RemoveUnit(unit.Id)">Remove</button>
                     </li>
                 }
             </ul>
         }
+
+        <ArmySummary />
     </section>
 }
 

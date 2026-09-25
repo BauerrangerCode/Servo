@@ -99,6 +99,23 @@ public class UnitCatalogPanelTests : BunitContext
     }
 
     [Fact]
+    public void The_row_shows_what_the_next_copy_costs_when_the_price_rises_with_the_number_of_copies()
+    {
+        var boyz = Units.Sheet(
+            "Boyz",
+            ["Battleline"],
+            sizes: [new UnitSize(10, 90)],
+            brackets: [new CostBracket(1, 1, [new UnitSize(10, 90)]), new CostBracket(2, null, [new UnitSize(10, 100)])]);
+        Services.AddSingleton<IDatasheetCatalog>(new FakeDatasheetCatalog([boyz]));
+        var cut = RenderReady();
+        Assert.Contains("90 pts", Row(cut, "Boyz").TextContent);
+
+        Row(cut, "Boyz").QuerySelector(".add-unit")!.Click();
+
+        Assert.Contains("100 pts", Row(cut, "Boyz").TextContent);
+    }
+
+    [Fact]
     public void The_limit_badge_shows_the_live_count_and_the_add_button_stops_at_the_limit()
     {
         var cut = RenderReady(BattleSizes.Incursion); // Boyz: 2 in Incursion

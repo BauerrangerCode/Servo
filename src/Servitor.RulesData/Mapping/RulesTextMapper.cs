@@ -26,7 +26,10 @@ public sealed record FactionIdentity(string Slug, string Name, string DataVersio
 public sealed record DatasheetReference(string Id, string Name, bool IsLegends);
 
 /// <summary>The parts of a per-datasheet detail file the data merge needs: its stratagems and the sizes it can be fielded in.</summary>
-public sealed record DatasheetDetails(string Id, IReadOnlyList<string> StratagemIds, IReadOnlyList<UnitSize> Sizes);
+public sealed record DatasheetDetails(string Id, IReadOnlyList<string> StratagemIds, IReadOnlyList<CostBracket> CostBrackets)
+{
+    public IReadOnlyList<UnitSize> Sizes => CostBrackets.FirstOrDefault()?.Sizes ?? [];
+}
 
 /// <summary>
 /// Maps the rules-text source (<c>core/*.json</c> and each faction's <c>faction.json</c> with its per-datasheet
@@ -167,7 +170,7 @@ public static class RulesTextMapper
             var datasheet = JsonSerializer.Deserialize<RtDatasheetDocument>(datasheetJson);
             return datasheet is null
                 ? null
-                : new DatasheetDetails(datasheet.Id, datasheet.StratagemIds, UnitSizeParser.Parse(datasheet.ModelCosts));
+                : new DatasheetDetails(datasheet.Id, datasheet.StratagemIds, UnitSizeParser.ParseBrackets(datasheet.ModelCosts));
         }
         catch (JsonException)
         {

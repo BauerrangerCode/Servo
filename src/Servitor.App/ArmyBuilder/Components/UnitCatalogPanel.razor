@@ -44,6 +44,7 @@
                     var count = UnitRules.CountOf(State.Units, unit);
                     var max = UnitLimits.MaxPerArmy(unit, battleSize);
                     var models = UnitSizes.ModelsText(unit);
+                    var price = ArmyPricing.PointsFor(unit, size.Models, count + 1);
 
                     <li class="unit-row @(ReferenceEquals(_detail, unit) ? "selected" : "")">
                         <button type="button" class="unit-name" @onclick="() => _detail = unit">@unit.Name</button>
@@ -60,7 +61,7 @@
                                 }
                             </span>
                         }
-                        <span class="unit-points">@size.Points pts</span>
+                        <span class="unit-points">@price pts</span>
                         @if (count > 0 && max is not null)
                         {
                             <span class="unit-limit @(count >= max ? "at-limit" : "")">×@count/@max</span>
