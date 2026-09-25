@@ -1,5 +1,6 @@
 @page "/build"
 @using Servitor.App.ArmyBuilder.Components
+@using Servitor.App.ArmyBuilder.Rules
 @using Servitor.App.ArmyBuilder.State
 @using Servitor.App.RulesData.Loading
 @using Servitor.App.Shared.Backdrop
@@ -8,6 +9,7 @@
 @implements IDisposable
 @inject IArmyBuilderState State
 @inject IFactionBackdrop Backdrop
+@inject IDetachmentRuleProvider RuleProvider
 @inject IMergedRulesDataProvider RulesData
 
 <PageTitle>Build</PageTitle>
@@ -89,7 +91,7 @@ else
             </section>
 
             <UnitCatalogPanel />
-            <ArmyListPanel />
+            <ArmyListPanel Enhancements="AvailableEnhancements" />
         }
     }
 
@@ -100,6 +102,10 @@ else
     private MergedRulesData? _data;
     private bool _isLoaded;
 
+    // The enhancements of the detachments the army has selected.
+    private IReadOnlyList<Enhancement> AvailableEnhancements =>
+        CurrentFaction?.Enhancements.Where(e => State.Setup.Detachments.Any(d => d.Name == e.Detachment)).ToList() ?? [];
+
     private MergedFactionRules? CurrentFaction =>
         _data?.Factions.FirstOrDefault(f => f.FactionId == State.Setup.FactionId);
 
@@ -107,6 +113,7 @@ else
     {
         State.Changed += OnStateChanged;
         _data = await RulesData.GetAsync();
+        await RuleProvider.LoadAsync();
         _isLoaded = true;
     }
 

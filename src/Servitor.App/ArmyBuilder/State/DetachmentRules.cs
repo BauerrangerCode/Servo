@@ -27,8 +27,8 @@ public static class DetachmentRules
             return DetachmentAddResult.AlreadySelected;
         }
 
-        return setup.DetachmentPointsUsed + detachment.DetachmentPoints > battleSize.DetachmentPointsLimit
-            ? DetachmentAddResult.ExceedsDetachmentPoints
-            : DetachmentAddResult.Added;
+        return DetachmentBudget.IsWithinBudget(battleSize, [.. setup.Detachments, detachment])
+            ? DetachmentAddResult.Added
+            : DetachmentAddResult.ExceedsDetachmentPoints;
     }
 }

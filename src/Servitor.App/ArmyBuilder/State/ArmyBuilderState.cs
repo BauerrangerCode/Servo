@@ -1,14 +1,17 @@
+using Servitor.App.ArmyBuilder.Rules;
 using Servitor.RulesData.Domain;
 
 namespace Servitor.App.ArmyBuilder.State;
 
-public sealed class ArmyBuilderState : IArmyBuilderState
+public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = null) : IArmyBuilderState
 {
     public event Action? Changed;
 
     public ArmySetup Setup { get; private set; } = ArmySetup.Empty;
 
     public IReadOnlyList<ArmyUnit> Units { get; private set; } = [];
+
+    public DetachmentRuleSet Rules => ruleProvider?.Current ?? DetachmentRuleSet.Empty;
 
     public void SelectBattleSize(BattleSize battleSize) => Update(Setup with { BattleSize = battleSize });
 
@@ -39,7 +42,7 @@ public sealed class ArmyBuilderState : IArmyBuilderState
 
     public AddUnitResult AddUnit(Datasheet datasheet, UnitSize size)
     {
-        var result = UnitRules.CanAdd(Setup, Units, datasheet);
+        var result = UnitRules.CanAdd(Setup, Units, datasheet, Rules);
         if (result == AddUnitResult.Added)
         {
             Units = [.. Units, new ArmyUnit(Guid.NewGuid(), datasheet, size)];
@@ -52,6 +55,12 @@ public sealed class ArmyBuilderState : IArmyBuilderState
     public void SetWargear(Guid unitId, WargearSelection wargear)
     {
         Units = Units.Select(u => u.Id == unitId ? u with { Wargear = wargear } : u).ToList();
+        Changed?.Invoke();
+    }
+
+    public void SetEnhancement(Guid unitId, Enhancement? enhancement)
+    {
+        Units = Units.Select(u => u.Id == unitId ? u with { Enhancement = enhancement } : u).ToList();
         Changed?.Invoke();
     }
 

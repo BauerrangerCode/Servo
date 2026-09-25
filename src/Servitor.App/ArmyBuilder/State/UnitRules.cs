@@ -1,4 +1,5 @@
 using Servitor.App.ArmyBuilder.Catalog;
+using Servitor.App.ArmyBuilder.Rules;
 using Servitor.RulesData.Domain;
 
 namespace Servitor.App.ArmyBuilder.State;
@@ -10,7 +11,7 @@ public static class UnitRules
     public static int CountOf(IEnumerable<ArmyUnit> units, Datasheet datasheet) =>
         units.Count(u => u.Datasheet.Name == datasheet.Name && u.Datasheet.Faction == datasheet.Faction);
 
-    public static AddUnitResult CanAdd(ArmySetup setup, IReadOnlyList<ArmyUnit> units, Datasheet datasheet)
+    public static AddUnitResult CanAdd(ArmySetup setup, IReadOnlyList<ArmyUnit> units, Datasheet datasheet, DetachmentRuleSet? rules = null)
     {
         if (setup.BattleSize is not { } battleSize)
         {
@@ -27,7 +28,8 @@ public static class UnitRules
             return AddUnitResult.NotInFaction;
         }
 
-        return UnitLimits.MaxPerArmy(datasheet, battleSize) is { } max && CountOf(units, datasheet) >= max
+        var active = (rules ?? DetachmentRuleSet.Empty).ActiveFor(setup);
+        return UnitLimits.MaxPerArmy(datasheet, battleSize, active, factionId) is { } max && CountOf(units, datasheet) >= max
             ? AddUnitResult.AtLimit
             : AddUnitResult.Added;
     }

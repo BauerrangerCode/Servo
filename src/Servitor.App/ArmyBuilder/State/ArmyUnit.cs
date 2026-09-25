@@ -9,4 +9,7 @@ namespace Servitor.App.ArmyBuilder.State;
 public sealed record ArmyUnit(Guid Id, Datasheet Datasheet, UnitSize Size)
 {
     public WargearSelection Wargear { get; init; } = WargearSelection.Default;
+
+    /// <summary>The enhancement the unit carries, or null. Its cost is added to the unit's points.</summary>
+    public Enhancement? Enhancement { get; init; }
 }

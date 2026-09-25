@@ -4,8 +4,9 @@
 @inject IArmyBuilderState State
 
 @{
-    var totals = ArmyTotals.Of(ArmyPricing.Price(State.Units));
-    var issues = ArmyValidator.Validate(State.Setup, totals);
+    var context = ArmyContext.Create(State.Setup, State.Units, State.Rules);
+    var totals = context.Totals;
+    var issues = ArmyValidator.Validate(context);
     var limit = State.Setup.BattleSize?.PointsLimit;
 }
 
@@ -23,6 +24,16 @@
     <p class="army-validity @(issues.Count == 0 ? "valid" : "invalid")">
         @(issues.Count == 0 ? "VALID" : $"INVALID – {issues.Count} {(issues.Count == 1 ? "issue" : "issues")}")
     </p>
+
+    @if (State.Rules.Warnings.Count > 0)
+    {
+        <ul class="army-rule-warnings">
+            @foreach (var warning in State.Rules.Warnings)
+            {
+                <li>@warning</li>
+            }
+        </ul>
+    }
 
     @if (issues.Count > 0)
     {

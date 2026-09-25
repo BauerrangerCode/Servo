@@ -4,12 +4,13 @@ using Servitor.RulesData.Domain;
 namespace Servitor.App.ArmyBuilder.State;
 
 /// <summary>A unit of the army list with the price it costs there: <paramref name="Copy"/> is its number among the units of the same datasheet.</summary>
-public sealed record PricedUnit(ArmyUnit Unit, int Copy, int Points, int WargearPoints);
+public sealed record PricedUnit(ArmyUnit Unit, int Copy, int Points, int WargearPoints, int EnhancementPoints);
 
 /// <summary>
 /// What units cost in an army. A datasheet's price can rise with the number of copies already taken ("1st to 2nd units
 /// cost 90, 3rd and further cost 100"), so a unit's price depends on the units before it in the list. A unit the
-/// datasheet has no price for keeps the points of the size it was added with. Chosen wargear adds its own points.
+/// datasheet has no price for keeps the points of the size it was added with. Chosen wargear and an enhancement add
+/// their own points.
 /// </summary>
 public static class ArmyPricing
 {
@@ -38,7 +39,8 @@ public static class ArmyPricing
             copies[key] = copy;
             var wargearPoints = WargearConfig.Points(unit);
             var unitPoints = FindPoints(unit.Datasheet, unit.Size.Models, copy) ?? unit.Size.Points;
-            priced.Add(new PricedUnit(unit, copy, unitPoints + wargearPoints, wargearPoints));
+            var enhancementPoints = unit.Enhancement?.Cost ?? 0;
+            priced.Add(new PricedUnit(unit, copy, unitPoints + wargearPoints + enhancementPoints, wargearPoints, enhancementPoints));
         }
 
         return priced;

@@ -1,4 +1,6 @@
+@using Servitor.App.ArmyBuilder.Catalog
 @using Servitor.App.ArmyBuilder.State
+@using Servitor.RulesData.Domain
 @implements IDisposable
 @inject IArmyBuilderState State
 
@@ -43,6 +45,21 @@
                                 <WargearEditor Unit="unit" />
                             }
                         }
+                        @if (EnhancementsFor(unit).Count > 0)
+                        {
+                            <label class="army-unit-enhancement">
+                                Enhancement
+                                <select class="enhancement-select" @onchange="e => OnEnhancementChanged(unit.Id, e)">
+                                    <option value="" selected="@(unit.Enhancement is null)">(none)</option>
+                                    @foreach (var enhancement in EnhancementsFor(unit))
+                                    {
+                                        <option value="@enhancement.Id" selected="@(unit.Enhancement?.Id == enhancement.Id)">
+                                            @enhancement.Name (@enhancement.Cost pts@(enhancement.IsUpgrade ? ", Upgrade" : ""))
+                                        </option>
+                                    }
+                                </select>
+                            </label>
+                        }
                     </li>
                 }
             </ul>
@@ -53,7 +70,29 @@
 }
 
 @code {
+    /// <summary>The enhancements of the army's selected detachments a unit can be given.</summary>
+    [Parameter]
+    public IReadOnlyList<Enhancement> Enhancements { get; set; } = [];
+
     private readonly HashSet<Guid> _editing = [];
+
+    // Only Characters (not Epic Heroes) can take any enhancement; other units only the ones tagged Upgrade.
+    private IReadOnlyList<Enhancement> EnhancementsFor(ArmyUnit unit)
+    {
+        var role = UnitRoles.Of(unit.Datasheet);
+        return role switch
+        {
+            UnitRole.EpicHero => [],
+            UnitRole.Character => Enhancements,
+            _ => Enhancements.Where(e => e.IsUpgrade).ToList(),
+        };
+    }
+
+    private void OnEnhancementChanged(Guid unitId, ChangeEventArgs args)
+    {
+        var id = args.Value?.ToString();
+        State.SetEnhancement(unitId, string.IsNullOrEmpty(id) ? null : Enhancements.FirstOrDefault(e => e.Id == id));
+    }
 
     protected override void OnInitialized() => State.Changed += OnChanged;
 

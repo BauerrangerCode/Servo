@@ -1,4 +1,5 @@
 @using Servitor.App.ArmyBuilder.Catalog
+@using Servitor.App.ArmyBuilder.Rules
 @using Servitor.App.ArmyBuilder.State
 @using Servitor.App.RulesData.Components
 @using Servitor.App.RulesData.Loading
@@ -42,7 +43,7 @@
                     var sizes = UnitSizes.For(unit);
                     var size = sizes[Math.Min(SelectedSizeIndex(unit), sizes.Count - 1)];
                     var count = UnitRules.CountOf(State.Units, unit);
-                    var max = UnitLimits.MaxPerArmy(unit, battleSize);
+                    var max = UnitLimits.MaxPerArmy(unit, battleSize, State.Rules.ActiveFor(State.Setup), factionId);
                     var models = UnitSizes.ModelsText(unit);
                     var price = ArmyPricing.PointsFor(unit, size.Models, count + 1);
 
@@ -67,7 +68,7 @@
                             <span class="unit-limit @(count >= max ? "at-limit" : "")">×@count/@max</span>
                         }
                         <button type="button" class="add-unit"
-                                disabled="@(UnitRules.CanAdd(State.Setup, State.Units, unit) != AddUnitResult.Added)"
+                                disabled="@(UnitRules.CanAdd(State.Setup, State.Units, unit, State.Rules) != AddUnitResult.Added)"
                                 @onclick="() => State.AddUnit(unit, size)">Add</button>
                     </li>
                 }

@@ -1,21 +1,30 @@
+using Servitor.App.ArmyBuilder.Rules;
 using Servitor.App.ArmyBuilder.State;
 
 namespace Servitor.App.ArmyBuilder.Validation;
 
-/// <summary>Checks an army list against the rules and names every rule it breaks. UI-independent.</summary>
+/// <summary>Checks an army list against every composition rule and names each rule it breaks. UI-independent.</summary>
 public static class ArmyValidator
 {
-    public static IReadOnlyList<ArmyIssue> Validate(ArmySetup setup, ArmyTotals totals)
-    {
-        var issues = new List<ArmyIssue>();
+    private static readonly IArmyRule[] Rules =
+    [
+        new PointsBudgetRule(),
+        new DetachmentPointsRule(),
+        new UnitLimitRule(),
+        new MustIncludeCheck(),
+        new CannotIncludeCheck(),
+        new PointsCapCheck(),
+        new ModelCountRule(),
+        new ChapterRestrictionRule(),
+        new EnhancementEligibilityRule(),
+        new EnhancementUniquenessRule(),
+        new EnhancementLimitRule(),
+        new EnhancementDetachmentRule(),
+    ];
 
-        if (setup.BattleSize is { } battleSize && totals.Points > battleSize.PointsLimit)
-        {
-            issues.Add(new ArmyIssue(
-                ArmyIssueKind.OverPointsBudget,
-                $"The army costs {totals.Points} pts, {totals.Points - battleSize.PointsLimit} over the {battleSize.PointsLimit} pts limit of {battleSize.Name}."));
-        }
+    public static IReadOnlyList<ArmyIssue> Validate(ArmySetup setup, IReadOnlyList<ArmyUnit> units, DetachmentRuleSet? rules = null) =>
+        Validate(ArmyContext.Create(setup, units, rules));
 
-        return issues;
-    }
+    public static IReadOnlyList<ArmyIssue> Validate(ArmyContext context) =>
+        Rules.SelectMany(rule => rule.Check(context)).ToList();
 }

@@ -48,6 +48,16 @@ Projects: `Servitor.App` (Blazor WebAssembly UI, feature folders as above), `Ser
 - The external data source (BSData XML/JSON) and the internal domain model are kept separate: an explicit mapping/parsing step, never direct deserialization of BSData's catalogue format into internal domain types. External formats change outside our control; the domain must not depend on their shape.
 - Rules data versioning is considered from the start (GW balance updates change values) — no hardcoding of rules values in logic code.
 
+## Detachment Rules (must include / cannot include)
+
+The rules a detachment adds to an army list are data, not code, because the rules change over time: `src/Servitor.App/wwwroot/rules/detachment-rules.json` (committed, not part of the gitignored data). The Build page reads it on every load, so a change of the file takes effect without rebuilding.
+
+- Each entry has `faction` (rules-text slug), `detachment`, `type`, `label` (how messages name the units), usually `units` (a selector) and the parameters of its type: `mustInclude` (+ `min`), `cannotInclude`, `pointsCap` (+ `caps` by battle size name) and `unitLimit` (+ `max`, raises the datasheet's own limit). `note` is for maintainers. The format is documented in `DetachmentRuleParser`.
+- A selector matches units by `names`, `keywords` (any of), `allKeywords`, `roles`, `excludeNames`, `excludeKeywords` and `outsideFaction`; every field that is set has to match. The rules-text faction files list allied units under the army's own faction, so allied units are best picked by their faction keyword ("Faction: Plague Legions").
+- A rule that cannot be read is left out and shown as a warning under the army summary; a test checks that every shipped rule names a detachment and units that exist in the rules data, so a rules-data update that renames one is noticed.
+- A new rule *type* needs a class in `ArmyBuilder/Rules` (the record), a case in `DetachmentRuleParser` and a check in `ArmyBuilder/Validation/DetachmentRuleChecks.cs`.
+- Not expressible as rules (and not enforced): Warlord requirements and ability or points changes that a detachment's text mentions. The Space Marines Chapter restriction is not in this file: it is read from the detachments' rules text (`ChapterRestrictionParser`).
+
 ## Local Data Persistence (Rules Data & Assets)
 
 No embedded SQL database for V0.1. Instead:

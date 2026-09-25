@@ -41,10 +41,22 @@ public class ArmyBuilderStateTests
     [Fact]
     public void Each_battle_size_enforces_its_own_dp_cap()
     {
-        Assert.Equal(DetachmentAddResult.ExceedsDetachmentPoints, Ready(BattleSizes.Incursion).AddDetachment(Det("a", 3)));
+        Assert.Equal(DetachmentAddResult.ExceedsDetachmentPoints, Ready(BattleSizes.Incursion).AddDetachment(Det("a", 4)));
         Assert.Equal(DetachmentAddResult.Added, Ready(BattleSizes.StrikeForce).AddDetachment(Det("a", 3)));
         Assert.Equal(DetachmentAddResult.ExceedsDetachmentPoints, Ready(BattleSizes.StrikeForce).AddDetachment(Det("a", 4)));
         Assert.Equal(DetachmentAddResult.Added, Ready(BattleSizes.Onslaught).AddDetachment(Det("a", 4)));
+    }
+
+    [Fact]
+    public void An_incursion_army_may_take_a_single_three_dp_detachment_but_only_as_its_only_one()
+    {
+        var alone = Ready(BattleSizes.Incursion);
+        Assert.Equal(DetachmentAddResult.Added, alone.AddDetachment(Det("big", 3)));
+        Assert.Equal(DetachmentAddResult.ExceedsDetachmentPoints, alone.AddDetachment(Det("small", 1)));
+
+        var second = Ready(BattleSizes.Incursion);
+        second.AddDetachment(Det("a", 1));
+        Assert.Equal(DetachmentAddResult.ExceedsDetachmentPoints, second.AddDetachment(Det("big", 3)));
     }
 
     [Fact]

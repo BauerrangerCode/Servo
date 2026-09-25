@@ -143,3 +143,23 @@ public class UnitCatalogTests
         Assert.Null(UnitLimits.MaxPerArmy(Units.Sheet("Free"), BattleSizes.Incursion));
     }
 }
+
+public class UnitChaptersTests
+{
+    [Theory]
+    [InlineData("Imperium - Adeptus Astartes - Blood Angels", "Blood Angels")]
+    [InlineData("Imperium - Adeptus Astartes - Space Marines", null)]
+    [InlineData("Xenos - Orks", null)]
+    [InlineData("Imperium - Adeptus Custodes", null)]
+    public void The_chapter_comes_from_the_catalogue_and_the_general_catalogue_has_none(string catalogue, string? expected)
+    {
+        Assert.Equal(expected, UnitChapters.Of(Units.Sheet("X", catalogue: catalogue)));
+    }
+
+    [Fact]
+    public void Chapter_names_are_compared_ignoring_case_and_punctuation()
+    {
+        Assert.True(UnitChapters.Same("SPACE WOLVES", "Space Wolves"));
+        Assert.False(UnitChapters.Same("Dark Angels", "Blood Angels"));
+    }
+}

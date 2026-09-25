@@ -266,7 +266,10 @@ public static class RulesTextMapper
         int.TryParse(entry.Dp, out var points) ? points : 0,
         ClassifyArchetype(entry.ForceDisposition),
         entry.Enhancements.Count,
-        ClassifyGameMode(entry.Type));
+        ClassifyGameMode(entry.Type))
+    {
+        RestrictedToChapter = ChapterRestrictionParser.Find(entry.Abilities.Select(a => a.Description).Append(entry.Legend)),
+    };
 
     private static MissionArchetype? ClassifyArchetype(string label) => label switch
     {

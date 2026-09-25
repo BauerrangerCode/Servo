@@ -1,3 +1,4 @@
+using Servitor.App.ArmyBuilder.Rules;
 using Servitor.RulesData.Domain;
 
 namespace Servitor.App.ArmyBuilder.State;
@@ -13,6 +14,9 @@ public interface IArmyBuilderState
 
     IReadOnlyList<ArmyUnit> Units { get; }
 
+    /// <summary>The detachment rules in force; empty until the rules file is loaded.</summary>
+    DetachmentRuleSet Rules { get; }
+
     void SelectBattleSize(BattleSize battleSize);
 
     /// <summary>Switching faction discards the selected detachments and the units, which belong to the previous army.</summary>
@@ -27,6 +31,8 @@ public interface IArmyBuilderState
     void RemoveUnit(Guid unitId);
 
     void SetWargear(Guid unitId, WargearSelection wargear);
+
+    void SetEnhancement(Guid unitId, Enhancement? enhancement);
 
     void SkipSetup();
 

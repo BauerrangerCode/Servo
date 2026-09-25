@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Servitor.App;
+using Servitor.App.ArmyBuilder.Rules;
 using Servitor.App.ArmyBuilder.State;
 using Servitor.App.RulesData.Loading;
 using Servitor.App.RulesData.Merging;
@@ -18,6 +19,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IRulesDataStore, IndexedDbRulesDataStore>();
 builder.Services.AddScoped<IMergedRulesDataProvider, MergedRulesDataProvider>();
 builder.Services.AddScoped<IDatasheetCatalog, DatasheetCatalog>();
+builder.Services.AddScoped<IDetachmentRuleProvider, HttpDetachmentRuleProvider>();
 builder.Services.AddScoped<IArmyBuilderState, ArmyBuilderState>();
 builder.Services.AddScoped<IRulesDataMergeService, RulesDataMergeService>();
 builder.Services.AddScoped<IDataUpdateService, HttpDataUpdateService>();

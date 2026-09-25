@@ -1,0 +1,157 @@
+{
+  "description": "Composition rules that detachments add to an army. Edit this file when the rules change; the app reads it on every load of the Build page. Format: see DetachmentRuleParser. 'note' is for maintainers and is not read.",
+  "rules": [
+    {
+      "faction": "aeldari",
+      "detachment": "Devoted of Ynnead",
+      "type": "mustInclude",
+      "label": "Yvraine or The Yncarne",
+      "units": { "names": ["Yvraine", "The Yncarne"] },
+      "min": 1,
+      "note": "You must include Yvraine and/or The Yncarne in your army (the Warlord part of the rule is not checked)."
+    },
+    {
+      "faction": "aeldari",
+      "detachment": "Ghosts of the Webway",
+      "type": "unitLimit",
+      "label": "Death Jester, Shadowseer and Troupe Master",
+      "units": { "names": ["Death Jester", "Shadowseer", "Troupe Master"] },
+      "max": 3,
+      "note": "You can include up to three of each of the following models in your army."
+    },
+    {
+      "faction": "aeldari",
+      "detachment": "Serpent's Brood",
+      "type": "unitLimit",
+      "label": "Death Jester, Shadowseer and Troupe Master",
+      "units": { "names": ["Death Jester", "Shadowseer", "Troupe Master"] },
+      "max": 3,
+      "note": "You can include up to three of each of the following models in your army."
+    },
+    {
+      "faction": "chaos-knights",
+      "detachment": "Houndpack Lance",
+      "type": "mustInclude",
+      "label": "WAR DOG units",
+      "units": { "keywords": ["WAR DOG"] },
+      "min": 3,
+      "note": "Your army must include three or more WAR DOG units."
+    },
+    {
+      "faction": "chaos-daemons",
+      "detachment": "Shadow Legion",
+      "type": "cannotInclude",
+      "label": "Daemon Prince units",
+      "units": { "names": ["Daemon Prince of Chaos", "Daemon Prince of Chaos with wings"] },
+      "note": "When mustering your army, you cannot include any Daemon Prince, Daemon Prince with Wings or Epic Hero units (excluding Be'lakor)."
+    },
+    {
+      "faction": "chaos-daemons",
+      "detachment": "Shadow Legion",
+      "type": "cannotInclude",
+      "label": "Epic Hero units (other than Be'lakor)",
+      "units": { "roles": ["EpicHero"], "excludeNames": ["Be'lakor"] },
+      "note": "See the rule above."
+    },
+    {
+      "faction": "chaos-daemons",
+      "detachment": "Shadow Legion",
+      "type": "cannotInclude",
+      "label": "Heretic Astartes units other than the listed ones",
+      "units": {
+        "keywords": ["Faction: Heretic Astartes"],
+        "excludeNames": [
+          "Chaos Lord", "Chaos Lord in Terminator Armour", "Chaos Lord with Jump Pack", "Chaos Terminator Squad", "Chosen",
+          "Dark Apostle", "Havocs", "Legionaries", "Master of Possession", "Possessed", "Raptors", "Sorcerer",
+          "Sorcerer in Terminator Armour", "Warp Talons"
+        ],
+        "excludeKeywords": ["DAMNED"]
+      },
+      "note": "You can include the following HERETIC ASTARTES units: ... Damned units ..."
+    },
+    {
+      "faction": "chaos-daemons",
+      "detachment": "Shadow Legion",
+      "type": "pointsCap",
+      "label": "Heretic Astartes units",
+      "units": { "keywords": ["Faction: Heretic Astartes"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 },
+      "note": "The combined points value of such units depends on your battle size."
+    },
+    {
+      "faction": "genestealer-cults",
+      "detachment": "Brood Brother Auxilia",
+      "type": "pointsCap",
+      "label": "Astra Militarum units",
+      "units": { "keywords": ["Faction: Astra Militarum"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    },
+    {
+      "faction": "genestealer-cults",
+      "detachment": "Brood Brother Auxilia",
+      "type": "cannotInclude",
+      "label": "these Astra Militarum units",
+      "units": {
+        "allKeywords": ["Faction: Astra Militarum"],
+        "keywords": ["AIRCRAFT", "COMMISSAR", "EPIC HERO", "MILITARUM TEMPESTUS", "OGRYN", "RATLING", "TECH-PRIEST ENGINSEER", "MINISTORUM PRIEST"]
+      },
+      "note": "You cannot include units with any of the following keywords in your army using this rule."
+    },
+    {
+      "faction": "genestealer-cults",
+      "detachment": "Final Day",
+      "type": "pointsCap",
+      "label": "Tyranids Vanguard Invader units",
+      "units": { "allKeywords": ["Faction: Tyranids", "Vanguard Invader"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    },
+    {
+      "faction": "genestealer-cults",
+      "detachment": "Final Day",
+      "type": "cannotInclude",
+      "label": "these Tyranids units",
+      "units": { "allKeywords": ["Faction: Tyranids"], "keywords": ["AIRCRAFT", "BROODLORD", "GENESTEALERS"] },
+      "note": "Excluding AIRCRAFT, BROODLORD and GENESTEALERS units."
+    },
+    {
+      "faction": "death-guard",
+      "detachment": "Tallyband Summoners",
+      "type": "pointsCap",
+      "label": "Plague Legions units",
+      "units": { "keywords": ["Faction: Plague Legions"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    },
+    {
+      "faction": "drukhari",
+      "detachment": "Reaper's Wager",
+      "type": "pointsCap",
+      "label": "Harlequins units",
+      "units": { "keywords": ["Faction: Harlequins"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    },
+    {
+      "faction": "emperor-s-children",
+      "detachment": "Carnival of Excess",
+      "type": "pointsCap",
+      "label": "Legions of Excess units",
+      "units": { "keywords": ["Faction: Legions of Excess"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    },
+    {
+      "faction": "thousand-sons",
+      "detachment": "Changehost of Deceit",
+      "type": "pointsCap",
+      "label": "Scintillating Legions units",
+      "units": { "keywords": ["Faction: Scintillating Legions"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    },
+    {
+      "faction": "world-eaters",
+      "detachment": "Khorne Daemonkin",
+      "type": "pointsCap",
+      "label": "Blood Legions units",
+      "units": { "keywords": ["Faction: Blood Legions"] },
+      "caps": { "Incursion": 500, "Strike Force": 1000, "Onslaught": 1500 }
+    }
+  ]
+}

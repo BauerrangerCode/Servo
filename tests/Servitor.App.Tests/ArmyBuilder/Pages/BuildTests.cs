@@ -1,6 +1,8 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.ArmyBuilder.Pages;
+using Servitor.App.ArmyBuilder.Rules;
+using Servitor.App.Tests.ArmyBuilder.Rules;
 using Servitor.App.ArmyBuilder.State;
 using Servitor.App.RulesData.Loading;
 using Servitor.App.Tests.RulesData.Loading;
@@ -13,11 +15,13 @@ namespace Servitor.App.Tests.ArmyBuilder.Pages;
 public class BuildTests : BunitContext
 {
     private readonly FactionBackdrop _backdrop = new();
+    private readonly FakeRuleProvider _rules = new();
 
     public BuildTests()
     {
         Services.AddSingleton<IFactionBackdrop>(_backdrop);
         Services.AddSingleton<IDatasheetCatalog>(new FakeDatasheetCatalog());
+        Services.AddSingleton<IDetachmentRuleProvider>(_rules);
     }
 
     private sealed class FakeProvider(MergedRulesData? data) : IMergedRulesDataProvider
@@ -103,11 +107,12 @@ public class BuildTests : BunitContext
         cut.FindAll(".chip")[0].Click(); // Incursion: 2 DP
         cut.Find(".faction-select").Change("orks");
 
-        Assert.True(cut.FindAll(".detachment button")[0].HasAttribute("disabled")); // 3 DP does not fit
+        Assert.False(cut.FindAll(".detachment button")[0].HasAttribute("disabled")); // a 3 DP detachment is fine as the only one
 
         cut.FindAll(".detachment button")[1].Click();
 
         Assert.Contains("1/2 DP", cut.Find(".dp-progress").TextContent);
+        Assert.True(cut.FindAll(".detachment button")[0].HasAttribute("disabled")); // now it no longer fits
         Assert.Equal("Remove", cut.FindAll(".detachment button")[1].TextContent);
     }
 
@@ -129,5 +134,13 @@ public class BuildTests : BunitContext
         var cut = RenderBuild(null);
 
         Assert.Contains("No rules data yet", cut.Markup);
+    }
+
+    [Fact]
+    public void The_detachment_rules_are_loaded_when_the_page_opens()
+    {
+        RenderBuild(Data());
+
+        Assert.Equal(1, _rules.Loads);
     }
 }
