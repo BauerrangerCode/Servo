@@ -6,5 +6,6 @@ public enum AddUnitResult
     NoBattleSize,
     NoFaction,
     NotInFaction,
+    AllyNotAllowed,
     AtLimit,
 }

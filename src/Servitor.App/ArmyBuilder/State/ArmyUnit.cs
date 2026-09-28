@@ -12,4 +12,7 @@ public sealed record ArmyUnit(Guid Id, Datasheet Datasheet, UnitSize Size)
 
     /// <summary>The enhancement the unit carries, or null. Its cost is added to the unit's points.</summary>
     public Enhancement? Enhancement { get; init; }
+
+    /// <summary>The faction (rules-text slug) the unit was taken from as an ally, or null for a unit of the army's own faction.</summary>
+    public string? AlliedFaction { get; init; }
 }

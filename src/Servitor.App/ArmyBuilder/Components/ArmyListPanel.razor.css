@@ -41,3 +41,13 @@
     margin-left: 0.5rem;
     max-width: 24rem;
 }
+
+.army-unit-ally {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0 0.4rem;
+    border: 1px solid var(--crt-warning);
+    color: var(--crt-warning);
+    white-space: nowrap;
+}

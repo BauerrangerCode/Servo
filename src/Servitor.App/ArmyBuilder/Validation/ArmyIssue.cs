@@ -16,6 +16,7 @@ public enum ArmyIssueKind
     MissingRequiredUnit,
     ForbiddenUnit,
     OverDetachmentPointsCap,
+    AllyNotAllowed,
 }
 
 /// <summary>One reason an army list is not valid: what kind of rule it breaks and a message saying so.</summary>

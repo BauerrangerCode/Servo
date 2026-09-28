@@ -4,7 +4,14 @@ using Servitor.RulesData.Mapping.BsData;
 
 namespace Servitor.RulesData.Mapping;
 
-public sealed record BsDataMappingResult(IReadOnlyList<Datasheet> Datasheets, IReadOnlyList<string> Warnings);
+public sealed record BsDataMappingResult(IReadOnlyList<Datasheet> Datasheets, IReadOnlyList<string> Warnings)
+{
+    /// <summary>The catalogue's own id, which other catalogues use to link to it.</summary>
+    public string CatalogueId { get; init; } = "";
+
+    /// <summary>The ids of the catalogues this one links to (the ones whose units an army of this catalogue may take as allies).</summary>
+    public IReadOnlyList<string> LinkedCatalogueIds { get; init; } = [];
+}
 
 /// <summary>
 /// Maps a BSData wh40k-11e catalogue JSON document into <see cref="Datasheet"/> domain records, so the rest of
@@ -81,7 +88,11 @@ public static class BsDataCatalogueMapper
             }
         }
 
-        return new BsDataMappingResult(datasheets, warnings);
+        return new BsDataMappingResult(datasheets, warnings)
+        {
+            CatalogueId = catalogue.Id ?? "",
+            LinkedCatalogueIds = catalogue.CatalogueLinks.Select(l => l.TargetId).Where(id => id.Length > 0).ToList(),
+        };
     }
 
     private static void IndexEntries(BsEntry entry, Dictionary<string, BsEntry> entriesById)

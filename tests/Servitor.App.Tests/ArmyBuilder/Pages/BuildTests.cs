@@ -15,6 +15,7 @@ namespace Servitor.App.Tests.ArmyBuilder.Pages;
 public class BuildTests : BunitContext
 {
     private readonly FactionBackdrop _backdrop = new();
+    private readonly ArmyBuilderState _state = new();
     private readonly FakeRuleProvider _rules = new();
 
     public BuildTests()
@@ -55,7 +56,7 @@ public class BuildTests : BunitContext
     private IRenderedComponent<Build> RenderBuild(MergedRulesData? data)
     {
         Services.AddSingleton<IMergedRulesDataProvider>(new FakeProvider(data));
-        Services.AddSingleton<IArmyBuilderState>(new ArmyBuilderState());
+        Services.AddSingleton<IArmyBuilderState>(_state);
         return Render<Build>();
     }
 
@@ -134,6 +135,26 @@ public class BuildTests : BunitContext
         var cut = RenderBuild(null);
 
         Assert.Contains("No rules data yet", cut.Markup);
+    }
+
+    [Fact]
+    public void Choosing_a_faction_hands_its_ally_factions_to_the_army_and_the_catalog_offers_them()
+    {
+        var data = Data() with
+        {
+            Factions =
+            [
+                Data().Factions[0] with { AllyFactionIds = ["necrons"] },
+                new MergedFactionRules("necrons", "Necrons", [], [], [], []),
+            ],
+        };
+        var cut = RenderBuild(data);
+        cut.FindAll(".chip")[1].Click();
+
+        cut.Find(".faction-select").Change("orks");
+
+        Assert.Equal(["necrons"], _state.Setup.AllyFactionIds);
+        Assert.Contains("Your army can also take: Necrons", cut.Find(".allies-note").TextContent);
     }
 
     [Fact]

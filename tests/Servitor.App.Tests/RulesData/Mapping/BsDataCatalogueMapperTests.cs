@@ -126,4 +126,24 @@ public class BsDataCatalogueMapperTests
         Assert.Equal(0, datasheet.Points);
         Assert.Empty(result.Warnings);
     }
+
+    [Fact]
+    public void The_catalogue_id_and_the_ids_of_the_catalogues_it_links_to_are_read()
+    {
+        var json = "{\"catalogue\":{\"id\":\"cat-1\",\"name\":\"X\",\"catalogueLinks\":[{\"targetId\":\"cat-2\"},{\"targetId\":\"cat-3\"}],\"sharedSelectionEntries\":[]}}";
+
+        var result = BsDataCatalogueMapper.Map(json);
+
+        Assert.Equal("cat-1", result.CatalogueId);
+        Assert.Equal(["cat-2", "cat-3"], result.LinkedCatalogueIds);
+    }
+
+    [Fact]
+    public void A_catalogue_without_an_id_or_links_has_none()
+    {
+        var result = BsDataCatalogueMapper.Map("{\"catalogue\":{\"name\":\"X\",\"sharedSelectionEntries\":[]}}");
+
+        Assert.Equal("", result.CatalogueId);
+        Assert.Empty(result.LinkedCatalogueIds);
+    }
 }

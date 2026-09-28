@@ -11,7 +11,7 @@ public static class UnitRules
     public static int CountOf(IEnumerable<ArmyUnit> units, Datasheet datasheet) =>
         units.Count(u => u.Datasheet.Name == datasheet.Name && u.Datasheet.Faction == datasheet.Faction);
 
-    public static AddUnitResult CanAdd(ArmySetup setup, IReadOnlyList<ArmyUnit> units, Datasheet datasheet, DetachmentRuleSet? rules = null)
+    public static AddUnitResult CanAdd(ArmySetup setup, IReadOnlyList<ArmyUnit> units, Datasheet datasheet, DetachmentRuleSet? rules = null, string? allyFaction = null)
     {
         if (setup.BattleSize is not { } battleSize)
         {
@@ -23,7 +23,14 @@ public static class UnitRules
             return AddUnitResult.NoFaction;
         }
 
-        if (!datasheet.FactionSlugs.Contains(factionId))
+        if (allyFaction is not null)
+        {
+            if (!setup.AllyFactionIds.Contains(allyFaction) || !datasheet.FactionSlugs.Contains(allyFaction))
+            {
+                return AddUnitResult.AllyNotAllowed;
+            }
+        }
+        else if (!datasheet.FactionSlugs.Contains(factionId))
         {
             return AddUnitResult.NotInFaction;
         }

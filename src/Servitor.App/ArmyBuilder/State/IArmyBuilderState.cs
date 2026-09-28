@@ -20,13 +20,15 @@ public interface IArmyBuilderState
     void SelectBattleSize(BattleSize battleSize);
 
     /// <summary>Switching faction discards the selected detachments and the units, which belong to the previous army.</summary>
-    void SelectFaction(string factionId);
+    /// <param name="allyFactionIds">The factions whose units this faction may take as allies.</param>
+    void SelectFaction(string factionId, IReadOnlyList<string>? allyFactionIds = null);
 
     DetachmentAddResult AddDetachment(Detachment detachment);
 
     void RemoveDetachment(string detachmentId);
 
-    AddUnitResult AddUnit(Datasheet datasheet, UnitSize size);
+    /// <param name="allyFaction">The ally faction the unit is taken from; null for a unit of the army's own faction.</param>
+    AddUnitResult AddUnit(Datasheet datasheet, UnitSize size, string? allyFaction = null);
 
     void RemoveUnit(Guid unitId);
 

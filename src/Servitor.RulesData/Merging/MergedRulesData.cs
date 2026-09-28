@@ -22,7 +22,11 @@ public sealed record MergedFactionRules(
     IReadOnlyList<Stratagem> Stratagems,
     IReadOnlyList<DetachmentAbility> Abilities,
     IReadOnlyList<Enhancement> Enhancements,
-    IReadOnlyList<Detachment> Detachments);
+    IReadOnlyList<Detachment> Detachments)
+{
+    /// <summary>The rules-text faction slugs whose units an army of this faction may take as allies.</summary>
+    public IReadOnlyList<string> AllyFactionIds { get; init; } = [];
+}
 
 /// <summary>
 /// The small header stored next to the (large) merged data so a consumer can decide which copy is newer without

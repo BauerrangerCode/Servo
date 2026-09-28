@@ -14,5 +14,8 @@ public sealed record ArmySetup(
 {
     public static ArmySetup Empty { get; } = new(null, null, [], false);
 
+    /// <summary>The factions (rules-text slugs) whose units the chosen faction may take as allies.</summary>
+    public IReadOnlyList<string> AllyFactionIds { get; init; } = [];
+
     public int DetachmentPointsUsed => Detachments.Sum(d => d.DetachmentPoints);
 }

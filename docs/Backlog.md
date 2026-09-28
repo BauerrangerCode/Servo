@@ -199,6 +199,7 @@ As a player, I want to see which other factions my chosen faction may ally with,
 
 - ✓ Allowed ally factions are shown per the currently selected faction
 - ✓ Units added from an ally faction are correctly flagged as allied in the list
+- **Status / scope:** implemented. The allowed ally factions of an army come from BSData: a faction's catalogue links to the catalogues whose units it may take (`AllyResolver`, stored as `MergedFactionRules.AllyFactionIds`); e.g. Space Marines: Imperial Knights, Imperial Agents, Adeptus Titanicus. The catalog shows "Your army can also take: ..." with one tab per ally faction; an allied unit is flagged "Ally: <faction>" in the list, counts against the same-datasheet limit like any copy, and an `AllyRule` reports allied units from a faction the army may not ally with. **Not covered:** conditions that some detachments put on allies (e.g. Genestealer Cults may only take Astra Militarum through the Brood Brother Auxilia detachment — BSData links them unconditionally); the detachment points caps for such units are in `detachment-rules.json`.
 
 ---
 

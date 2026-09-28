@@ -18,6 +18,9 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
     private const string StageFactions = "Factions";
     private const string StageDatasheetDetails = "Datasheet details";
 
+    private sealed record LoadedCatalogue(
+        string FileName, IReadOnlyList<Datasheet> Datasheets, string Id, IReadOnlyList<string> LinkedIds);
+
     private sealed record LoadedFaction(string Slug, FactionRulesTextMappingResult Mapping);
 
     private sealed record RulesTextDatasheet(string FactionSlug, DatasheetReference Reference);
@@ -42,7 +45,8 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
             .Select(s => s.Id)
             .ToHashSet();
 
-        var joined = JoinDatasheets(catalogues, factions, datasheetDetails, knownStratagemIds);
+        var joined = JoinDatasheets(catalogues.Select(c => (c.FileName, c.Datasheets)).ToList(), factions, datasheetDetails, knownStratagemIds);
+        var allies = AllyResolver.Resolve(catalogues.Select(c => new CatalogueLinks(c.FileName, c.Id, c.LinkedIds)).ToList());
         var (proseRules, keptFromBsData) = MergeCoreRules(bsDataRules, rulesTextCoreRules);
         var coreRules = proseRules.Concat(coreActions.Kept).ToList();
 
@@ -50,7 +54,10 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
         var dataVersion = BuildDataVersion(factions);
         var mergedFactions = factions
             .Select(f => new MergedFactionRules(
-                f.Slug, f.Mapping.Identity.Name, f.Mapping.Stratagems, f.Mapping.Abilities, f.Mapping.Enhancements, f.Mapping.Detachments))
+                f.Slug, f.Mapping.Identity.Name, f.Mapping.Stratagems, f.Mapping.Abilities, f.Mapping.Enhancements, f.Mapping.Detachments)
+            {
+                AllyFactionIds = allies.GetValueOrDefault(f.Slug) ?? [],
+            })
             .ToList();
 
         var data = new MergedRulesData(dataVersion, generatedAt, joined.Datasheets, coreStratagems.Kept, mergedFactions, coreRules);
@@ -86,11 +93,11 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
         return new MergeOutcome(data, report);
     }
 
-    private async Task<IReadOnlyList<(string FileName, IReadOnlyList<Datasheet> Datasheets)>> LoadCataloguesAsync(
+    private async Task<IReadOnlyList<LoadedCatalogue>> LoadCataloguesAsync(
         IProgress<MergeProgress>? progress, List<string> warnings, CancellationToken cancellationToken)
     {
         var fileNames = RulesSourceManifest.BsDataCatalogueFileNames;
-        var loaded = new List<(string, IReadOnlyList<Datasheet>)>();
+        var loaded = new List<LoadedCatalogue>();
 
         for (var i = 0; i < fileNames.Count; i++)
         {
@@ -100,7 +107,7 @@ public sealed class RulesDataMerger(IRulesSourceReader reader, TimeProvider time
             {
                 var result = BsDataCatalogueMapper.Map(json);
                 warnings.AddRange(result.Warnings.Select(w => $"{path}: {w}"));
-                loaded.Add((fileNames[i], result.Datasheets));
+                loaded.Add(new LoadedCatalogue(fileNames[i], result.Datasheets, result.CatalogueId, result.LinkedCatalogueIds));
             }
 
             progress?.Report(new MergeProgress(StageCatalogues, i + 1, fileNames.Count));

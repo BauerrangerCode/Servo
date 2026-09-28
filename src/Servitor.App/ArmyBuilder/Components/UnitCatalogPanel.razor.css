@@ -86,3 +86,13 @@
     color: var(--crt-warning);
     border-color: var(--crt-warning);
 }
+
+.allies-note {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+.ally-tabs {
+    margin-bottom: 0.5rem;
+}

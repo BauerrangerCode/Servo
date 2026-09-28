@@ -1,4 +1,5 @@
 @page "/build"
+@using Servitor.App.ArmyBuilder.Catalog
 @using Servitor.App.ArmyBuilder.Components
 @using Servitor.App.ArmyBuilder.Rules
 @using Servitor.App.ArmyBuilder.State
@@ -90,8 +91,8 @@ else
                 </ul>
             </section>
 
-            <UnitCatalogPanel />
-            <ArmyListPanel Enhancements="AvailableEnhancements" />
+            <UnitCatalogPanel Allies="AllyFactions" />
+            <ArmyListPanel Enhancements="AvailableEnhancements" Allies="AllyFactions" />
         }
     }
 
@@ -105,6 +106,24 @@ else
     // The enhancements of the detachments the army has selected.
     private IReadOnlyList<Enhancement> AvailableEnhancements =>
         CurrentFaction?.Enhancements.Where(e => State.Setup.Detachments.Any(d => d.Name == e.Detachment)).ToList() ?? [];
+
+    // The factions the army's faction may ally with, named for the catalog and the list.
+    private IReadOnlyList<AllyFaction> AllyFactions => AlliesOf(State.Setup.FactionId);
+
+    private IReadOnlyList<AllyFaction> AlliesOf(string? factionId)
+    {
+        var faction = _data?.Factions.FirstOrDefault(f => f.FactionId == factionId);
+        if (faction is null || _data is null)
+        {
+            return [];
+        }
+
+        return faction.AllyFactionIds
+            .Select(id => _data.Factions.FirstOrDefault(f => f.FactionId == id))
+            .OfType<MergedFactionRules>()
+            .Select(f => new AllyFaction(f.FactionId, f.Name))
+            .ToList();
+    }
 
     private MergedFactionRules? CurrentFaction =>
         _data?.Factions.FirstOrDefault(f => f.FactionId == State.Setup.FactionId);
@@ -125,7 +144,7 @@ else
     {
         if (args.Value?.ToString() is { Length: > 0 } factionId)
         {
-            State.SelectFaction(factionId);
+            State.SelectFaction(factionId, AlliesOf(factionId).Select(a => a.Slug).ToList());
             Backdrop.ShowFaction(factionId);
         }
     }

@@ -12,6 +12,15 @@ public static class FactionCatalogueMap
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["Aeldari - Aeldari Library.json"] = ["aeldari", "drukhari"],
+            // The army catalogues themselves hold no units (those live in the libraries) but carry the links to the
+            // catalogues an army may take allies from.
+            ["Aeldari - Craftworlds.json"] = ["aeldari"],
+            ["Aeldari - Drukhari.json"] = ["drukhari"],
+            ["Chaos - Chaos Daemons.json"] = ["chaos-daemons"],
+            ["Chaos - Chaos Knights.json"] = ["chaos-knights"],
+            ["Imperium - Astra Militarum.json"] = ["astra-militarum"],
+            ["Imperium - Imperial Knights.json"] = ["imperial-knights"],
+            ["Imperium - Adeptus Titanicus.json"] = ["adeptus-titanicus"],
             ["Chaos - Chaos Daemons Library.json"] = ["chaos-daemons"],
             ["Chaos - Chaos Knights Library.json"] = ["chaos-knights"],
             ["Chaos - Chaos Space Marines.json"] = ["chaos-space-marines"],

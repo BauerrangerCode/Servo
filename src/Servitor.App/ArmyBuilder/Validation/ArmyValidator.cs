@@ -16,6 +16,7 @@ public static class ArmyValidator
         new PointsCapCheck(),
         new ModelCountRule(),
         new ChapterRestrictionRule(),
+        new AllyRule(),
         new EnhancementEligibilityRule(),
         new EnhancementUniquenessRule(),
         new EnhancementLimitRule(),

@@ -10,11 +10,24 @@
 
 @if (_datasheets is not null && State.Setup is { BattleSize: { } battleSize, FactionId: { } factionId })
 {
-    var factionUnits = UnitCatalog.ForFaction(_datasheets, factionId, _showLegends);
+    var browsedFaction = _allyFaction is not null && Allies.Any(a => a.Slug == _allyFaction) ? _allyFaction : null;
+    var factionUnits = UnitCatalog.ForFaction(_datasheets, browsedFaction ?? factionId, _showLegends);
     var groups = UnitCatalog.Group(factionUnits, _query, _role);
 
     <section class="unit-catalog">
         <h2>Units</h2>
+
+        @if (Allies.Count > 0)
+        {
+            <p class="allies-note">Your army can also take: @string.Join(" · ", Allies.Select(a => a.Name))</p>
+            <div class="ally-tabs">
+                <button type="button" class="chip @(browsedFaction is null ? "selected" : "")" @onclick="() => SelectAlly(null)">Own units</button>
+                @foreach (var ally in Allies)
+                {
+                    <button type="button" class="chip ally-tab @(browsedFaction == ally.Slug ? "selected" : "")" @onclick="() => SelectAlly(ally.Slug)">@ally.Name</button>
+                }
+            </div>
+        }
 
         <div class="catalog-controls">
             <input type="text" class="catalog-search" placeholder="Search @factionUnits.Count units…" value="@_query" @oninput="OnQueryChanged" />
@@ -68,8 +81,8 @@
                             <span class="unit-limit @(count >= max ? "at-limit" : "")">×@count/@max</span>
                         }
                         <button type="button" class="add-unit"
-                                disabled="@(UnitRules.CanAdd(State.Setup, State.Units, unit, State.Rules) != AddUnitResult.Added)"
-                                @onclick="() => State.AddUnit(unit, size)">Add</button>
+                                disabled="@(UnitRules.CanAdd(State.Setup, State.Units, unit, State.Rules, browsedFaction) != AddUnitResult.Added)"
+                                @onclick="() => State.AddUnit(unit, size, browsedFaction)">Add</button>
                     </li>
                 }
             </ul>
@@ -83,6 +96,11 @@
 }
 
 @code {
+    /// <summary>The factions whose units the army may take as allies.</summary>
+    [Parameter]
+    public IReadOnlyList<AllyFaction> Allies { get; set; } = [];
+
+    private string? _allyFaction;
     private IReadOnlyList<Datasheet>? _datasheets;
     private string _query = "";
     private bool _showLegends;
@@ -110,6 +128,13 @@
         _datasheets = await Catalog.GetAllAsync();
         StateHasChanged();
     });
+
+    private void SelectAlly(string? slug)
+    {
+        _allyFaction = slug;
+        _role = null;
+        _detail = null;
+    }
 
     private void OnQueryChanged(ChangeEventArgs args) => _query = args.Value?.ToString() ?? "";
 

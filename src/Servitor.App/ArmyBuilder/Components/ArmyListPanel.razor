@@ -23,6 +23,10 @@
                     <li class="army-unit-card">
                         <div class="army-unit">
                             <span class="army-unit-name">@unit.Datasheet.Name</span>
+                            @if (unit.AlliedFaction is { } ally)
+                            {
+                                <span class="army-unit-ally">Ally: @AllyName(ally)</span>
+                            }
                             @if (unit.Size.Models > 0)
                             {
                                 <span class="army-unit-models">@unit.Size.Models models</span>
@@ -73,6 +77,12 @@
     /// <summary>The enhancements of the army's selected detachments a unit can be given.</summary>
     [Parameter]
     public IReadOnlyList<Enhancement> Enhancements { get; set; } = [];
+
+    /// <summary>The factions whose units the army may take as allies, for naming the faction of an allied unit.</summary>
+    [Parameter]
+    public IReadOnlyList<AllyFaction> Allies { get; set; } = [];
+
+    private string AllyName(string slug) => Allies.FirstOrDefault(a => a.Slug == slug)?.Name ?? slug;
 
     private readonly HashSet<Guid> _editing = [];
 

@@ -97,3 +97,21 @@ public sealed class ChapterRestrictionRule : IArmyRule
         }
     }
 }
+
+/// <summary>Units taken as allies have to come from a faction the army's faction may ally with, and the unit has to belong to it.</summary>
+public sealed class AllyRule : IArmyRule
+{
+    public IEnumerable<ArmyIssue> Check(ArmyContext context)
+    {
+        foreach (var unit in context.Units.Where(u => u.AlliedFaction is not null))
+        {
+            var ally = unit.AlliedFaction!;
+            if (!context.Setup.AllyFactionIds.Contains(ally) || !unit.Datasheet.FactionSlugs.Contains(ally))
+            {
+                yield return new ArmyIssue(
+                    ArmyIssueKind.AllyNotAllowed,
+                    $"{unit.Datasheet.Name} is taken as an ally from {ally}, which the army faction may not ally with.");
+            }
+        }
+    }
+}

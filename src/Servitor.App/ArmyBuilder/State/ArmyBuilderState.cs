@@ -15,15 +15,21 @@ public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = nul
 
     public void SelectBattleSize(BattleSize battleSize) => Update(Setup with { BattleSize = battleSize });
 
-    public void SelectFaction(string factionId)
+    public void SelectFaction(string factionId, IReadOnlyList<string>? allyFactionIds = null)
     {
+        var allies = allyFactionIds ?? [];
         if (factionId == Setup.FactionId)
         {
+            if (!allies.SequenceEqual(Setup.AllyFactionIds))
+            {
+                Update(Setup with { AllyFactionIds = allies });
+            }
+
             return;
         }
 
         Units = [];
-        Update(Setup with { FactionId = factionId, Detachments = [] });
+        Update(Setup with { FactionId = factionId, Detachments = [], AllyFactionIds = allies });
     }
 
     public DetachmentAddResult AddDetachment(Detachment detachment)
@@ -40,12 +46,12 @@ public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = nul
     public void RemoveDetachment(string detachmentId) =>
         Update(Setup with { Detachments = Setup.Detachments.Where(d => d.Id != detachmentId).ToList() });
 
-    public AddUnitResult AddUnit(Datasheet datasheet, UnitSize size)
+    public AddUnitResult AddUnit(Datasheet datasheet, UnitSize size, string? allyFaction = null)
     {
-        var result = UnitRules.CanAdd(Setup, Units, datasheet, Rules);
+        var result = UnitRules.CanAdd(Setup, Units, datasheet, Rules, allyFaction);
         if (result == AddUnitResult.Added)
         {
-            Units = [.. Units, new ArmyUnit(Guid.NewGuid(), datasheet, size)];
+            Units = [.. Units, new ArmyUnit(Guid.NewGuid(), datasheet, size) { AlliedFaction = allyFaction }];
             Changed?.Invoke();
         }
 
