@@ -79,6 +79,28 @@ public class SavedArmyResolverTests
     }
 
     [Fact]
+    public async Task Resolving_twice_into_the_same_shared_state_succeeds_both_times()
+    {
+        // IArmyBuilderState is shared across Import/Build/Play (see its doc comment) — reopening the same saved
+        // army a second time (e.g. Open in Build, then later Open in Play on the same entry) must not fail with
+        // AlreadySelected/AtLimit against what the first open already put there.
+        var saved = new SavedArmy(
+            Guid.NewGuid(), "Test", DateTimeOffset.UtcNow, "orks", "Strike Force", [], ["Green Tide"],
+            [new SavedUnit(Guid.NewGuid(), "Painboy", 0, WargearSelection.Default, null, null, false, null)]);
+        var state = new ArmyBuilderState();
+
+        var first = await SavedArmyResolver.ResolveAsync(
+            saved, state, new FakeRulesDataProvider(RulesData()), new FakeDatasheetCatalog(RulesData().Datasheets));
+        var second = await SavedArmyResolver.ResolveAsync(
+            saved, state, new FakeRulesDataProvider(RulesData()), new FakeDatasheetCatalog(RulesData().Datasheets));
+
+        Assert.True(first.IsSuccess, string.Join("; ", first.Errors));
+        Assert.True(second.IsSuccess, string.Join("; ", second.Errors));
+        Assert.Single(state.Units);
+        Assert.Single(state.Setup.Detachments);
+    }
+
+    [Fact]
     public async Task An_unknown_datasheet_fails_without_mutating_state()
     {
         var saved = new SavedArmy(

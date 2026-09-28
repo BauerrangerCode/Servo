@@ -23,7 +23,7 @@ internal static class RuleData
     public static DetachmentRuleSet Set(params DetachmentRule[] rules) => new(rules, []);
 
     public static ArmySetup SetupWith(string faction, string detachment, BattleSize? size = null) =>
-        new(size ?? BattleSizes.StrikeForce, faction, [Army.Detachment(detachment)], false);
+        new(size ?? BattleSizes.StrikeForce, faction, [Army.Detachment(detachment)]);
 
     /// <summary>A unit of the datasheet as the given catalogue and armies list it.</summary>
     public static Datasheet Sheet(string name, string[]? keywords = null, string[]? factions = null, int points = 100) =>

@@ -88,9 +88,11 @@ public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = nul
         Changed?.Invoke();
     }
 
-    public void SkipSetup() => Update(Setup with { IsSkipped = true });
-
-    public void ResumeSetup() => Update(Setup with { IsSkipped = false });
+    public void Reset()
+    {
+        Units = [];
+        Update(ArmySetup.Empty);
+    }
 
     private void Update(ArmySetup setup)
     {

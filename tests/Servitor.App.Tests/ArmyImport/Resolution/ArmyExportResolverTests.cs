@@ -131,4 +131,26 @@ public class ArmyExportResolverTests
         Assert.False(result.IsSuccess);
         Assert.NotEmpty(result.Errors);
     }
+
+    [Fact]
+    public async Task Importing_twice_into_the_same_shared_state_succeeds_both_times()
+    {
+        // IArmyBuilderState is shared across Import/Build/Play — importing the same (or another) list a second
+        // time into a state that already holds a resolved army must not fail with AlreadySelected/AtLimit against
+        // what the first import already put there.
+        var rulesData = LoadRealMergedData();
+        var parseResult = WarscribeExportParser.Parse(File.ReadAllText(TestPaths.DataFile("Army1.txt")));
+        Assert.True(parseResult.IsSuccess, string.Join("; ", parseResult.Errors));
+
+        var state = new ArmyBuilderState();
+        var first = await ArmyExportResolver.ResolveAsync(
+            parseResult.Export!, state, new FakeRulesDataProvider(rulesData), new FakeDatasheetCatalog(rulesData.Datasheets));
+        var second = await ArmyExportResolver.ResolveAsync(
+            parseResult.Export!, state, new FakeRulesDataProvider(rulesData), new FakeDatasheetCatalog(rulesData.Datasheets));
+
+        Assert.True(first.IsSuccess, string.Join("; ", first.Errors));
+        Assert.True(second.IsSuccess, string.Join("; ", second.Errors));
+        Assert.Equal(16, state.Units.Count);
+        Assert.Equal(3, state.Setup.Detachments.Count);
+    }
 }

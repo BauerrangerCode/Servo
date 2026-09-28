@@ -8,7 +8,7 @@ namespace Servitor.App.Tests.ArmyBuilder.Validation;
 internal static class Army
 {
     public static ArmySetup Setup(BattleSize? size = null, params Detachment[] detachments) =>
-        new(size ?? BattleSizes.StrikeForce, "orks", detachments, false);
+        new(size ?? BattleSizes.StrikeForce, "orks", detachments);
 
     public static Detachment Detachment(string name, int dp = 1, string? chapter = null) =>
         new($"id-{name}", name, "", dp, MissionArchetype.TakeAndHold, 4, GameMode.Standard) { RestrictedToChapter = chapter };

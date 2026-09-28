@@ -1,5 +1,4 @@
 @namespace Servitor.App.RulesData.Components
-@using Markdig
 @using Servitor.RulesData.Domain
 
 <section class="ability-list">
@@ -11,21 +10,16 @@
             <h4>@ability.Name</h4>
             @if (!string.IsNullOrWhiteSpace(ability.Description))
             {
-                <div class="ability-description">@RenderMarkdown(ability.Description)</div>
+                <div class="ability-description">@MarkdownRenderer.Render(ability.Description)</div>
             }
         </div>
     }
 </section>
 
 @code {
-    // Raw HTML in the source text is escaped rather than passed through, since the result is rendered as markup.
-    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder().UsePipeTables().DisableHtml().Build();
-
     [Parameter, EditorRequired]
     public string Title { get; set; } = "";
 
     [Parameter, EditorRequired]
     public IReadOnlyList<Ability> Abilities { get; set; } = [];
-
-    private static MarkupString RenderMarkdown(string markdown) => new(Markdown.ToHtml(markdown, Pipeline));
 }

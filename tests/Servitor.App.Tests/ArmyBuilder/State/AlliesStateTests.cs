@@ -112,7 +112,7 @@ public class AllyRuleTests
         new(Guid.NewGuid(), Units.Sheet("Inquisitor", factions: [unitFaction]), new UnitSize(1, 100)) { AlliedFaction = faction };
 
     private static ArmySetup Setup(params string[] allies) =>
-        new(BattleSizes.StrikeForce, "space-marines", [], false) { AllyFactionIds = allies };
+        new(BattleSizes.StrikeForce, "space-marines", []) { AllyFactionIds = allies };
 
     [Fact]
     public void An_allied_unit_from_a_faction_the_army_may_not_ally_with_is_reported()

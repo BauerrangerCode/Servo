@@ -55,6 +55,11 @@
     text-decoration: underline;
 }
 
+.unit-row:has(.add-unit:hover) .unit-name {
+    color: var(--crt-fg-bright);
+    text-decoration: underline;
+}
+
 .unit-models,
 .unit-points {
     font-size: 0.85rem;

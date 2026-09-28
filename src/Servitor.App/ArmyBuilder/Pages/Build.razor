@@ -5,6 +5,7 @@
 @using Servitor.App.ArmyBuilder.State
 @using Servitor.App.ArmyCollection.Resolution
 @using Servitor.App.ArmyCollection.State
+@using Servitor.App.RulesData.Components
 @using Servitor.App.RulesData.Loading
 @using Servitor.App.Shared.Backdrop
 @using Servitor.RulesData.Domain
@@ -27,11 +28,6 @@
 else if (_data is null || _data.Factions.Count == 0)
 {
     <p class="build-empty">No rules data yet. Use “Merge data” in the top bar to build it.</p>
-}
-else if (State.Setup.IsSkipped)
-{
-    <p class="build-skipped">Army setup skipped.</p>
-    <button type="button" @onclick="State.ResumeSetup">Back to setup</button>
 }
 else
 {
@@ -73,7 +69,7 @@ else
                     {
                         var selected = setup.Detachments.Any(d => d.Id == detachment.Id);
                         <li class="detachment @(selected ? "selected" : "")">
-                            <span class="detachment-name">@detachment.Name</span>
+                            <button type="button" class="detachment-name" @onclick="() => ToggleDetachmentRules(detachment.Id)">@detachment.Name</button>
                             <span class="detachment-dp">@detachment.DetachmentPoints DP</span>
                             @if (detachment.Archetype is { } archetype)
                             {
@@ -82,14 +78,18 @@ else
                             <span class="detachment-enh">@detachment.EnhancementCount enh</span>
                             @if (selected)
                             {
-                                <button type="button" @onclick="() => State.RemoveDetachment(detachment.Id)">Remove</button>
+                                <button type="button" class="detachment-action" @onclick="() => State.RemoveDetachment(detachment.Id)">Remove</button>
                             }
                             else
                             {
-                                <button type="button" disabled="@(DetachmentRules.CanAdd(setup, detachment) != DetachmentAddResult.Added)"
+                                <button type="button" class="detachment-action" disabled="@(DetachmentRules.CanAdd(setup, detachment) != DetachmentAddResult.Added)"
                                         @onclick="() => State.AddDetachment(detachment)">Add</button>
                             }
                         </li>
+                        @if (_expandedDetachments.Contains(detachment.Id))
+                        {
+                            <li class="detachment-rules">@MarkdownRenderer.Render(detachment.Legend)</li>
+                        }
                     }
                 </ul>
             </section>
@@ -108,8 +108,6 @@ else
             </section>
         }
     }
-
-    <button type="button" class="skip-setup" @onclick="State.SkipSetup">Skip for now</button>
 }
 
 @code {
@@ -117,6 +115,7 @@ else
     private bool _isLoaded;
     private string _saveName = "";
     private string? _saveMessage;
+    private readonly HashSet<string> _expandedDetachments = [];
 
     // The enhancements of the detachments the army has selected.
     private IReadOnlyList<Enhancement> AvailableEnhancements =>
@@ -172,6 +171,14 @@ else
         var saved = ArmySnapshot.Capture(name, State);
         await CollectionStore.SaveAsync(saved);
         _saveMessage = $"Saved \"{name}\" to My Collection.";
+    }
+
+    private void ToggleDetachmentRules(string detachmentId)
+    {
+        if (!_expandedDetachments.Remove(detachmentId))
+        {
+            _expandedDetachments.Add(detachmentId);
+        }
     }
 
     private static string ArchetypeLabel(MissionArchetype archetype) => archetype switch

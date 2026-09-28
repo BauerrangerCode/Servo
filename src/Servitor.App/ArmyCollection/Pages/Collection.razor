@@ -30,21 +30,25 @@ else
             var invalidReasons = _invalidArmies.GetValueOrDefault(army.Id);
             <li class="collection-entry @(invalidReasons is not null ? "collection-entry-invalid" : "")"
                 title="@(invalidReasons is null ? null : string.Join("; ", invalidReasons))">
-                <span class="collection-name">@army.Name</span>
-                <span class="collection-detail">@FactionName(army.FactionId) · @army.BattleSizeName · @army.Units.Count units</span>
-                <span class="collection-saved">Saved @army.SavedAtUtc.LocalDateTime.ToString("g")</span>
-                @if (_pendingDeleteId == army.Id)
-                {
-                    <span class="confirm-delete">Delete "@army.Name"?</span>
-                    <button type="button" class="confirm-delete-yes" @onclick="@(() => ConfirmDelete(army.Id))">Yes, delete</button>
-                    <button type="button" class="cancel-delete" @onclick="CancelDelete">Cancel</button>
-                }
-                else
-                {
-                    <button type="button" class="open-build" @onclick="@(() => OpenInBuild(army))">Open in Build</button>
-                    <button type="button" class="open-play" @onclick="@(() => OpenInPlay(army))">Open in Play</button>
-                    <button type="button" class="delete-button" @onclick="@(() => RequestDelete(army.Id))">Delete</button>
-                }
+                <div class="collection-info">
+                    <span class="collection-name">@army.Name</span>
+                    <span class="collection-detail">@FactionName(army.FactionId) · @army.BattleSizeName · @army.Units.Count units</span>
+                    <span class="collection-saved">Saved @army.SavedAtUtc.LocalDateTime.ToString("g")</span>
+                </div>
+                <div class="collection-actions">
+                    @if (_pendingDeleteId == army.Id)
+                    {
+                        <span class="confirm-delete">Delete "@army.Name"?</span>
+                        <button type="button" class="confirm-delete-yes" @onclick="@(() => ConfirmDelete(army.Id))">Yes, delete</button>
+                        <button type="button" class="cancel-delete" @onclick="CancelDelete">Cancel</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="open-build" @onclick="@(() => OpenInBuild(army))">Open in Build</button>
+                        <button type="button" class="open-play" @onclick="@(() => OpenInPlay(army))">Open in Play</button>
+                        <button type="button" class="delete-button" @onclick="@(() => RequestDelete(army.Id))">Delete</button>
+                    }
+                </div>
             </li>
         }
     </ul>

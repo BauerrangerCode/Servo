@@ -50,7 +50,7 @@ public class BuildTests : BunitContext
         [
             new MergedFactionRules("orks", "Orks", [], [], [],
             [
-                new Detachment("d1", "Waaagh Tribe", "", 3, MissionArchetype.TakeAndHold, 4, GameMode.Standard),
+                new Detachment("d1", "Waaagh Tribe", "Waaagh Tribe rules text.", 3, MissionArchetype.TakeAndHold, 4, GameMode.Standard),
                 new Detachment("d2", "Blitz Brigade", "", 1, MissionArchetype.PurgeTheFoe, 2, GameMode.Standard),
                 new Detachment("d3", "Boarding Thing", "", 0, null, 0, GameMode.BoardingActions),
             ]),
@@ -106,31 +106,35 @@ public class BuildTests : BunitContext
     }
 
     [Fact]
+    public void Clicking_a_detachment_name_toggles_its_rules_text()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        Assert.Empty(cut.FindAll(".detachment-rules"));
+
+        cut.FindAll(".detachment-name")[0].Click();
+        Assert.Equal("Waaagh Tribe rules text.", cut.Find(".detachment-rules").TextContent.Trim());
+
+        cut.FindAll(".detachment-name")[0].Click();
+        Assert.Empty(cut.FindAll(".detachment-rules"));
+    }
+
+    [Fact]
     public void Adding_detachments_updates_the_dp_progress_and_disables_what_no_longer_fits()
     {
         var cut = RenderBuild(Data());
         cut.FindAll(".chip")[0].Click(); // Incursion: 2 DP
         cut.Find(".faction-select").Change("orks");
 
-        Assert.False(cut.FindAll(".detachment button")[0].HasAttribute("disabled")); // a 3 DP detachment is fine as the only one
+        Assert.False(cut.FindAll(".detachment-action")[0].HasAttribute("disabled")); // a 3 DP detachment is fine as the only one
 
-        cut.FindAll(".detachment button")[1].Click();
+        cut.FindAll(".detachment-action")[1].Click();
 
         Assert.Contains("1/2 DP", cut.Find(".dp-progress").TextContent);
-        Assert.True(cut.FindAll(".detachment button")[0].HasAttribute("disabled")); // now it no longer fits
-        Assert.Equal("Remove", cut.FindAll(".detachment button")[1].TextContent);
-    }
-
-    [Fact]
-    public void Skip_for_now_leaves_the_setup_and_can_be_resumed()
-    {
-        var cut = RenderBuild(Data());
-
-        cut.Find(".skip-setup").Click();
-        Assert.Contains("Army setup skipped", cut.Markup);
-
-        cut.Find("button").Click();
-        Assert.Single(cut.FindAll(".skip-setup"));
+        Assert.True(cut.FindAll(".detachment-action")[0].HasAttribute("disabled")); // now it no longer fits
+        Assert.Equal("Remove", cut.FindAll(".detachment-action")[1].TextContent);
     }
 
     [Fact]

@@ -39,6 +39,11 @@ public static class SavedArmyResolver
 
         var errors = new List<string>();
 
+        // Reset first: IArmyBuilderState is shared across Import/Build/Play, so it may already hold this exact
+        // faction (e.g. from an earlier open of this same saved army, or from Build) — SelectFaction alone is a
+        // no-op for units/detachments when the faction doesn't change, which would otherwise make every add below
+        // fail as AlreadySelected/AtLimit against the leftover army instead of the one being reopened.
+        state.Reset();
         state.SelectFaction(saved.FactionId, saved.AllyFactionIds);
         state.SelectBattleSize(plan.BattleSize!);
 

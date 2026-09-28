@@ -100,19 +100,4 @@ public class ArmyBuilderStateTests
         state.SelectFaction("necrons");
         Assert.Empty(state.Setup.Detachments);
     }
-
-    [Fact]
-    public void Skipping_and_resuming_the_setup_is_tracked_and_raises_changed()
-    {
-        var state = new ArmyBuilderState();
-        var changes = 0;
-        state.Changed += () => changes++;
-
-        state.SkipSetup();
-        Assert.True(state.Setup.IsSkipped);
-
-        state.ResumeSetup();
-        Assert.False(state.Setup.IsSkipped);
-        Assert.Equal(2, changes);
-    }
 }

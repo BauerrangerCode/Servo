@@ -42,7 +42,6 @@ public interface IArmyBuilderState
     /// <param name="leaderUnitId">The leading character's unit id, or null to detach.</param>
     void SetLeader(Guid unitId, Guid? leaderUnitId);
 
-    void SkipSetup();
-
-    void ResumeSetup();
+    /// <summary>Discards the whole army in progress (setup and units), so a resolver can rebuild it from a clean slate.</summary>
+    void Reset();
 }

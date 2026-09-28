@@ -262,7 +262,7 @@ public static class RulesTextMapper
     private static Detachment BuildDetachment(RtDetachment entry) => new(
         entry.Id,
         entry.Name,
-        entry.Legend,
+        HtmlToMarkdown.Convert(entry.Legend),
         int.TryParse(entry.Dp, out var points) ? points : 0,
         ClassifyArchetype(entry.ForceDisposition),
         entry.Enhancements.Count,

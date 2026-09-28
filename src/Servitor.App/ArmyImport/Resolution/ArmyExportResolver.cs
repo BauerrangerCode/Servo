@@ -85,6 +85,11 @@ public static class ArmyExportResolver
             return ImportResolveResult.Failure(errors);
         }
 
+        // Reset first: IArmyBuilderState is shared across Import/Build/Play, so it may already hold this exact
+        // faction (e.g. an existing Build in progress) — SelectFaction alone is a no-op for units/detachments when
+        // the faction doesn't change, which would otherwise make every add below fail as AlreadySelected/AtLimit
+        // against the leftover army instead of the one being imported.
+        state.Reset();
         state.SelectFaction(factionId!, faction.AllyFactionIds);
         state.SelectBattleSize(ResolveBattleSize(export.TotalArmyPoints));
 
