@@ -44,3 +44,18 @@
 .dp-progress.over-budget {
     color: var(--crt-danger);
 }
+
+.save-name {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--crt-fg-dim);
+    border-radius: 0;
+    font-family: inherit;
+    padding: 0.2rem 0.4rem;
+    margin-right: 0.5rem;
+}
+
+.save-message {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}

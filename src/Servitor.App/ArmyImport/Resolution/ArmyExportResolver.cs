@@ -41,7 +41,7 @@ public static class ArmyExportResolver
         var detachments = new List<Detachment>();
         foreach (var name in export.DetachmentNames)
         {
-            var detachment = FindByName(faction.Detachments, d => d.Name, name);
+            var detachment = CatalogNameResolver.FindByName(faction.Detachments, d => d.Name, name);
             if (detachment is null)
             {
                 errors.Add($"Unknown detachment \"{name}\" for faction \"{faction.Name}\".");
@@ -58,7 +58,7 @@ public static class ArmyExportResolver
         var characterPlans = new List<(ParsedCharacter Parsed, Datasheet Datasheet, UnitSize Size, Enhancement? Enhancement)>();
         foreach (var character in export.Characters)
         {
-            var plan = ResolveUnitPlan(character.Name, 1, factionDatasheets, errors);
+            var plan = CatalogNameResolver.ResolveUnitPlan(character.Name, 1, factionDatasheets, errors);
             var enhancement = ResolveEnhancement(character.Enhancement, $"Char{character.CharacterNumber}: {character.Name}", availableEnhancements, errors);
             if (plan is { } p)
             {
@@ -69,7 +69,7 @@ public static class ArmyExportResolver
         var unitPlans = new List<(ParsedUnit Parsed, Datasheet Datasheet, UnitSize Size, Enhancement? Enhancement)>();
         foreach (var unit in export.Units)
         {
-            var plan = ResolveUnitPlan(unit.Name, unit.ModelCount, factionDatasheets, errors);
+            var plan = CatalogNameResolver.ResolveUnitPlan(unit.Name, unit.ModelCount, factionDatasheets, errors);
             var enhancement = ResolveEnhancement(unit.Enhancement, $"{unit.ModelCount}x {unit.Name}", availableEnhancements, errors);
             if (plan is { } p)
             {
@@ -187,33 +187,6 @@ public static class ArmyExportResolver
     private static BattleSize ResolveBattleSize(int totalPoints) =>
         BattleSizes.All.FirstOrDefault(b => totalPoints <= b.PointsLimit) ?? BattleSizes.Onslaught;
 
-    private static (Datasheet Datasheet, UnitSize Size)? ResolveUnitPlan(
-        string name, int modelCount, IReadOnlyList<Datasheet> datasheets, List<string> errors)
-    {
-        var candidates = datasheets.Where(d => NameNormalizer.Normalize(d.Name) == NameNormalizer.Normalize(name)).ToList();
-        if (candidates.Count == 0)
-        {
-            errors.Add($"Unknown unit \"{name}\" for this faction.");
-            return null;
-        }
-
-        // NameNormalizer strips the "[Legends]" suffix, so a Legends and non-Legends datasheet can share a
-        // normalized name — the plain-text export never marks Legends units, so the non-Legends one wins.
-        var datasheet = candidates.FirstOrDefault(d => !d.Name.Contains("[Legends]", StringComparison.OrdinalIgnoreCase)) ?? candidates[0];
-
-        var sizes = UnitSizes.For(datasheet);
-        var size = sizes.FirstOrDefault(s => s.Models == modelCount)
-            ?? (sizes is [{ Models: 0 } only] && modelCount == 1 ? only : null);
-
-        if (size is null)
-        {
-            errors.Add($"\"{name}\" has no {modelCount}-model size in the catalog.");
-            return null;
-        }
-
-        return (datasheet, size);
-    }
-
     private static Enhancement? ResolveEnhancement(
         ParsedEnhancement? parsed, string ownerLabel, IReadOnlyList<Enhancement> available, List<string> errors)
     {
@@ -222,7 +195,7 @@ public static class ArmyExportResolver
             return null;
         }
 
-        var match = FindByName(available, e => e.Name, parsed.Name);
+        var match = CatalogNameResolver.FindByName(available, e => e.Name, parsed.Name);
         if (match is null)
         {
             errors.Add($"Unknown enhancement \"{parsed.Name}\" on {ownerLabel}.");
@@ -244,6 +217,4 @@ public static class ArmyExportResolver
         return match;
     }
 
-    private static T? FindByName<T>(IEnumerable<T> items, Func<T, string> nameSelector, string wantedName) where T : class =>
-        items.FirstOrDefault(i => NameNormalizer.Normalize(nameSelector(i)) == NameNormalizer.Normalize(wantedName));
 }

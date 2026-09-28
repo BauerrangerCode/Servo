@@ -3,6 +3,8 @@
 @using Servitor.App.ArmyBuilder.Components
 @using Servitor.App.ArmyBuilder.Rules
 @using Servitor.App.ArmyBuilder.State
+@using Servitor.App.ArmyCollection.Resolution
+@using Servitor.App.ArmyCollection.State
 @using Servitor.App.RulesData.Loading
 @using Servitor.App.Shared.Backdrop
 @using Servitor.RulesData.Domain
@@ -12,6 +14,7 @@
 @inject IFactionBackdrop Backdrop
 @inject IDetachmentRuleProvider RuleProvider
 @inject IMergedRulesDataProvider RulesData
+@inject IArmyCollectionStore CollectionStore
 
 <PageTitle>Build</PageTitle>
 
@@ -93,6 +96,16 @@ else
 
             <UnitCatalogPanel Allies="AllyFactions" />
             <ArmyListPanel Enhancements="AvailableEnhancements" Allies="AllyFactions" />
+
+            <section class="build-step save-step">
+                <h2>Save</h2>
+                <input class="save-name" @bind="_saveName" @bind:event="oninput" placeholder="List name" />
+                <button type="button" class="save-button" @onclick="SaveToCollection">Save to My Collection</button>
+                @if (_saveMessage is not null)
+                {
+                    <p class="save-message">@_saveMessage</p>
+                }
+            </section>
         }
     }
 
@@ -102,6 +115,8 @@ else
 @code {
     private MergedRulesData? _data;
     private bool _isLoaded;
+    private string _saveName = "";
+    private string? _saveMessage;
 
     // The enhancements of the detachments the army has selected.
     private IReadOnlyList<Enhancement> AvailableEnhancements =>
@@ -146,7 +161,17 @@ else
         {
             State.SelectFaction(factionId, AlliesOf(factionId).Select(a => a.Slug).ToList());
             Backdrop.ShowFaction(factionId);
+            _saveName = _data?.Factions.FirstOrDefault(f => f.FactionId == factionId)?.Name ?? factionId;
+            _saveMessage = null;
         }
+    }
+
+    private async Task SaveToCollection()
+    {
+        var name = string.IsNullOrWhiteSpace(_saveName) ? (CurrentFaction?.Name ?? "Unnamed army") : _saveName.Trim();
+        var saved = ArmySnapshot.Capture(name, State);
+        await CollectionStore.SaveAsync(saved);
+        _saveMessage = $"Saved \"{name}\" to My Collection.";
     }
 
     private static string ArchetypeLabel(MissionArchetype archetype) => archetype switch

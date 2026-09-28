@@ -29,6 +29,8 @@
     font-size: 0.85rem;
 }
 
-.build-fallback {
+.build-fallback,
+.collection-link {
     display: inline-block;
+    margin-right: 1rem;
 }

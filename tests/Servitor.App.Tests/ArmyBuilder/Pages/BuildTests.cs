@@ -4,7 +4,9 @@ using Servitor.App.ArmyBuilder.Pages;
 using Servitor.App.ArmyBuilder.Rules;
 using Servitor.App.Tests.ArmyBuilder.Rules;
 using Servitor.App.ArmyBuilder.State;
+using Servitor.App.ArmyCollection.State;
 using Servitor.App.RulesData.Loading;
+using Servitor.App.Tests.ArmyCollection;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Shared.Backdrop;
 using Servitor.RulesData.Domain;
@@ -17,12 +19,14 @@ public class BuildTests : BunitContext
     private readonly FactionBackdrop _backdrop = new();
     private readonly ArmyBuilderState _state = new();
     private readonly FakeRuleProvider _rules = new();
+    private readonly FakeArmyCollectionStore _collectionStore = new();
 
     public BuildTests()
     {
         Services.AddSingleton<IFactionBackdrop>(_backdrop);
         Services.AddSingleton<IDatasheetCatalog>(new FakeDatasheetCatalog());
         Services.AddSingleton<IDetachmentRuleProvider>(_rules);
+        Services.AddSingleton<IArmyCollectionStore>(_collectionStore);
     }
 
     private sealed class FakeProvider(MergedRulesData? data) : IMergedRulesDataProvider
@@ -163,5 +167,31 @@ public class BuildTests : BunitContext
         RenderBuild(Data());
 
         Assert.Equal(1, _rules.Loads);
+    }
+
+    [Fact]
+    public void Choosing_a_faction_defaults_the_save_name_to_the_faction_name()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+
+        cut.Find(".faction-select").Change("orks");
+
+        Assert.Equal("Orks", cut.Find(".save-name").GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Saving_stores_a_snapshot_in_my_collection()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        cut.Find(".save-button").Click();
+
+        var saved = Assert.Single(_collectionStore.Armies);
+        Assert.Equal("Orks", saved.Name);
+        Assert.Equal("orks", saved.FactionId);
+        Assert.Contains("Saved", cut.Find(".save-message").TextContent);
     }
 }

@@ -1,0 +1,38 @@
+.collection-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+}
+
+.collection-entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--crt-fg-dim);
+    margin-bottom: 0.4rem;
+}
+
+.collection-name {
+    font-weight: bold;
+    min-width: 10rem;
+}
+
+.collection-detail,
+.collection-saved {
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.collection-errors {
+    max-width: 40rem;
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+    color: var(--crt-danger);
+    font-size: 0.85rem;
+}
+
+.import-fallback {
+    display: inline-block;
+}
