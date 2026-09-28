@@ -70,6 +70,18 @@ public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = nul
         Changed?.Invoke();
     }
 
+    public void SetWarlord(Guid unitId)
+    {
+        Units = Units.Select(u => u with { IsWarlord = u.Id == unitId }).ToList();
+        Changed?.Invoke();
+    }
+
+    public void SetLeader(Guid unitId, Guid? leaderUnitId)
+    {
+        Units = Units.Select(u => u.Id == unitId ? u with { LeaderUnitId = leaderUnitId } : u).ToList();
+        Changed?.Invoke();
+    }
+
     public void RemoveUnit(Guid unitId)
     {
         Units = Units.Where(u => u.Id != unitId).ToList();

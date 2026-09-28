@@ -36,6 +36,12 @@ public interface IArmyBuilderState
 
     void SetEnhancement(Guid unitId, Enhancement? enhancement);
 
+    /// <summary>Makes the given unit the army's Warlord, clearing the flag from any previously-set unit.</summary>
+    void SetWarlord(Guid unitId);
+
+    /// <param name="leaderUnitId">The leading character's unit id, or null to detach.</param>
+    void SetLeader(Guid unitId, Guid? leaderUnitId);
+
     void SkipSetup();
 
     void ResumeSetup();

@@ -21,6 +21,14 @@
     opacity: 0.8;
 }
 
+.import-errors {
+    max-width: 40rem;
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+    color: var(--crt-danger);
+    font-size: 0.85rem;
+}
+
 .build-fallback {
     display: inline-block;
 }

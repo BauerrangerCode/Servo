@@ -1,4 +1,12 @@
 @page "/"
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.ArmyImport.Parsing
+@using Servitor.App.ArmyImport.Resolution
+@using Servitor.App.RulesData.Loading
+@inject IArmyBuilderState State
+@inject IMergedRulesDataProvider RulesData
+@inject IDatasheetCatalog Catalog
+@inject NavigationManager Nav
 
 <PageTitle>Import</PageTitle>
 
@@ -9,12 +17,52 @@
     <textarea id="import-text" class="import-textarea" @bind="_pastedText" @bind:event="oninput"
               placeholder="Paste a Warscribe army list export here…"></textarea>
 
-    <button type="button" class="import-play" disabled title="Parsing lands with E4.2">Import &amp; Play</button>
-    <p class="import-note">Parsing isn't implemented yet — this button unlocks once the Warscribe format parser (E4.2) lands.</p>
+    <button type="button" class="import-play" disabled="@(_isImporting || string.IsNullOrWhiteSpace(_pastedText))" @onclick="ImportAndPlay">
+        @(_isImporting ? "Importing…" : "Import & Play")
+    </button>
+
+    @if (_errors.Count > 0)
+    {
+        <ul class="import-errors">
+            @foreach (var error in _errors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    }
 </section>
 
 <a href="build" class="build-fallback">Build one instead</a>
 
 @code {
     private string _pastedText = "";
+    private bool _isImporting;
+    private List<string> _errors = [];
+
+    private async Task ImportAndPlay()
+    {
+        _errors = [];
+        _isImporting = true;
+
+        var parseResult = WarscribeExportParser.Parse(_pastedText);
+        if (!parseResult.IsSuccess)
+        {
+            _errors = [.. parseResult.Errors];
+            _isImporting = false;
+            return;
+        }
+
+        var resolveResult = await ArmyExportResolver.ResolveAsync(parseResult.Export!, State, RulesData, Catalog);
+        if (!resolveResult.IsSuccess)
+        {
+            _errors = [.. resolveResult.Errors];
+            _isImporting = false;
+            return;
+        }
+
+        // Play (E6) is still an empty placeholder page (built last, per the backlog's delivery order) — Build
+        // (E3) is the only screen that can currently show the imported list, so that's where a successful import
+        // lands; the button stays labelled "Import & Play" since that will resolve to /play once E6.4 exists.
+        Nav.NavigateTo("build");
+    }
 }
