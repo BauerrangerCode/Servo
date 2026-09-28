@@ -48,7 +48,10 @@ public class BuildTests : BunitContext
         [],
         [],
         [
-            new MergedFactionRules("orks", "Orks", [], [], [],
+            new MergedFactionRules("orks", "Orks", [], [],
+            [
+                new Enhancement("e1", "Da Biggest Boss", "Flavor.", "The bearer has an <b>Invuln save</b>.", 15, "Waaagh Tribe", false, null),
+            ],
             [
                 new Detachment("d1", "Waaagh Tribe", "Waaagh Tribe rules text.", 3, MissionArchetype.TakeAndHold, 4, GameMode.Standard)
                 {
@@ -137,6 +140,34 @@ public class BuildTests : BunitContext
         cut.FindAll(".detachment-name")[1].Click(); // "Blitz Brigade" — empty Legend, no RuleText in the fixture
 
         Assert.Empty(cut.Find(".detachment-rules").QuerySelectorAll(".detachment-rule-text"));
+    }
+
+    [Fact]
+    public void The_detachment_rules_panel_also_lists_its_enhancements()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        cut.FindAll(".detachment-name")[0].Click(); // "Waaagh Tribe" — has one enhancement in the fixture
+
+        var enhancement = cut.Find(".detachment-enhancement");
+        Assert.Contains("Da Biggest Boss", enhancement.TextContent);
+        Assert.Contains("15 pts", enhancement.TextContent);
+        Assert.Contains("Invuln save", enhancement.TextContent);
+        Assert.Contains("<b>Invuln save</b>", enhancement.InnerHtml);
+    }
+
+    [Fact]
+    public void A_detachment_with_no_enhancements_shows_no_enhancement_section()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        cut.FindAll(".detachment-name")[1].Click(); // "Blitz Brigade" — no enhancements in the fixture
+
+        Assert.Empty(cut.Find(".detachment-rules").QuerySelectorAll(".detachment-enhancements"));
     }
 
     [Fact]

@@ -94,6 +94,21 @@ else
                                 {
                                     <div class="detachment-rule-text">@MarkdownRenderer.Render(ruleText)</div>
                                 }
+                                @{ var enhancements = EnhancementsOf(current, detachment); }
+                                @if (enhancements.Count > 0)
+                                {
+                                    <div class="detachment-enhancements">
+                                        <h4>Enhancements</h4>
+                                        @foreach (var enhancement in enhancements)
+                                        {
+                                            <div class="detachment-enhancement">
+                                                <span class="enhancement-name">@enhancement.Name</span>
+                                                <span class="enhancement-cost">@enhancement.Cost pts</span>
+                                                <div class="enhancement-description">@((MarkupString)enhancement.DescriptionHtml)</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </li>
                         }
                     }
@@ -224,6 +239,9 @@ else
         _pendingOverwriteName = null;
         _pendingOverwriteId = null;
     }
+
+    private static IReadOnlyList<Enhancement> EnhancementsOf(MergedFactionRules faction, Detachment detachment) =>
+        faction.Enhancements.Where(e => e.Detachment == detachment.Name).ToList();
 
     private void ToggleDetachmentRules(string detachmentId)
     {
