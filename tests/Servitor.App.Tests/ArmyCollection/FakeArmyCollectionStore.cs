@@ -13,6 +13,7 @@ internal sealed class FakeArmyCollectionStore : IArmyCollectionStore
 
     public Task SaveAsync(SavedArmy army, CancellationToken cancellationToken = default)
     {
+        _armies.RemoveAll(a => a.Id == army.Id);
         _armies.Add(army);
         return Task.CompletedTask;
     }

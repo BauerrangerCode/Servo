@@ -55,6 +55,11 @@
     opacity: 0.85;
 }
 
+.detachment-flavor {
+    font-style: italic;
+    margin-bottom: 0.4rem;
+}
+
 .detachment-tag {
     font-size: 0.8rem;
     opacity: 0.8;
@@ -77,4 +82,9 @@
 .save-message {
     font-size: 0.85rem;
     opacity: 0.8;
+}
+
+.modal-confirm {
+    border-color: var(--crt-danger);
+    color: var(--crt-danger);
 }

@@ -50,7 +50,10 @@ public class BuildTests : BunitContext
         [
             new MergedFactionRules("orks", "Orks", [], [], [],
             [
-                new Detachment("d1", "Waaagh Tribe", "Waaagh Tribe rules text.", 3, MissionArchetype.TakeAndHold, 4, GameMode.Standard),
+                new Detachment("d1", "Waaagh Tribe", "Waaagh Tribe rules text.", 3, MissionArchetype.TakeAndHold, 4, GameMode.Standard)
+                {
+                    RuleText = "**Da Biggest and da Best**\n\nThe actual rule text.",
+                },
                 new Detachment("d2", "Blitz Brigade", "", 1, MissionArchetype.PurgeTheFoe, 2, GameMode.Standard),
                 new Detachment("d3", "Boarding Thing", "", 0, null, 0, GameMode.BoardingActions),
             ]),
@@ -106,7 +109,7 @@ public class BuildTests : BunitContext
     }
 
     [Fact]
-    public void Clicking_a_detachment_name_toggles_its_rules_text()
+    public void Clicking_a_detachment_name_toggles_its_flavor_text_and_its_actual_rule_text()
     {
         var cut = RenderBuild(Data());
         cut.FindAll(".chip")[1].Click();
@@ -115,10 +118,25 @@ public class BuildTests : BunitContext
         Assert.Empty(cut.FindAll(".detachment-rules"));
 
         cut.FindAll(".detachment-name")[0].Click();
-        Assert.Equal("Waaagh Tribe rules text.", cut.Find(".detachment-rules").TextContent.Trim());
+        var rules = cut.Find(".detachment-rules");
+        Assert.Contains("Waaagh Tribe rules text.", rules.TextContent);
+        Assert.Contains("Da Biggest and da Best", rules.TextContent);
+        Assert.Contains("The actual rule text.", rules.TextContent);
 
         cut.FindAll(".detachment-name")[0].Click();
         Assert.Empty(cut.FindAll(".detachment-rules"));
+    }
+
+    [Fact]
+    public void A_detachment_with_no_rule_text_shows_only_the_flavor_line()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        cut.FindAll(".detachment-name")[1].Click(); // "Blitz Brigade" — empty Legend, no RuleText in the fixture
+
+        Assert.Empty(cut.Find(".detachment-rules").QuerySelectorAll(".detachment-rule-text"));
     }
 
     [Fact]
@@ -197,5 +215,59 @@ public class BuildTests : BunitContext
         Assert.Equal("Orks", saved.Name);
         Assert.Equal("orks", saved.FactionId);
         Assert.Contains("Saved", cut.Find(".save-message").TextContent);
+    }
+
+    [Fact]
+    public async Task Saving_with_a_duplicate_name_asks_before_overwriting()
+    {
+        var existing = new SavedArmy(Guid.NewGuid(), "Orks", DateTimeOffset.UtcNow, "orks", "Incursion", [], [], []);
+        await _collectionStore.SaveAsync(existing);
+
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        cut.Find(".save-button").Click();
+
+        Assert.Single(_collectionStore.Armies); // not yet overwritten
+        Assert.Contains("already saved", cut.Find(".modal-box").TextContent);
+    }
+
+    [Fact]
+    public async Task Confirming_the_overwrite_replaces_the_existing_entry_in_place()
+    {
+        var existingId = Guid.NewGuid();
+        var existing = new SavedArmy(existingId, "Orks", DateTimeOffset.UtcNow, "orks", "Incursion", [], [], []);
+        await _collectionStore.SaveAsync(existing);
+
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click(); // Strike Force
+        cut.Find(".faction-select").Change("orks");
+
+        cut.Find(".save-button").Click();
+        cut.Find(".modal-confirm").Click();
+
+        var saved = Assert.Single(_collectionStore.Armies);
+        Assert.Equal(existingId, saved.Id);
+        Assert.Equal("Strike Force", saved.BattleSizeName);
+        Assert.Contains("Saved", cut.Find(".save-message").TextContent);
+    }
+
+    [Fact]
+    public async Task Cancelling_the_overwrite_leaves_the_existing_entry_untouched()
+    {
+        var existing = new SavedArmy(Guid.NewGuid(), "Orks", DateTimeOffset.UtcNow, "orks", "Incursion", [], [], []);
+        await _collectionStore.SaveAsync(existing);
+
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+
+        cut.Find(".save-button").Click();
+        cut.Find(".modal-cancel").Click();
+
+        var remaining = Assert.Single(_collectionStore.Armies);
+        Assert.Equal("Incursion", remaining.BattleSizeName);
+        Assert.Empty(cut.FindAll(".modal-box"));
     }
 }

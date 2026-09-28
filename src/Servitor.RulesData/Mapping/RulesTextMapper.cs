@@ -269,7 +269,15 @@ public static class RulesTextMapper
         ClassifyGameMode(entry.Type))
     {
         RestrictedToChapter = ChapterRestrictionParser.Find(entry.Abilities.Select(a => a.Description).Append(entry.Legend)),
+        RuleText = BuildDetachmentRuleText(entry.Abilities),
     };
+
+    // The detachment's own "legend" field (see BuildDetachment above) is only a short flavor quote; the actual rule
+    // — what the detachment does mechanically — is one or more named abilities the source lists separately.
+    private static string? BuildDetachmentRuleText(IReadOnlyList<RtAbilityEntry> abilities) =>
+        abilities.Count == 0
+            ? null
+            : string.Join("\n\n", abilities.Select(a => $"**{a.Name}**\n\n{HtmlToMarkdown.Convert(a.Description)}"));
 
     private static MissionArchetype? ClassifyArchetype(string label) => label switch
     {

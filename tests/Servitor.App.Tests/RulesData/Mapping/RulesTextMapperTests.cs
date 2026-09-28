@@ -66,6 +66,21 @@ public class RulesTextMapperTests
     }
 
     [Fact]
+    public void Maps_the_detachments_own_rule_text_separately_from_its_flavor_legend()
+    {
+        var result = RulesTextMapper.MapFaction(FactionFile("orks"));
+
+        var blitz = Assert.Single(result.Detachments, d => d.Name == "Blitz Brigade");
+        Assert.Contains("THUNDERING MASS", blitz.Legend);
+        Assert.DoesNotMatch("<[a-zA-Z/]", blitz.Legend);
+
+        Assert.NotNull(blitz.RuleText);
+        Assert.Contains("Unstoppable Momentum", blitz.RuleText);
+        Assert.Contains("re-roll charge rolls", blitz.RuleText);
+        Assert.DoesNotMatch("<[a-zA-Z/]", blitz.RuleText);
+    }
+
+    [Fact]
     public void Boarding_actions_detachments_are_marked_as_such()
     {
         var result = RulesTextMapper.MapFaction(FactionFile("orks"));

@@ -66,4 +66,21 @@ public class ArmyCollectionStoreTests
 
         Assert.Single(await store.ListAsync());
     }
+
+    [Fact]
+    public async Task Saving_an_army_with_the_same_id_replaces_it_instead_of_duplicating()
+    {
+        var store = new ArmyCollectionStore(new InMemoryRulesDataStore());
+        var original = Sample("First");
+        await store.SaveAsync(original);
+        await store.SaveAsync(Sample("Second"));
+
+        var overwritten = original with { BattleSizeName = "Onslaught" };
+        await store.SaveAsync(overwritten);
+
+        var armies = await store.ListAsync();
+        Assert.Equal(2, armies.Count);
+        var replaced = Assert.Single(armies, a => a.Id == original.Id);
+        Assert.Equal("Onslaught", replaced.BattleSizeName);
+    }
 }

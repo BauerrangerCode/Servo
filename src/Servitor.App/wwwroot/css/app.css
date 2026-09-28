@@ -189,6 +189,36 @@ hr { border: 0; border-top: 1px solid var(--crt-fg-faint); }
     gap: 0.5rem;
 }
 
+/* Generic confirm/error dialog chrome, reused by any feature that needs a modal popup. */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-box {
+    max-width: 30rem;
+    padding: 1rem 1.25rem;
+    background: var(--crt-panel);
+    border: 1px solid var(--crt-danger);
+    box-shadow: var(--crt-glow);
+}
+
+.modal-box h2 {
+    margin-top: 0;
+    color: var(--crt-danger);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
 main {
     flex: 1;
     padding: 1rem;

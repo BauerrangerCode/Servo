@@ -19,4 +19,10 @@ public sealed record Detachment(
     /// restriction. Read from the detachment's rules text, the only place the source states it.
     /// </summary>
     public string? RestrictedToChapter { get; init; }
+
+    /// <summary>
+    /// The detachment's actual rule (its named ability/abilities, e.g. "Unstoppable Momentum"), as Markdown — distinct
+    /// from <see cref="Legend"/>, which is only the short italic flavor quote. Null for the rare detachment with none.
+    /// </summary>
+    public string? RuleText { get; init; }
 }

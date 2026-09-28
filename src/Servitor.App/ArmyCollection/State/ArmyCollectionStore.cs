@@ -9,9 +9,10 @@ public sealed class ArmyCollectionStore(IRulesDataStore store) : IArmyCollection
     public async Task<IReadOnlyList<SavedArmy>> ListAsync(CancellationToken cancellationToken = default) =>
         await store.LoadAsync<List<SavedArmy>>(Key, cancellationToken) ?? [];
 
+    /// <summary>Upserts by id: replaces a saved army with the same id, or appends a new one.</summary>
     public async Task SaveAsync(SavedArmy army, CancellationToken cancellationToken = default)
     {
-        var armies = (await ListAsync(cancellationToken)).ToList();
+        var armies = (await ListAsync(cancellationToken)).Where(a => a.Id != army.Id).ToList();
         armies.Add(army);
         await store.SaveAsync(Key, armies, cancellationToken);
     }

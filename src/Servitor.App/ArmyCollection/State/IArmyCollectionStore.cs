@@ -5,6 +5,7 @@ public interface IArmyCollectionStore
 {
     Task<IReadOnlyList<SavedArmy>> ListAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Upserts by id: replaces a saved army with the same id, or appends a new one.</summary>
     Task SaveAsync(SavedArmy army, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
