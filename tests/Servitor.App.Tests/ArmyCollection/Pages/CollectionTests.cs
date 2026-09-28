@@ -101,4 +101,46 @@ public class CollectionTests : BunitContext
         var nav = Services.GetRequiredService<NavigationManager>();
         Assert.DoesNotContain("/build", nav.Uri);
     }
+
+    [Fact]
+    public async Task Delete_requires_a_second_confirming_click()
+    {
+        var store = new FakeArmyCollectionStore();
+        await store.SaveAsync(Sample("My Waaagh"));
+
+        var cut = RenderCollection(store);
+        cut.Find(".delete-button").Click();
+
+        Assert.Empty(cut.FindAll(".delete-button"));
+        Assert.Single(store.Armies);
+        Assert.Contains("Delete", cut.Find(".confirm-delete").TextContent);
+    }
+
+    [Fact]
+    public async Task Cancelling_the_confirmation_keeps_the_army()
+    {
+        var store = new FakeArmyCollectionStore();
+        await store.SaveAsync(Sample("My Waaagh"));
+
+        var cut = RenderCollection(store);
+        cut.Find(".delete-button").Click();
+        cut.Find(".cancel-delete").Click();
+
+        Assert.Single(store.Armies);
+        Assert.Single(cut.FindAll(".delete-button"));
+    }
+
+    [Fact]
+    public async Task Confirming_deletes_the_army_and_refreshes_the_list()
+    {
+        var store = new FakeArmyCollectionStore();
+        await store.SaveAsync(Sample("My Waaagh"));
+
+        var cut = RenderCollection(store);
+        cut.Find(".delete-button").Click();
+        cut.Find(".confirm-delete-yes").Click();
+
+        Assert.Empty(store.Armies);
+        Assert.Contains("No saved armies yet", cut.Markup);
+    }
 }

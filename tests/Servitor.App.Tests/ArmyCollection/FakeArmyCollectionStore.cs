@@ -16,4 +16,10 @@ internal sealed class FakeArmyCollectionStore : IArmyCollectionStore
         _armies.Add(army);
         return Task.CompletedTask;
     }
+
+    public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        _armies.RemoveAll(a => a.Id == id);
+        return Task.CompletedTask;
+    }
 }

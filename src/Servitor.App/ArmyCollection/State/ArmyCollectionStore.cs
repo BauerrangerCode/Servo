@@ -15,4 +15,10 @@ public sealed class ArmyCollectionStore(IRulesDataStore store) : IArmyCollection
         armies.Add(army);
         await store.SaveAsync(Key, armies, cancellationToken);
     }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var armies = (await ListAsync(cancellationToken)).Where(a => a.Id != id).ToList();
+        await store.SaveAsync(Key, armies, cancellationToken);
+    }
 }

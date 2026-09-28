@@ -31,8 +31,18 @@ else
                 <span class="collection-name">@army.Name</span>
                 <span class="collection-detail">@FactionName(army.FactionId) · @army.BattleSizeName · @army.Units.Count units</span>
                 <span class="collection-saved">Saved @army.SavedAtUtc.LocalDateTime.ToString("g")</span>
-                <button type="button" @onclick="@(() => Open(army, "build"))">Open in Build</button>
-                <button type="button" @onclick="@(() => Open(army, "play"))">Open in Play</button>
+                @if (_pendingDeleteId == army.Id)
+                {
+                    <span class="confirm-delete">Delete "@army.Name"?</span>
+                    <button type="button" class="confirm-delete-yes" @onclick="@(() => ConfirmDelete(army.Id))">Yes, delete</button>
+                    <button type="button" class="cancel-delete" @onclick="CancelDelete">Cancel</button>
+                }
+                else
+                {
+                    <button type="button" @onclick="@(() => Open(army, "build"))">Open in Build</button>
+                    <button type="button" @onclick="@(() => Open(army, "play"))">Open in Play</button>
+                    <button type="button" class="delete-button" @onclick="@(() => RequestDelete(army.Id))">Delete</button>
+                }
             </li>
         }
     </ul>
@@ -55,6 +65,7 @@ else
     private MergedRulesData? _data;
     private bool _isLoaded;
     private List<string> _errors = [];
+    private Guid? _pendingDeleteId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,5 +88,16 @@ else
         }
 
         Nav.NavigateTo(destination);
+    }
+
+    private void RequestDelete(Guid id) => _pendingDeleteId = id;
+
+    private void CancelDelete() => _pendingDeleteId = null;
+
+    private async Task ConfirmDelete(Guid id)
+    {
+        await CollectionStore.DeleteAsync(id);
+        _armies = await CollectionStore.ListAsync();
+        _pendingDeleteId = null;
     }
 }

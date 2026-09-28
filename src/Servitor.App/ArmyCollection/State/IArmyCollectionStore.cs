@@ -6,4 +6,6 @@ public interface IArmyCollectionStore
     Task<IReadOnlyList<SavedArmy>> ListAsync(CancellationToken cancellationToken = default);
 
     Task SaveAsync(SavedArmy army, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

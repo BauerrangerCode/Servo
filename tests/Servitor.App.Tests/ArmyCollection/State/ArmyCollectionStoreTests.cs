@@ -39,4 +39,31 @@ public class ArmyCollectionStoreTests
         var armies = await store.ListAsync();
         Assert.Equal(["First", "Second"], armies.Select(a => a.Name));
     }
+
+    [Fact]
+    public async Task Deleting_an_army_removes_only_that_one()
+    {
+        var store = new ArmyCollectionStore(new InMemoryRulesDataStore());
+        var first = Sample("First");
+        var second = Sample("Second");
+        await store.SaveAsync(first);
+        await store.SaveAsync(second);
+
+        await store.DeleteAsync(first.Id);
+
+        var armies = await store.ListAsync();
+        var remaining = Assert.Single(armies);
+        Assert.Equal("Second", remaining.Name);
+    }
+
+    [Fact]
+    public async Task Deleting_an_unknown_id_is_a_no_op()
+    {
+        var store = new ArmyCollectionStore(new InMemoryRulesDataStore());
+        await store.SaveAsync(Sample("First"));
+
+        await store.DeleteAsync(Guid.NewGuid());
+
+        Assert.Single(await store.ListAsync());
+    }
 }

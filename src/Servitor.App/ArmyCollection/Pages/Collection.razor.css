@@ -36,3 +36,13 @@
 .import-fallback {
     display: inline-block;
 }
+
+.delete-button,
+.confirm-delete-yes {
+    border-color: var(--crt-danger);
+    color: var(--crt-danger);
+}
+
+.confirm-delete {
+    color: var(--crt-danger);
+}
