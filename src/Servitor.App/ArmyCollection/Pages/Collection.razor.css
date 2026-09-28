@@ -46,3 +46,40 @@
 .confirm-delete {
     color: var(--crt-danger);
 }
+
+.collection-entry-invalid {
+    background: var(--crt-danger-bg);
+    border-color: var(--crt-danger);
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-box {
+    max-width: 30rem;
+    padding: 1rem 1.25rem;
+    background: var(--crt-panel);
+    border: 1px solid var(--crt-danger);
+    box-shadow: var(--crt-glow);
+}
+
+.modal-box h2 {
+    margin-top: 0;
+    color: var(--crt-danger);
+}
+
+.modal-box ul {
+    color: var(--crt-danger);
+    font-size: 0.85rem;
+}
+
+.modal-continue {
+    margin-top: 0.5rem;
+}

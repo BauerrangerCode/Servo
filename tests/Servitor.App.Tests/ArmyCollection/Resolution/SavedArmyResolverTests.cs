@@ -106,4 +106,29 @@ public class SavedArmyResolverTests
         Assert.False(result.IsSuccess);
         Assert.NotEmpty(result.Errors);
     }
+
+    [Fact]
+    public async Task ValidateAsync_reports_the_same_errors_without_touching_state()
+    {
+        var saved = new SavedArmy(
+            Guid.NewGuid(), "Test", DateTimeOffset.UtcNow, "orks", "Strike Force", [], ["Unknown Detachment"], []);
+
+        var errors = await SavedArmyResolver.ValidateAsync(
+            saved, new FakeRulesDataProvider(RulesData()), new FakeDatasheetCatalog(RulesData().Datasheets));
+
+        Assert.Contains(errors, e => e.Contains("Unknown detachment"));
+    }
+
+    [Fact]
+    public async Task ValidateAsync_finds_nothing_wrong_with_a_valid_saved_army()
+    {
+        var saved = new SavedArmy(
+            Guid.NewGuid(), "Test", DateTimeOffset.UtcNow, "orks", "Strike Force", [], ["Green Tide"],
+            [new SavedUnit(Guid.NewGuid(), "Painboy", 0, WargearSelection.Default, null, null, false, null)]);
+
+        var errors = await SavedArmyResolver.ValidateAsync(
+            saved, new FakeRulesDataProvider(RulesData()), new FakeDatasheetCatalog(RulesData().Datasheets));
+
+        Assert.Empty(errors);
+    }
 }

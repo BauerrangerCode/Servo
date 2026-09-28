@@ -27,20 +27,32 @@ public class CollectionTests : BunitContext
         public Task StoreAsync(MergedRulesData value, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
-    private static Datasheet Sheet(string name) => new(
-        name, "Orks", 45, new StatLine("6\"", "3", "5+", null, "1", "7+", "2"), [], [], [], [], [], [], null, [])
+    private static Datasheet Sheet(string name, string faction, string factionSlug) => new(
+        name, faction, 45, new StatLine("6\"", "3", "5+", null, "1", "7+", "2"), [], [], [], [], [], [], null, [])
     {
-        FactionSlugs = ["orks"],
+        FactionSlugs = [factionSlug],
     };
 
     private static readonly Detachment GreenTide = new("d1", "Green Tide", "", 1, MissionArchetype.TakeAndHold, 2, GameMode.Standard);
+    private static readonly Detachment AwakenedDynasty = new("d2", "Awakened Dynasty", "", 1, MissionArchetype.TakeAndHold, 2, GameMode.Standard);
 
     private static MergedRulesData RulesData() => new(
-        "v1", DateTimeOffset.UnixEpoch, [Sheet("Painboy")], [], [new MergedFactionRules("orks", "Orks", [], [], [], [GreenTide])], []);
+        "v1", DateTimeOffset.UnixEpoch,
+        [Sheet("Painboy", "Orks", "orks"), Sheet("Necron Warriors", "Necrons", "necrons")],
+        [],
+        [
+            new MergedFactionRules("orks", "Orks", [], [], [], [GreenTide]),
+            new MergedFactionRules("necrons", "Necrons", [], [], [], [AwakenedDynasty]),
+        ],
+        []);
 
     private static SavedArmy Sample(string name) => new(
         Guid.NewGuid(), name, DateTimeOffset.UtcNow, "orks", "Strike Force", [], ["Green Tide"],
         [new SavedUnit(Guid.NewGuid(), "Painboy", 0, WargearSelection.Default, null, null, false, null)]);
+
+    private static SavedArmy SampleNecron(string name) => new(
+        Guid.NewGuid(), name, DateTimeOffset.UtcNow, "necrons", "Strike Force", [], ["Awakened Dynasty"],
+        [new SavedUnit(Guid.NewGuid(), "Necron Warriors", 0, WargearSelection.Default, null, null, false, null)]);
 
     private IRenderedComponent<Collection> RenderCollection(IArmyCollectionStore store, ArmyBuilderState? state = null)
     {
@@ -81,7 +93,7 @@ public class CollectionTests : BunitContext
         var state = new ArmyBuilderState();
 
         var cut = RenderCollection(store, state);
-        cut.Find(".collection-entry button").Click();
+        cut.Find(".open-build").Click();
 
         var nav = Services.GetRequiredService<NavigationManager>();
         Assert.Equal("orks", state.Setup.FactionId);
@@ -89,17 +101,92 @@ public class CollectionTests : BunitContext
     }
 
     [Fact]
-    public async Task A_stale_reference_shows_errors_and_does_not_navigate()
+    public async Task Opening_a_saved_army_in_play_loads_it_and_navigates()
+    {
+        var store = new FakeArmyCollectionStore();
+        await store.SaveAsync(Sample("My Waaagh"));
+        var state = new ArmyBuilderState();
+
+        var cut = RenderCollection(store, state);
+        cut.Find(".open-play").Click();
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        Assert.Equal("orks", state.Setup.FactionId);
+        Assert.EndsWith("/play", nav.Uri);
+    }
+
+    [Fact]
+    public async Task A_stale_reference_via_open_in_play_shows_inline_errors_and_does_not_navigate()
     {
         var store = new FakeArmyCollectionStore();
         await store.SaveAsync(Sample("My Waaagh") with { DetachmentNames = ["Unknown Detachment"] });
 
         var cut = RenderCollection(store);
-        cut.Find(".collection-entry button").Click();
+        cut.Find(".open-play").Click();
 
         Assert.Contains("Unknown detachment", cut.Find(".collection-errors").TextContent);
         var nav = Services.GetRequiredService<NavigationManager>();
+        Assert.DoesNotContain("/play", nav.Uri);
+    }
+
+    [Fact]
+    public async Task A_stale_reference_via_open_in_build_shows_a_popup_first_then_still_continues_to_build()
+    {
+        var store = new FakeArmyCollectionStore();
+        await store.SaveAsync(Sample("My Waaagh") with { DetachmentNames = ["Unknown Detachment"] });
+
+        var cut = RenderCollection(store);
+        cut.Find(".open-build").Click();
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        Assert.Contains("Unknown detachment", cut.Find(".modal-box").TextContent);
         Assert.DoesNotContain("/build", nav.Uri);
+
+        cut.Find(".modal-continue").Click();
+
+        Assert.EndsWith("/build", nav.Uri);
+    }
+
+    [Fact]
+    public async Task An_army_with_a_stale_reference_is_shown_in_red()
+    {
+        var store = new FakeArmyCollectionStore();
+        await store.SaveAsync(Sample("Broken") with { DetachmentNames = ["Unknown Detachment"] });
+        await store.SaveAsync(Sample("Fine"));
+
+        var cut = RenderCollection(store);
+
+        var entries = cut.FindAll(".collection-entry");
+        var broken = Assert.Single(entries, e => e.TextContent.Contains("Broken"));
+        var fine = Assert.Single(entries, e => e.TextContent.Contains("Fine"));
+        Assert.Contains("collection-entry-invalid", broken.ClassList);
+        Assert.DoesNotContain("collection-entry-invalid", fine.ClassList);
+    }
+
+    [Fact]
+    public async Task Opening_the_remaining_army_after_deleting_a_different_one_loads_the_right_army()
+    {
+        var store = new FakeArmyCollectionStore();
+        var necrons = SampleNecron("Necron Army A");
+        var orks = Sample("Orks Army B");
+        await store.SaveAsync(necrons);
+        await store.SaveAsync(orks);
+        var state = new ArmyBuilderState();
+
+        var cut = RenderCollection(store, state);
+
+        // Delete the Necron army first, exactly like a user deleting one saved list before reopening another.
+        var necronEntry = cut.FindAll(".collection-entry").Single(e => e.TextContent.Contains("Necron Army A"));
+        necronEntry.QuerySelector(".delete-button")!.Click();
+        cut.Find(".confirm-delete-yes").Click();
+        Assert.Single(store.Armies);
+
+        cut.Find(".open-play").Click();
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        Assert.Equal("orks", state.Setup.FactionId);
+        Assert.Equal("Painboy", state.Units.Single().Datasheet.Name);
+        Assert.EndsWith("/play", nav.Uri);
     }
 
     [Fact]

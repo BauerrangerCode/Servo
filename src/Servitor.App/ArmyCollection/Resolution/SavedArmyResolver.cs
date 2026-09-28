@@ -13,6 +13,17 @@ namespace Servitor.App.ArmyCollection.Resolution;
 /// </summary>
 public static class SavedArmyResolver
 {
+    /// <summary>Checks whether a saved army would still resolve, without touching any <see cref="IArmyBuilderState"/>.</summary>
+    public static async Task<IReadOnlyList<string>> ValidateAsync(
+        SavedArmy saved,
+        IMergedRulesDataProvider rulesDataProvider,
+        IDatasheetCatalog catalog,
+        CancellationToken cancellationToken = default)
+    {
+        var plan = await PlanAsync(saved, rulesDataProvider, catalog, cancellationToken);
+        return plan.Errors;
+    }
+
     public static async Task<OpenSavedArmyResult> ResolveAsync(
         SavedArmy saved,
         IArmyBuilderState state,
@@ -20,22 +31,94 @@ public static class SavedArmyResolver
         IDatasheetCatalog catalog,
         CancellationToken cancellationToken = default)
     {
+        var plan = await PlanAsync(saved, rulesDataProvider, catalog, cancellationToken);
+        if (plan.Errors.Count > 0)
+        {
+            return OpenSavedArmyResult.Failure(plan.Errors);
+        }
+
+        var errors = new List<string>();
+
+        state.SelectFaction(saved.FactionId, saved.AllyFactionIds);
+        state.SelectBattleSize(plan.BattleSize!);
+
+        foreach (var detachment in plan.Detachments)
+        {
+            var result = state.AddDetachment(detachment);
+            if (result != DetachmentAddResult.Added)
+            {
+                errors.Add($"Could not add detachment \"{detachment.Name}\": {result}.");
+            }
+        }
+
+        var idMap = new Dictionary<Guid, Guid>();
+        foreach (var (plannedUnit, datasheet, size, enhancement) in plan.UnitPlans)
+        {
+            var addResult = state.AddUnit(datasheet, size, plannedUnit.AlliedFaction);
+            if (addResult != AddUnitResult.Added)
+            {
+                errors.Add($"Could not add \"{plannedUnit.DatasheetName}\": {addResult}.");
+                continue;
+            }
+
+            var unit = state.Units[^1];
+            idMap[plannedUnit.Id] = unit.Id;
+
+            if (plannedUnit.Wargear != WargearSelection.Default)
+            {
+                state.SetWargear(unit.Id, plannedUnit.Wargear);
+            }
+
+            if (enhancement is not null)
+            {
+                state.SetEnhancement(unit.Id, enhancement);
+            }
+        }
+
+        // A second pass, since a leader can be listed after the unit it leads (or vice versa) and AddUnit only
+        // assigns each unit's real id once it has actually been added.
+        foreach (var plannedUnit in saved.Units)
+        {
+            if (!idMap.TryGetValue(plannedUnit.Id, out var unitId))
+            {
+                continue;
+            }
+
+            if (plannedUnit.LeaderUnitId is { } leaderId && idMap.TryGetValue(leaderId, out var resolvedLeaderId))
+            {
+                state.SetLeader(unitId, resolvedLeaderId);
+            }
+
+            if (plannedUnit.IsWarlord)
+            {
+                state.SetWarlord(unitId);
+            }
+        }
+
+        return errors.Count > 0 ? OpenSavedArmyResult.Failure(errors) : OpenSavedArmyResult.Success;
+    }
+
+    /// <summary>The read-only half of resolving a saved army: everything that only reads the catalog, shared by
+    /// <see cref="ValidateAsync"/> (which stops here) and <see cref="ResolveAsync"/> (which then applies the plan).</summary>
+    private static async Task<Plan> PlanAsync(
+        SavedArmy saved, IMergedRulesDataProvider rulesDataProvider, IDatasheetCatalog catalog, CancellationToken cancellationToken)
+    {
         var rulesData = await rulesDataProvider.GetAsync(cancellationToken);
         if (rulesData is null)
         {
-            return OpenSavedArmyResult.Failure(["No rules data is available yet — use \"Merge data\" in the top bar first."]);
+            return Plan.Failed(["No rules data is available yet — use \"Merge data\" in the top bar first."]);
         }
 
         var faction = rulesData.Factions.FirstOrDefault(f => f.FactionId == saved.FactionId);
         if (faction is null)
         {
-            return OpenSavedArmyResult.Failure([$"Faction \"{saved.FactionId}\" is no longer in the rules data."]);
+            return Plan.Failed([$"Faction \"{saved.FactionId}\" is no longer in the rules data."]);
         }
 
         var battleSize = BattleSizes.All.FirstOrDefault(b => b.Name == saved.BattleSizeName);
         if (battleSize is null)
         {
-            return OpenSavedArmyResult.Failure([$"Unknown battle size \"{saved.BattleSizeName}\"."]);
+            return Plan.Failed([$"Unknown battle size \"{saved.BattleSizeName}\"."]);
         }
 
         var errors = new List<string>();
@@ -80,70 +163,15 @@ public static class SavedArmyResolver
             }
         }
 
-        // As with the import resolver: nothing on `state` is touched until every reference in the saved army has
-        // resolved, so a stale reference (e.g. a datasheet removed by a rules-data update) fails the whole reopen
-        // instead of leaving Build half-populated.
-        if (errors.Count > 0)
-        {
-            return OpenSavedArmyResult.Failure(errors);
-        }
+        return new Plan(errors, battleSize, detachments, unitPlans);
+    }
 
-        state.SelectFaction(saved.FactionId, saved.AllyFactionIds);
-        state.SelectBattleSize(battleSize);
-
-        foreach (var detachment in detachments)
-        {
-            var result = state.AddDetachment(detachment);
-            if (result != DetachmentAddResult.Added)
-            {
-                errors.Add($"Could not add detachment \"{detachment.Name}\": {result}.");
-            }
-        }
-
-        var idMap = new Dictionary<Guid, Guid>();
-        foreach (var (plannedUnit, datasheet, size, enhancement) in unitPlans)
-        {
-            var addResult = state.AddUnit(datasheet, size, plannedUnit.AlliedFaction);
-            if (addResult != AddUnitResult.Added)
-            {
-                errors.Add($"Could not add \"{plannedUnit.DatasheetName}\": {addResult}.");
-                continue;
-            }
-
-            var unit = state.Units[^1];
-            idMap[plannedUnit.Id] = unit.Id;
-
-            if (plannedUnit.Wargear != WargearSelection.Default)
-            {
-                state.SetWargear(unit.Id, plannedUnit.Wargear);
-            }
-
-            if (enhancement is not null)
-            {
-                state.SetEnhancement(unit.Id, enhancement);
-            }
-        }
-
-        // A second pass, since a leader can be listed after the unit it leads (or vice versa) and AddUnit only
-        // assigns each unit's real id once it has actually been added.
-        foreach (var plannedUnit in saved.Units)
-        {
-            if (!idMap.TryGetValue(plannedUnit.Id, out var unitId))
-            {
-                continue;
-            }
-
-            if (plannedUnit.LeaderUnitId is { } leaderId && idMap.TryGetValue(leaderId, out var resolvedLeaderId))
-            {
-                state.SetLeader(unitId, resolvedLeaderId);
-            }
-
-            if (plannedUnit.IsWarlord)
-            {
-                state.SetWarlord(unitId);
-            }
-        }
-
-        return errors.Count > 0 ? OpenSavedArmyResult.Failure(errors) : OpenSavedArmyResult.Success;
+    private sealed record Plan(
+        List<string> Errors,
+        BattleSize? BattleSize,
+        List<Detachment> Detachments,
+        List<(SavedUnit Saved, Datasheet Datasheet, UnitSize Size, Enhancement? Enhancement)> UnitPlans)
+    {
+        public static Plan Failed(List<string> errors) => new(errors, null, [], []);
     }
 }

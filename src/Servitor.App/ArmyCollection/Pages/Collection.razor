@@ -27,7 +27,9 @@ else
     <ul class="collection-list">
         @foreach (var army in _armies)
         {
-            <li class="collection-entry">
+            var invalidReasons = _invalidArmies.GetValueOrDefault(army.Id);
+            <li class="collection-entry @(invalidReasons is not null ? "collection-entry-invalid" : "")"
+                title="@(invalidReasons is null ? null : string.Join("; ", invalidReasons))">
                 <span class="collection-name">@army.Name</span>
                 <span class="collection-detail">@FactionName(army.FactionId) · @army.BattleSizeName · @army.Units.Count units</span>
                 <span class="collection-saved">Saved @army.SavedAtUtc.LocalDateTime.ToString("g")</span>
@@ -39,8 +41,8 @@ else
                 }
                 else
                 {
-                    <button type="button" @onclick="@(() => Open(army, "build"))">Open in Build</button>
-                    <button type="button" @onclick="@(() => Open(army, "play"))">Open in Play</button>
+                    <button type="button" class="open-build" @onclick="@(() => OpenInBuild(army))">Open in Build</button>
+                    <button type="button" class="open-play" @onclick="@(() => OpenInPlay(army))">Open in Play</button>
                     <button type="button" class="delete-button" @onclick="@(() => RequestDelete(army.Id))">Delete</button>
                 }
             </li>
@@ -60,24 +62,73 @@ else
 
 <a href="" class="import-fallback">Back to Import</a>
 
+@if (_buildPopupErrors is { } popupErrors)
+{
+    <div class="modal-backdrop">
+        <div class="modal-box">
+            <h2>Couldn't fully load this army</h2>
+            <ul>
+                @foreach (var error in popupErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+            <button type="button" class="modal-continue" @onclick="ContinueToBuildAfterPopup">Continue to Build</button>
+        </div>
+    </div>
+}
+
 @code {
     private IReadOnlyList<SavedArmy> _armies = [];
+    private Dictionary<Guid, IReadOnlyList<string>> _invalidArmies = [];
     private MergedRulesData? _data;
     private bool _isLoaded;
     private List<string> _errors = [];
     private Guid? _pendingDeleteId;
+    private IReadOnlyList<string>? _buildPopupErrors;
 
     protected override async Task OnInitializedAsync()
     {
         _armies = await CollectionStore.ListAsync();
         _data = await RulesData.GetAsync();
+
+        var invalid = new Dictionary<Guid, IReadOnlyList<string>>();
+        foreach (var army in _armies)
+        {
+            var errors = await SavedArmyResolver.ValidateAsync(army, RulesData, Catalog);
+            if (errors.Count > 0)
+            {
+                invalid[army.Id] = errors;
+            }
+        }
+
+        _invalidArmies = invalid;
         _isLoaded = true;
     }
 
     private string FactionName(string factionId) =>
         _data?.Factions.FirstOrDefault(f => f.FactionId == factionId)?.Name ?? factionId;
 
-    private async Task Open(SavedArmy army, string destination)
+    /// <summary>Open in Build always ends up on Build — a resolve failure is shown as a popup first, then continues there.</summary>
+    private async Task OpenInBuild(SavedArmy army)
+    {
+        var result = await SavedArmyResolver.ResolveAsync(army, State, RulesData, Catalog);
+        if (!result.IsSuccess)
+        {
+            _buildPopupErrors = result.Errors;
+            return;
+        }
+
+        Nav.NavigateTo("build");
+    }
+
+    private void ContinueToBuildAfterPopup()
+    {
+        _buildPopupErrors = null;
+        Nav.NavigateTo("build");
+    }
+
+    private async Task OpenInPlay(SavedArmy army)
     {
         _errors = [];
         var result = await SavedArmyResolver.ResolveAsync(army, State, RulesData, Catalog);
@@ -87,7 +138,7 @@ else
             return;
         }
 
-        Nav.NavigateTo(destination);
+        Nav.NavigateTo("play");
     }
 
     private void RequestDelete(Guid id) => _pendingDeleteId = id;
@@ -98,6 +149,7 @@ else
     {
         await CollectionStore.DeleteAsync(id);
         _armies = await CollectionStore.ListAsync();
+        _invalidArmies.Remove(id);
         _pendingDeleteId = null;
     }
 }
