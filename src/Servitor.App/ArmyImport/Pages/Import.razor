@@ -3,3 +3,18 @@
 <PageTitle>Import</PageTitle>
 
 <h1>Import</h1>
+
+<section class="import-step">
+    <label for="import-text">Paste your army list</label>
+    <textarea id="import-text" class="import-textarea" @bind="_pastedText" @bind:event="oninput"
+              placeholder="Paste a Warscribe army list export here…"></textarea>
+
+    <button type="button" class="import-play" disabled title="Parsing lands with E4.2">Import &amp; Play</button>
+    <p class="import-note">Parsing isn't implemented yet — this button unlocks once the Warscribe format parser (E4.2) lands.</p>
+</section>
+
+<a href="build" class="build-fallback">Build one instead</a>
+
+@code {
+    private string _pastedText = "";
+}

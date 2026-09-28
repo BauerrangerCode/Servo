@@ -214,7 +214,8 @@ As a player, I want a landing screen with a paste-army-list textarea, an "Import
 
 - ✓ Import screen is the default route (matches E1.5)
 - ✓ "Build one instead" routes to Build (E3)
-- ✓ "Try with a sample army" loads a checked-in fixture army
+- ~~"Try with a sample army" loads a checked-in fixture army~~ — dropped by decision, not implemented
+- **Status / scope:** the paste textarea and "Import & Play" button are in place, but the button stays disabled until the parser (E4.2) exists — there is nothing yet to turn pasted text into an Army. The sample-army option was dropped rather than deferred.
 
 ### E4.2 Parser for the Warscribe plain-text export format — 8 pts
 As a player, I want pasted text in Warscribe 40K's own plain-text export format (header block, Char/unit lines with wargear, Enhancement lines, Leading/Led-by cross-references, version footer) parsed into a valid Army using the E3 domain model, so that I can bring in a list exported from Warscribe instead of rebuilding it by hand.
