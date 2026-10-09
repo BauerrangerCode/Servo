@@ -18,7 +18,7 @@ Feature-based, not layer-based. No project-wide top-level `Controllers/`, `Model
 
 Rationale: the reference app has clearly separated feature areas (import, build, battle tracker/scry, scoring). Feature folders keep related code together instead of spreading one feature's change across three layer folders.
 
-Projects: `Servitor.App` (Blazor WebAssembly UI, feature folders as above), `Servitor.RulesData` (class library without any Blazor dependency: rules domain records, source mappers, the data merge), `Servitor.DataMerge` (console tool that runs the merge at build time), `Servitor.DataUpdate` (local web service + logic that refreshes the raw sources, see "Data & Assets"). Code that both the app and the build tool need lives in `Servitor.RulesData`, never in `Servitor.App`.
+Projects: `Servitor.App` (Blazor WebAssembly UI, feature folders as above), `Servitor.RulesData` (class library without any Blazor dependency: rules domain records, source mappers, the data merge), `Servitor.DataMerge` (console tool that runs the merge at build time), `Servitor.DataUpdate` (local web service + logic that refreshes the raw sources, see "Data & Assets"). `Servitor.Launcher` (assembly `Servo`: self-contained launcher that serves the published app plus the update API on localhost and opens a Chromium browser in full-screen app mode; rules data lives in the per-user folder and is served under `/data`; packaged by `scripts/publish_servo.py`, which publishes the app with `-p:ExcludeRulesData=true`). Code that both the app and the build tool need lives in `Servitor.RulesData`, never in `Servitor.App`.
 
 ## Data & Assets
 

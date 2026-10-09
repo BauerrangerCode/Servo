@@ -3,6 +3,7 @@
     <Project Path="src/Servitor.App/Servitor.App.csproj" />
     <Project Path="src/Servitor.DataMerge/Servitor.DataMerge.csproj" />
     <Project Path="src/Servitor.DataUpdate/Servitor.DataUpdate.csproj" />
+    <Project Path="src/Servitor.Launcher/Servitor.Launcher.csproj" />
     <Project Path="src/Servitor.RulesData/Servitor.RulesData.csproj" />
   </Folder>
   <Folder Name="/tests/">

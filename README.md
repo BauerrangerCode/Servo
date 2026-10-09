@@ -4,13 +4,46 @@ An offline-capable army list tool that runs entirely in your browser. Import a l
 
 Servitor is a Blazor WebAssembly app (.NET 10). It can be installed as a PWA.
 
-## Requirements
+## Quick start with Servo
+
+Servo is a small launcher with a skull-and-gear icon. Start it and it serves the app on your own computer and opens it in a full-screen window. Closing that window stops Servo. Nothing is installed and no internet connection is needed once the rules data is loaded.
+
+| System | Package | Start |
+| --- | --- | --- |
+| Windows | `Servo-win-x64.zip` | Unzip, double-click `Servo.exe` |
+| macOS (Apple Silicon) | `Servo-osx-arm64.zip` | Unzip, double-click `Servo.app` |
+| macOS (Intel) | `Servo-osx-x64.zip` | Unzip, double-click `Servo.app` |
+| Linux (x64) | `Servo-linux-x64.tar.gz` | Extract, run `Servo` |
+
+Requirements: Microsoft Edge, Google Chrome, Chromium or Brave. Servo uses one of them for the full-screen window; it does not touch your normal browser profile. Keep the `wwwroot` folder next to the program. For the first rules data update, Git must be installed.
+
+**First start:** the app has no rules data yet. Open the settings menu (gear icon, top right), choose **Update data** and wait until it reports "Update finished". This needs an internet connection once. Your armies, scores and the rules data are stored per user (Windows: `%LOCALAPPDATA%\Servo`, macOS and Linux: `~/.local/share/Servo`) and stay when you replace Servo with a newer version.
+
+Notes for systems that distrust unsigned programs:
+
+- **Windows:** SmartScreen may warn on first start. Choose *More info*, then *Run anyway*.
+- **macOS:** Servo is not signed. Right-click `Servo.app`, choose *Open*, and confirm. If macOS reports the app as damaged, run `xattr -cr Servo.app` and then `codesign --force --deep -s - Servo.app` in the Terminal.
+- **Linux:** if your file manager opens the file as text, enable running executable files in its settings, or start it from a terminal.
+
+### Building the packages
+
+```bash
+python scripts/publish_servo.py
+```
+
+This writes the four packages to `artifacts/` (use `--only win-x64` to build a single one). It needs the .NET SDK and Python 3, plus internet access for the runtime packs of the other systems. The packages contain the app without rules data.
+
+The icon is drawn by `scripts/make_icon.py` (needs Pillow); the generated files are committed.
+
+## Running from source
+
+### Requirements
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - A current desktop browser (Chromium-based, Firefox or Safari)
 - Git, only needed to fetch or update the rules data (see [Loading the rules data](#loading-the-rules-data))
 
-## Running the app
+### Running the app
 
 From the repository root:
 
@@ -27,7 +60,7 @@ dotnet build
 dotnet test
 ```
 
-## Loading the rules data
+### Loading the rules data
 
 The rules data (datasheets, stratagems, core rules) is not part of the repository. It lives in `src/Servitor.App/wwwroot/data/` and is generated from external sources. A fresh clone therefore has to fetch it once.
 
@@ -110,6 +143,8 @@ To use the app offline, load it once while online (or from your local server) an
 | `src/Servitor.RulesData` | Domain model, source mappers and the merge logic |
 | `src/Servitor.DataMerge` | Console tool that runs the merge |
 | `src/Servitor.DataUpdate` | Local service that fetches and converts the rules data |
+| `src/Servitor.Launcher` | Servo, the double-clickable launcher |
+| `scripts/` | Packaging and icon scripts |
 | `tests/Servitor.App.Tests` | Unit and component tests |
 | `docs/` | Backlog and analysis documents |
 

@@ -23,6 +23,12 @@
     <ProjectReference Include="..\Servitor.DataMerge\Servitor.DataMerge.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <!-- Publishing with -p:ExcludeRulesData=true leaves the (gitignored, external) rules data out; the Servo packages load it through "Update data". -->
+  <ItemGroup Condition="'$(ExcludeRulesData)' == 'true'">
+    <Content Remove="wwwroot\data\**" />
+    <None Remove="wwwroot\data\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
@@ -45,7 +51,7 @@
     <RulesDataSource Include="wwwroot\data\bsdata\**\*.json;wwwroot\data\core\**\*.json;wwwroot\data\factions\**\*.json" />
   </ItemGroup>
 
-  <Target Name="MergeRulesData" AfterTargets="ResolveProjectReferences" Condition="'$(SkipRulesDataMerge)' != 'true' And '$(DesignTimeBuild)' != 'true' And Exists('$(RulesDataRoot)\bsdata\wh40k-11e')" Inputs="@(RulesDataSource);$(DataMergeToolDll);$(DataMergeToolDir)Servitor.RulesData.dll" Outputs="$(RulesDataRoot)\merged\manifest.json">
+  <Target Name="MergeRulesData" AfterTargets="ResolveProjectReferences" Condition="'$(SkipRulesDataMerge)' != 'true' And '$(ExcludeRulesData)' != 'true' And '$(DesignTimeBuild)' != 'true' And Exists('$(RulesDataRoot)\bsdata\wh40k-11e')" Inputs="@(RulesDataSource);$(DataMergeToolDll);$(DataMergeToolDir)Servitor.RulesData.dll" Outputs="$(RulesDataRoot)\merged\manifest.json">
     <Exec Command="dotnet &quot;$(DataMergeToolDll)&quot; &quot;$(RulesDataRoot)&quot;" />
     <ItemGroup>
       <Content Include="wwwroot\data\merged\**" Exclude="@(Content)" />
