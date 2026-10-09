@@ -4,7 +4,7 @@ using Servitor.App.Scoring.Tracking;
 
 namespace Servitor.App.Scoring.History;
 
-public sealed class GameRecorder(IBattleSetupState setup, IScoreTrackingState tracking, IBattleProgressState progress, IScorecardStore store, TimeProvider time) : IGameRecorder
+public sealed class GameRecorder(IBattleSetupState setup, IScoreTrackingState tracking, IBattleProgressState progress, IBattlePlaySession session, IScorecardStore store, TimeProvider time) : IGameRecorder
 {
     public event Action? Saved;
 
@@ -22,6 +22,7 @@ public sealed class GameRecorder(IBattleSetupState setup, IScoreTrackingState tr
         LastEnded = scorecard;
         tracking.Reset();
         setup.Reset();
+        await session.ResetAsync();
         Saved?.Invoke();
         return scorecard;
     }

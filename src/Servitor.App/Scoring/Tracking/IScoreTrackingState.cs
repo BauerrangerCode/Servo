@@ -11,10 +11,10 @@ public interface IScoreTrackingState
 {
     event Action? Changed;
 
-    /// <summary>The battle round (1-5) entries are recorded in.</summary>
+    /// <summary>The battle round (1-5) entries are recorded in: the round Play is in, which is the one source of it.</summary>
     int CurrentRound { get; }
 
-    void SetRound(int round);
+    Task SetRoundAsync(int round);
 
     PrimaryMission? MissionOf(Side side);
 
@@ -65,6 +65,6 @@ public interface IScoreTrackingState
     /// <summary>The once-per-battle 1CP replacement: retires the card and draws a new one.</summary>
     bool Replace(Side side, string cardName);
 
-    /// <summary>Clears every entry, e.g. for a new game.</summary>
+    /// <summary>Clears every entry, e.g. for a new game. The battle round belongs to Play and stays.</summary>
     void Reset();
 }

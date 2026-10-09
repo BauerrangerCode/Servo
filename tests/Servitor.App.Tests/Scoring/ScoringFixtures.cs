@@ -1,4 +1,6 @@
+using Servitor.App.BattleTracker.State;
 using Servitor.App.Scoring.MissionDeck;
+using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
 using Servitor.App.Tests.Scoring.State;
@@ -62,7 +64,7 @@ internal static class ScoringFixtures
         var setup = new BattleSetupState(provider);
         setup.SelectYourDisposition(MissionArchetype.TakeAndHold);
         setup.SelectOpponentDisposition(MissionArchetype.PurgeTheFoe);
-        return (setup, new ScoreTrackingState(setup, provider, new Random(seed)));
+        return (setup, new ScoreTrackingState(setup, provider, new BattleProgressState(new InMemoryRulesDataStore()), new Random(seed)));
     }
 
     private static SecondaryMission Card(string name, bool fixedEligible, params SecondaryCondition[] conditions) =>

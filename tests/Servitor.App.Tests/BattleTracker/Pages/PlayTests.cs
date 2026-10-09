@@ -4,10 +4,15 @@ using Servitor.App.ArmyBuilder.State;
 using Servitor.App.BattleTracker.Opponent;
 using Servitor.App.BattleTracker.State;
 using Servitor.App.RulesData.Loading;
+using Servitor.App.Scoring.History;
+using Servitor.App.Scoring.MissionDeck;
+using Servitor.App.Scoring.State;
+using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.Scoring;
+using Servitor.App.Tests.Scoring.History;
 using Servitor.App.Tests.ArmyBuilder.Catalog;
 using Servitor.RulesData.Domain;
 using Servitor.App.RulesData.Storage;
-using Servitor.App.Scoring.Tracking;
 using Servitor.App.Tests.RulesData.Loading;
 
 namespace Servitor.App.Tests.BattleTracker.Pages;
@@ -329,5 +334,49 @@ public class PlayTests : BunitContext
 
         Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
         Assert.NotNull(Card(cut, "GRENADE").QuerySelector("button.use-stratagem"));
+    }
+
+    private void AddScoringServices(BattleProgressState progress)
+    {
+        var deck = ScoringFixtures.Provider();
+        var setup = new BattleSetupState(deck);
+        var tracking = new ScoreTrackingState(setup, deck, progress);
+        var scorecards = new FakeScorecardStore();
+        Services.AddSingleton<IBattleSetupState>(setup);
+        Services.AddSingleton<IMissionDeckProvider>(deck);
+        Services.AddSingleton<IScoreTrackingState>(tracking);
+        Services.AddSingleton<IScorecardStore>(scorecards);
+        Services.AddSingleton<IGameRecorder>(new GameRecorder(setup, tracking, progress, new FakeBattlePlaySession(), scorecards, TimeProvider.System));
+        setup.SelectYourDisposition(MissionArchetype.TakeAndHold);
+        setup.SelectOpponentDisposition(MissionArchetype.PurgeTheFoe);
+        setup.SelectRole(BattleRole.Attacker);
+    }
+
+    [Fact]
+    public void TheScoringShortcutOpensTheSameScoringOverPlayAndSharesTheBattleRound()
+    {
+        var progress = new BattleProgressState(_store);
+        Services.AddSingleton<IBattleProgressState>(progress);
+        AddScoringServices(progress);
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.Find(".round-next").Click();
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
+
+        cut.Find(".open-scoring").Click();
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".score-tracker")));
+        Assert.Contains("selected", cut.FindAll(".round-chip")[1].ClassList);
+        Assert.Contains("Battle Round 2", cut.Find(".round-label").TextContent);
+
+        cut.FindAll(".round-chip")[3].Click();
+        Assert.Contains("Battle Round 4", cut.Find(".round-label").TextContent);
+
+        cut.Find(".round-next").Click();
+        Assert.Contains("selected", cut.FindAll(".round-chip")[4].ClassList);
+
+        cut.Find(".modal-close").Click();
+        Assert.Empty(cut.FindAll(".score-tracker"));
+        Assert.Equal("Shooting", SelectedPhase(cut));
+        Assert.Contains("Battle Round 5", cut.Find(".round-label").TextContent);
     }
 }

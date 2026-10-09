@@ -110,14 +110,14 @@ public class OpponentArmyModalTests : BunitContext
     {
         var cut = OpenModal();
 
-        Assert.NotNull(cut.Find(".opponent-modal"));
+        Assert.NotNull(cut.Find(".modal-dialog"));
         Assert.NotNull(cut.Find(".opponent-textarea"));
         Assert.Empty(cut.FindAll(".clear-opponent"));
         Assert.NotNull(cut.Find(".battle-progress"));
 
-        cut.Find(".close-opponent").Click();
+        cut.Find(".modal-close").Click();
 
-        Assert.Empty(cut.FindAll(".opponent-modal"));
+        Assert.Empty(cut.FindAll(".modal-dialog"));
     }
 
     [Fact]

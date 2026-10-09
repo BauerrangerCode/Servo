@@ -55,6 +55,12 @@ public sealed class StratagemUsageState(IRulesDataStore store, IBattleProgressSt
         return new StratagemUseOutcome(StratagemUseResult.Used);
     }
 
+    public Task ResetAsync()
+    {
+        _uses = [];
+        return SaveAsync();
+    }
+
     public async Task UndoAsync(string stratagemId)
     {
         if (ThisPhase().FirstOrDefault(u => u.StratagemId == stratagemId) is not { } use)

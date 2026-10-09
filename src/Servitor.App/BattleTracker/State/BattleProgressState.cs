@@ -84,6 +84,10 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
     public Task SetFirstTurnAsync(Side side) =>
         Phase == BattlePhase.Deployment ? UpdateAsync(Round, Phase, side, side) : Task.CompletedTask;
 
+    public Task SetRoundAsync(int round) => UpdateAsync(round, Phase, FirstTurn, ActiveTurn);
+
+    public Task ResetAsync() => ApplyAsync(MinRound, BattlePhase.Deployment, Side.You, Side.You, CommandPointLedger.Empty);
+
     public Task IncrementRoundAsync() => UpdateAsync(Round + 1, Phase, FirstTurn, ActiveTurn);
 
     public Task DecrementRoundAsync() => UpdateAsync(Round - 1, Phase, FirstTurn, ActiveTurn);

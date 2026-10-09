@@ -6,6 +6,7 @@ using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.BattleTracker;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.RulesData.Domain;
 
@@ -21,7 +22,7 @@ public class ScorecardHistoryTests : BunitContext
     public ScorecardHistoryTests()
     {
         (_setup, _tracking) = ScoringFixtures.Prepared();
-        _recorder = new GameRecorder(_setup, _tracking, new BattleProgressState(new InMemoryRulesDataStore()), _store, TimeProvider.System);
+        _recorder = new GameRecorder(_setup, _tracking, new BattleProgressState(new InMemoryRulesDataStore()), new FakeBattlePlaySession(), _store, TimeProvider.System);
         Services.AddSingleton<IScorecardStore>(_store);
         Services.AddSingleton<IGameRecorder>(_recorder);
     }

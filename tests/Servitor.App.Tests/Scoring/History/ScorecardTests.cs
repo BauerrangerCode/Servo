@@ -5,6 +5,7 @@ using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.BattleTracker;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.RulesData.Domain;
 using Servitor.RulesData.Merging;
@@ -29,7 +30,7 @@ public class ScorecardFactoryTests
         tracking.AdjustPrimary(Side.You, ScoringFixtures.CountableIndex, 2);
         tracking.SetPainted(Side.You, true);
         tracking.AdjustChallenger(Side.Enemy, 1);
-        tracking.SetRound(5);
+        await tracking.SetRoundAsync(5);
         tracking.AdjustPrimary(Side.You, ScoringFixtures.EndOfBattleIndex, 1);
 
         var card = ScorecardFactory.Create(setup, tracking, progress, Ended)!;
@@ -70,7 +71,7 @@ public class ScorecardFactoryTests
     {
         var provider = ScoringFixtures.Provider();
         var setup = new BattleSetupState(provider);
-        var tracking = new ScoreTrackingState(setup, provider);
+        var tracking = new ScoreTrackingState(setup, provider, NewProgress());
         setup.SelectYourDisposition(MissionArchetype.TakeAndHold);
 
         Assert.Null(ScorecardFactory.Create(setup, tracking, NewProgress(), Ended));
@@ -205,7 +206,7 @@ public class GameRecorderTests
     {
         var (setup, tracking) = ScoringFixtures.Prepared();
         var store = new FakeScorecardStore();
-        return (new GameRecorder(setup, tracking, NewProgress(), store, TimeProvider.System), store, setup, tracking);
+        return (new GameRecorder(setup, tracking, NewProgress(), new FakeBattlePlaySession(), store, TimeProvider.System), store, setup, tracking);
     }
 
     [Fact]
@@ -225,7 +226,6 @@ public class GameRecorderTests
         Assert.Null(setup.YourDisposition);
         Assert.Null(setup.ResolvedMission);
         Assert.Equal(0, tracking.ScoreOf(Side.You).Total);
-        Assert.Equal(1, tracking.CurrentRound);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public class GameRecorderTests
         var provider = ScoringFixtures.Provider();
         var setup = new BattleSetupState(provider);
         var store = new FakeScorecardStore();
-        var recorder = new GameRecorder(setup, new ScoreTrackingState(setup, provider), NewProgress(), store, TimeProvider.System);
+        var recorder = new GameRecorder(setup, new ScoreTrackingState(setup, provider, NewProgress()), NewProgress(), new FakeBattlePlaySession(), store, TimeProvider.System);
 
         Assert.Null(await recorder.EndGameAsync());
         Assert.Empty(store.Scorecards);
@@ -264,7 +264,7 @@ public class GameRecorderTests
         var (_, store, setup, tracking) = Create();
         var clock = new FixedTime(new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.Zero));
 
-        await new GameRecorder(setup, tracking, NewProgress(), store, clock).EndGameAsync();
+        await new GameRecorder(setup, tracking, NewProgress(), new FakeBattlePlaySession(), store, clock).EndGameAsync();
 
         Assert.Equal(clock.Now, Assert.Single(store.Scorecards).EndedAtUtc);
     }

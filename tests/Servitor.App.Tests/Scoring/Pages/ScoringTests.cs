@@ -5,6 +5,7 @@ using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.BattleTracker;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Tests.Scoring.History;
 using Servitor.App.Tests.Scoring.State;
@@ -27,6 +28,7 @@ public class ScoringTests : BunitContext
 
     private readonly BattleSetupState _state;
     private readonly FakeScorecardStore _scorecards = new();
+    private readonly BattleProgressState _progress = new(new InMemoryRulesDataStore());
 
     public ScoringTests()
     {
@@ -39,10 +41,10 @@ public class ScoringTests : BunitContext
 
         Services.AddSingleton<IBattleSetupState>(_state);
         Services.AddSingleton<IMissionDeckProvider>(provider);
-        var tracking = new ScoreTrackingState(_state, provider);
+        var tracking = new ScoreTrackingState(_state, provider, _progress);
         Services.AddSingleton<IScoreTrackingState>(tracking);
         Services.AddSingleton<IScorecardStore>(_scorecards);
-        Services.AddSingleton<IGameRecorder>(new GameRecorder(_state, tracking, new BattleProgressState(new InMemoryRulesDataStore()), _scorecards, TimeProvider.System));
+        Services.AddSingleton<IGameRecorder>(new GameRecorder(_state, tracking, _progress, new FakeBattlePlaySession(), _scorecards, TimeProvider.System));
     }
 
     // Several disposition chips share the same label between the "Your Disposition" and "Opponent Disposition"

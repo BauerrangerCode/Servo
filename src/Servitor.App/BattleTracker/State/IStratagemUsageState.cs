@@ -28,6 +28,9 @@ public interface IStratagemUsageState
     /// </param>
     Task<StratagemUseOutcome> UseAsync(Stratagem stratagem, Guid? targetUnitId, bool allowRetarget = false);
 
+    /// <summary>Forgets every use, for a new game.</summary>
+    Task ResetAsync();
+
     /// <summary>Takes back a use of the current phase and refunds its Command Points.</summary>
     Task UndoAsync(string stratagemId);
 }

@@ -12,6 +12,9 @@ public interface IArmyRuleState
 
     Task LoadAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Clears pins, notes and chosen alternatives for a new game; the auras preference stays.</summary>
+    Task ResetAsync();
+
     Task SetShowAurasAsync(bool show);
 
     /// <summary>A pinned rule stays listed in every phase until it is unpinned, e.g. a target chosen "until the start of your next Command phase".</summary>

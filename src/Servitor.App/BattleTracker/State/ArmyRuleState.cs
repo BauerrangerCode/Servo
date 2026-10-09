@@ -34,6 +34,14 @@ public sealed class ArmyRuleState(IRulesDataStore store) : IArmyRuleState
         }
     }
 
+    public Task ResetAsync()
+    {
+        _pins = [];
+        _activeOptions = [];
+        _usedOptions = [];
+        return SaveAsync();
+    }
+
     public Task SetShowAurasAsync(bool show)
     {
         _showAuras = show;

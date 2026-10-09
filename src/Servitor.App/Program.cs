@@ -38,6 +38,7 @@ builder.Services.AddScoped<IBattleProgressState, BattleProgressState>();
 builder.Services.AddScoped<IArmyRuleState, ArmyRuleState>();
 builder.Services.AddScoped<IStratagemUsageState, StratagemUsageState>();
 builder.Services.AddScoped<IOpponentArmyState, OpponentArmyState>();
+builder.Services.AddScoped<IBattlePlaySession, BattlePlaySession>();
 builder.Services.AddScoped<IRulesDataMergeService, RulesDataMergeService>();
 builder.Services.AddScoped<IDataUpdateService, HttpDataUpdateService>();
 builder.Services.AddScoped<IFileDownloadService, JsFileDownloadService>();

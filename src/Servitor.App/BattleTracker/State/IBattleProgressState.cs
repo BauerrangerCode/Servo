@@ -43,6 +43,12 @@ public interface IBattleProgressState
     /// <summary>Picks who takes the first turn; only possible during Deployment.</summary>
     Task SetFirstTurnAsync(Side side);
 
+    /// <summary>Sets the battle round directly; the round shown in Scoring is this one.</summary>
+    Task SetRoundAsync(int round);
+
+    /// <summary>Starts over for a new game: round 1, Deployment, you first, no Command Points.</summary>
+    Task ResetAsync();
+
     Task IncrementRoundAsync();
 
     Task DecrementRoundAsync();

@@ -1,3 +1,4 @@
+using Servitor.App.BattleTracker.State;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.RulesData.Domain;
@@ -7,36 +8,32 @@ namespace Servitor.App.Scoring.Tracking;
 public sealed class ScoreTrackingState : IScoreTrackingState
 {
     private readonly IBattleSetupState _setup;
+    private readonly IBattleProgressState _progress;
     private readonly IMissionDeckProvider _deckProvider;
     private readonly Random _random;
     private Dictionary<Side, ScoreSheet> _sheets = NewSheets();
     private (MissionArchetype? Yours, MissionArchetype? Opponent) _dispositions;
 
-    public ScoreTrackingState(IBattleSetupState setup, IMissionDeckProvider deckProvider, Random? random = null)
+    public ScoreTrackingState(IBattleSetupState setup, IMissionDeckProvider deckProvider, IBattleProgressState progress, Random? random = null)
     {
         _setup = setup;
+        _progress = progress;
         _deckProvider = deckProvider;
         _random = random ?? Random.Shared;
         _dispositions = (setup.YourDisposition, setup.OpponentDisposition);
         setup.Changed += OnSetupChanged;
+        progress.Changed += () => Changed?.Invoke();
     }
 
     public event Action? Changed;
 
-    public int CurrentRound { get; private set; } = ScoringCondition.MinRound;
+    public int CurrentRound => _progress.Round;
 
     private MissionDeckData Deck => _deckProvider.Current.Data;
 
     public IReadOnlyList<SecondaryMission> FixedChoices => Deck.SecondaryMissions.Where(m => m.FixedEligible).ToList();
 
-    public void SetRound(int round)
-    {
-        if (round is >= ScoringCondition.MinRound and <= ScoringCondition.MaxRound)
-        {
-            CurrentRound = round;
-            Changed?.Invoke();
-        }
-    }
+    public Task SetRoundAsync(int round) => _progress.SetRoundAsync(round);
 
     public PrimaryMission? MissionOf(Side side) => side == Side.You ? _setup.ResolvedMission : _setup.OpponentMission;
 
@@ -199,7 +196,6 @@ public sealed class ScoreTrackingState : IScoreTrackingState
     public void Reset()
     {
         _sheets = NewSheets();
-        CurrentRound = ScoringCondition.MinRound;
         Changed?.Invoke();
     }
 
