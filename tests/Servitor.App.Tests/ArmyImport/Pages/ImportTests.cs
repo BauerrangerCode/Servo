@@ -75,7 +75,7 @@ public class ImportTests : BunitContext
     }
 
     [Fact]
-    public void A_successful_import_populates_state_and_navigates_to_build()
+    public void A_successful_import_populates_state_and_navigates_to_play()
     {
         var rulesData = ArmyExportResolverTests.LoadRealMergedData();
         Services.AddSingleton<IMergedRulesDataProvider>(new FakeRulesDataProvider(rulesData));
@@ -91,6 +91,6 @@ public class ImportTests : BunitContext
 
         Assert.Equal("orks", state.Setup.FactionId);
         Assert.Equal(16, state.Units.Count);
-        Assert.EndsWith("/build", nav.Uri);
+        Assert.EndsWith("/play", nav.Uri);
     }
 }

@@ -317,10 +317,10 @@ As a player, I want to view my opponent's army list and a commands/stratagems re
 - ✓ Each opponent unit supports a +Token action and a mark-destroyed toggle, independent of the player's own army state
 
 ### E6.4 Empty state — 2 pts
-As a player, I want a clear "Import Army" / "Try Demo" prompt instead of a broken tracker when no army is loaded, so that I understand why the tracker isn't showing anything yet.
+As a player, I want a clear "Import Army" prompt instead of a broken tracker when no army is loaded, so that I understand why the tracker isn't showing anything yet.
 
 - ✓ Play screen detects the no-army state and shows the prompt instead of the tracker UI
-- ✓ "Try Demo" loads the same fixture army as E4.1
+- ~~"Try Demo" loads the same fixture army as E4.1~~ — dropped by decision (like the E4.1 sample army); the prompt offers "Import Army" and "Build one instead", and a successful import now lands on Play
 
 ### E6.5 Scoring shortcut inside Play — 3 pts
 As a player, I want to reach Scoring (E5) from within Play without leaving the battle tracker context, so that I can update VP without losing my place in the game.

@@ -1,5 +1,6 @@
 using Servitor.App.ArmyBuilder.State;
 using Servitor.App.RulesData.Loading;
+using Servitor.App.Tests.ArmyBuilder.Catalog;
 using Servitor.RulesData.Domain;
 using Servitor.RulesData.Merging;
 
@@ -43,6 +44,7 @@ internal static class BattleTrackerFixtures
         state.SelectBattleSize(BattleSizes.StrikeForce);
         state.SelectFaction("orks");
         state.AddDetachment(new Detachment("w", DetachmentName, "", 1, MissionArchetype.TakeAndHold, 4, GameMode.Standard));
+        state.AddUnit(Units.Sheet("Boyz", factions: ["orks"]), new UnitSize(10, 90));
         return state;
     }
 

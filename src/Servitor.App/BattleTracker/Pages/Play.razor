@@ -1,16 +1,38 @@
 @page "/play"
+@using Servitor.App.ArmyBuilder.State
 @using Servitor.App.BattleTracker.Components
 @using Servitor.App.BattleTracker.State
+@implements IDisposable
 @inject IBattleProgressState Progress
+@inject IArmyBuilderState Army
 
 <PageTitle>Play</PageTitle>
 
 <h1>Play</h1>
 
-<BattleProgressBar />
-<CommandPointsPanel />
-<ActionQueuePanel />
+@if (Army.Units.Count == 0)
+{
+    <section class="play-empty">
+        <p>No army loaded — the battle tracker needs an army to follow.</p>
+        <a href="" class="import-link">Import Army</a>
+        <a href="build" class="build-link">Build one instead</a>
+    </section>
+}
+else
+{
+    <BattleProgressBar />
+    <CommandPointsPanel />
+    <ActionQueuePanel />
+}
 
 @code {
-    protected override Task OnInitializedAsync() => Progress.LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        Army.Changed += OnArmyChanged;
+        await Progress.LoadAsync();
+    }
+
+    public void Dispose() => Army.Changed -= OnArmyChanged;
+
+    private void OnArmyChanged() => InvokeAsync(StateHasChanged);
 }

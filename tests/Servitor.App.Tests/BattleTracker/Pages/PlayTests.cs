@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.ArmyBuilder.State;
 using Servitor.App.BattleTracker.State;
 using Servitor.App.RulesData.Loading;
+using Servitor.App.Tests.ArmyBuilder.Catalog;
+using Servitor.RulesData.Domain;
 using Servitor.App.RulesData.Storage;
 using Servitor.App.Scoring.Tracking;
 using Servitor.App.Tests.RulesData.Loading;
@@ -118,6 +120,36 @@ public class PlayTests : BunitContext
 
         cut.Find(".phase-next").Click();
         Assert.Empty(cut.FindAll(".first-turn-picker"));
+    }
+
+    [Fact]
+    public void WithoutAnArmyThePromptReplacesTheTracker()
+    {
+        Services.AddSingleton<IArmyBuilderState>(new ArmyBuilderState());
+
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+
+        Assert.Contains("No army loaded", cut.Find(".play-empty").TextContent);
+        Assert.Equal("", cut.Find(".import-link").GetAttribute("href"));
+        Assert.Equal("build", cut.Find(".build-link").GetAttribute("href"));
+        Assert.Empty(cut.FindAll(".battle-progress"));
+        Assert.Empty(cut.FindAll(".action-queue"));
+    }
+
+    [Fact]
+    public void TheTrackerAppearsOnceAnArmyIsLoaded()
+    {
+        var army = new ArmyBuilderState();
+        Services.AddSingleton<IArmyBuilderState>(army);
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        Assert.Empty(cut.FindAll(".battle-progress"));
+
+        army.SelectBattleSize(BattleSizes.StrikeForce);
+        army.SelectFaction("orks");
+        army.AddUnit(Units.Sheet("Boyz", factions: ["orks"]), new UnitSize(10, 90));
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".battle-progress")));
+        Assert.Empty(cut.FindAll(".play-empty"));
     }
 
     private static string[] CardNames(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut) =>
