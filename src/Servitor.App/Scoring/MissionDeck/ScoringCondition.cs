@@ -16,6 +16,19 @@ public enum ScoringRelation
 /// <summary>
 /// One line of a Primary Mission's "how to score" list, e.g. "Second Battle Round Onwards / End of your Command
 /// phase… / For each objective you control. / 3VP". <paramref name="When"/> is empty for an "End of the Battle"
-/// condition, whose timing is fully described by <paramref name="RoundScope"/> alone.
+/// condition, whose timing is fully described by <paramref name="RoundScope"/> alone. <paramref name="FirstRound"/>
+/// and <paramref name="LastRound"/> are the battle rounds the condition can be scored in.
 /// </summary>
-public sealed record ScoringCondition(string RoundScope, string When, string Condition, int Points, ScoringRelation Relation = ScoringRelation.Standalone);
+public sealed record ScoringCondition(
+    string RoundScope,
+    string When,
+    string Condition,
+    int Points,
+    ScoringRelation Relation = ScoringRelation.Standalone,
+    int FirstRound = ScoringCondition.MinRound,
+    int LastRound = ScoringCondition.MaxRound,
+    bool IsEndOfBattle = false)
+{
+    public const int MinRound = 1;
+    public const int MaxRound = 5;
+}

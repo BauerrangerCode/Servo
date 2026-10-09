@@ -10,9 +10,11 @@ namespace Servitor.App.Scoring.MissionDeck;
 /// <remarks>
 /// The file is a JSON object with a "primaryMissions" array (each entry: "yourDisposition", "opponentDisposition"
 /// — <see cref="MissionArchetype"/> names —, "name", "legend", "scoringConditions" — each with "roundScope", "when",
-/// "condition", "points" and an optional "relation" ("Or"/"Cumulative", default standalone) — and an optional
-/// "additionalRules" array of verbatim rule-text blocks) and a "deploymentCards" array ("name", "attackerZone",
-/// "defenderZone", "objectives").
+/// "condition", "points", an optional "relation" ("Or"/"Cumulative", default standalone), "firstRound"/"lastRound"
+/// (default 1-5) and "endOfBattle" — and an optional "additionalRules" array of verbatim rule-text blocks), a
+/// "deploymentCards" array ("name", "attackerZone", "defenderZone", "objectives") and a "secondaryMissions" array
+/// ("name", "legend", "whenDrawn", "additionalRules", "fixedEligible", "turnCap" and "conditions" with
+/// "fixedPoints"/"tacticalPoints" — an absent value means the line does not exist in that mode).
 /// </remarks>
 public static class MissionDeckParser
 {
@@ -35,7 +37,8 @@ public static class MissionDeckParser
             var warnings = new List<string>();
             var missions = ParseMissions(document.RootElement, warnings);
             var cards = ParseDeploymentCards(document.RootElement, warnings);
-            return new MissionDeckSet(new MissionDeckData(missions, cards), warnings);
+            var secondaries = ParseSecondaryMissions(document.RootElement, warnings);
+            return new MissionDeckSet(new MissionDeckData(missions, cards) { SecondaryMissions = secondaries }, warnings);
         }
     }
 
@@ -119,15 +122,78 @@ public static class MissionDeckParser
                 continue;
             }
 
-            var relation = Text(condition, "relation") is { } relationText && Enum.TryParse<ScoringRelation>(relationText, out var parsed)
-                ? parsed
-                : ScoringRelation.Standalone;
-
-            conditions.Add(new ScoringCondition(roundScope, when, text, points.Value, relation));
+            var (first, last) = Rounds(condition);
+            var isEndOfBattle = condition.TryGetProperty("endOfBattle", out var flag) && flag.ValueKind == JsonValueKind.True;
+            conditions.Add(new ScoringCondition(roundScope, when, text, points.Value, Relation(condition), first, last, isEndOfBattle));
         }
 
         return conditions;
     }
+
+    private static List<SecondaryMission> ParseSecondaryMissions(JsonElement root, List<string> warnings)
+    {
+        var missions = new List<SecondaryMission>();
+        if (!root.TryGetProperty("secondaryMissions", out var array) || array.ValueKind != JsonValueKind.Array)
+        {
+            warnings.Add("The Mission Deck file has no \"secondaryMissions\" array.");
+            return missions;
+        }
+
+        var index = 0;
+        foreach (var entry in array.EnumerateArray())
+        {
+            index++;
+            if (entry.ValueKind != JsonValueKind.Object || Text(entry, "name") is not { } name)
+            {
+                warnings.Add($"Secondary mission {index} has no \"name\".");
+                continue;
+            }
+
+            var conditions = ParseSecondaryConditions(entry);
+            if (conditions.Count == 0)
+            {
+                warnings.Add($"Secondary mission \"{name}\" has no readable scoring condition.");
+                continue;
+            }
+
+            var fixedEligible = entry.TryGetProperty("fixedEligible", out var flag) && flag.ValueKind == JsonValueKind.True;
+            missions.Add(new SecondaryMission(name, Text(entry, "legend") ?? "", Text(entry, "whenDrawn") ?? "", Strings(entry, "additionalRules"), fixedEligible, Number(entry, "turnCap"), conditions));
+        }
+
+        return missions;
+    }
+
+    private static List<SecondaryCondition> ParseSecondaryConditions(JsonElement entry)
+    {
+        var conditions = new List<SecondaryCondition>();
+        if (!entry.TryGetProperty("conditions", out var array) || array.ValueKind != JsonValueKind.Array)
+        {
+            return conditions;
+        }
+
+        foreach (var condition in array.EnumerateArray())
+        {
+            var fixedPoints = Number(condition, "fixedPoints");
+            var tacticalPoints = Number(condition, "tacticalPoints");
+            if (condition.ValueKind != JsonValueKind.Object || Text(condition, "condition") is not { } text || (fixedPoints is null && tacticalPoints is null))
+            {
+                continue;
+            }
+
+            var (first, last) = Rounds(condition);
+            conditions.Add(new SecondaryCondition(Text(condition, "roundScope") ?? "", Text(condition, "when") ?? "", text, fixedPoints, tacticalPoints, Relation(condition), first, last));
+        }
+
+        return conditions;
+    }
+
+    private static ScoringRelation Relation(JsonElement condition) =>
+        Text(condition, "relation") is { } relationText && Enum.TryParse<ScoringRelation>(relationText, out var parsed)
+            ? parsed
+            : ScoringRelation.Standalone;
+
+    private static (int First, int Last) Rounds(JsonElement condition) =>
+        (Number(condition, "firstRound") ?? ScoringCondition.MinRound, Number(condition, "lastRound") ?? ScoringCondition.MaxRound);
 
     private static List<DeploymentCard> ParseDeploymentCards(JsonElement root, List<string> warnings)
     {

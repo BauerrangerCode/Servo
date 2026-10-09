@@ -1,0 +1,53 @@
+@using Servitor.App.Scoring.MissionDeck
+
+<li class="entry @(Enabled ? "" : "entry-disabled")">
+    @if (!string.IsNullOrEmpty(When))
+    {
+        <span class="entry-when">@When</span>
+    }
+    <span class="entry-text">@Text</span>
+    <span class="entry-points">@PointsLabel</span>
+    @if (Relation != ScoringRelation.Standalone)
+    {
+        <span class="entry-relation">@Relation.ToString().ToUpperInvariant()</span>
+    }
+    @if (IsCountable)
+    {
+        <span class="entry-control">
+            <button type="button" class="step-down" disabled="@(!Enabled || Count == 0)" @onclick="() => OnAdjust.InvokeAsync(-1)">−</button>
+            <span class="entry-count">@Count</span>
+            <button type="button" class="step-up" disabled="@(!Enabled)" @onclick="() => OnAdjust.InvokeAsync(1)">+</button>
+        </span>
+    }
+    else
+    {
+        <input type="checkbox" class="entry-check" checked="@(Count > 0)" disabled="@(!Enabled)"
+               @onchange="e => OnAdjust.InvokeAsync((bool)e.Value! ? 1 : -1)" />
+    }
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = "";
+
+    [Parameter]
+    public string When { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string PointsLabel { get; set; } = "";
+
+    [Parameter]
+    public ScoringRelation Relation { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    [Parameter]
+    public bool IsCountable { get; set; }
+
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    [Parameter, EditorRequired]
+    public EventCallback<int> OnAdjust { get; set; }
+}

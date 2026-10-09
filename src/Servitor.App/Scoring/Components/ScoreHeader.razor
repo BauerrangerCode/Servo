@@ -1,0 +1,28 @@
+@using Servitor.App.Scoring.Tracking
+@inherits TrackingComponentBase
+
+@{
+    var you = Tracking.ScoreOf(Side.You).Total;
+    var enemy = Tracking.ScoreOf(Side.Enemy).Total;
+}
+
+<header class="score-header">
+    <p class="score-line">
+        <span class="header-you">You <strong>@you</strong></span>
+        —
+        <span class="header-enemy">Enemy <strong>@enemy</strong></span>
+        <span class="lead-indicator">@LeadText(you, enemy)</span>
+    </p>
+    <div class="round-selector">
+        @for (var round = 1; round <= ScoringRules.BattleRounds; round++)
+        {
+            var r = round;
+            <button type="button" class="chip round-chip @(Tracking.CurrentRound == r ? "selected" : "")" @onclick="() => Tracking.SetRound(r)">Round @r</button>
+        }
+    </div>
+</header>
+
+@code {
+    private static string LeadText(int you, int enemy) =>
+        you == enemy ? "Tied" : you > enemy ? $"You lead by {you - enemy}" : $"Enemy leads by {enemy - you}";
+}

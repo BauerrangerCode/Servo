@@ -1,0 +1,37 @@
+@using Servitor.App.Scoring.MissionDeck
+@using Servitor.App.Scoring.Tracking
+@inherits TrackingComponentBase
+
+@if (Tracking.MissionOf(Side) is { } mission)
+{
+    var score = Tracking.ScoreOf(Side);
+    <section class="score-section primary-panel">
+        <h3>Primary — @mission.Name <span class="vp-total">@score.Primary/@ScoringRules.PrimaryMaxVp VP</span></h3>
+        <p class="round-subtotal">Round @Tracking.CurrentRound: @score.PrimaryRounds[Tracking.CurrentRound - 1]/@ScoringRules.MaxVpPerRound VP</p>
+        <ul class="entry-list">
+            @for (var index = 0; index < mission.ScoringConditions.Count; index++)
+            {
+                var i = index;
+                var condition = mission.ScoringConditions[i];
+                <ConditionEntry Text="@condition.Condition"
+                                When="@condition.When"
+                                PointsLabel="@PointsLabel(condition)"
+                                Relation="@condition.Relation"
+                                IsCountable="@ScoringRules.IsCountable(condition.Condition)"
+                                Enabled="@ScoringRules.IsActiveIn(condition.FirstRound, condition.LastRound, Tracking.CurrentRound)"
+                                Count="@Tracking.PrimaryCount(Side, Tracking.CurrentRound, i)"
+                                OnAdjust="@(delta => Adjust(i, delta))" />
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Side Side { get; set; }
+
+    private static string PointsLabel(ScoringCondition condition) =>
+        $"{(condition.Relation == ScoringRelation.Cumulative ? "+" : "")}{condition.Points}VP";
+
+    private void Adjust(int conditionIndex, int delta) => Tracking.AdjustPrimary(Side, conditionIndex, delta);
+}

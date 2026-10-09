@@ -1,0 +1,13 @@
+@using Servitor.App.Scoring.Tracking
+
+<section class="score-tracker">
+    <h2>Scoring</h2>
+    <ScoreHeader />
+    <div class="history-scroll">
+        <RoundHistory />
+    </div>
+    <div class="side-panels">
+        <SideScorePanel Side="Side.You" Title="You" />
+        <SideScorePanel Side="Side.Enemy" Title="Enemy" />
+    </div>
+</section>

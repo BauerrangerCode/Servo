@@ -1,4 +1,5 @@
 @page "/scoring"
+@using Servitor.App.Scoring.Components
 @using Servitor.App.Scoring.MissionDeck
 @using Servitor.App.Scoring.State
 @using Servitor.RulesData.Domain
@@ -129,6 +130,7 @@ else
             <p class="setup-complete">
                 Setup complete — @MissionArchetypeLabels.Label(State.YourDisposition!.Value) vs @MissionArchetypeLabels.Label(State.OpponentDisposition!.Value): @mission.Name.
             </p>
+            <ScoreTracker />
         }
     }
 

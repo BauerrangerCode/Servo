@@ -1,0 +1,47 @@
+@using Servitor.App.Scoring.Tracking
+@inherits TrackingComponentBase
+
+@{
+    var you = Tracking.ScoreOf(Side.You);
+    var enemy = Tracking.ScoreOf(Side.Enemy);
+}
+
+<table class="round-history">
+    <thead>
+        <tr>
+            <th></th>
+            @for (var round = 1; round <= ScoringRules.BattleRounds; round++)
+            {
+                <th>R@(round)</th>
+            }
+            <th>End</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="history-you-primary">
+            <th>You · Primary</th>
+            @foreach (var vp in you.PrimaryRounds) { <td>@vp</td> }
+            <td>@you.PrimaryEndOfBattle</td>
+            <td>@you.Primary</td>
+        </tr>
+        <tr class="history-you-secondary">
+            <th>You · Secondary</th>
+            @foreach (var vp in you.SecondaryRounds) { <td>@vp</td> }
+            <td>—</td>
+            <td>@you.Secondary</td>
+        </tr>
+        <tr class="history-enemy-primary">
+            <th>Enemy · Primary</th>
+            @foreach (var vp in enemy.PrimaryRounds) { <td>@vp</td> }
+            <td>@enemy.PrimaryEndOfBattle</td>
+            <td>@enemy.Primary</td>
+        </tr>
+        <tr class="history-enemy-secondary">
+            <th>Enemy · Secondary</th>
+            @foreach (var vp in enemy.SecondaryRounds) { <td>@vp</td> }
+            <td>—</td>
+            <td>@enemy.Secondary</td>
+        </tr>
+    </tbody>
+</table>

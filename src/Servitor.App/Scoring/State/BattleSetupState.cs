@@ -26,6 +26,9 @@ public sealed class BattleSetupState(IMissionDeckProvider? missionDeckProvider =
     public PrimaryMission? ResolvedMission =>
         YourDisposition is { } yours && OpponentDisposition is { } opponent ? Deck.Resolve(yours, opponent) : null;
 
+    public PrimaryMission? OpponentMission =>
+        YourDisposition is { } yours && OpponentDisposition is { } opponent ? Deck.Resolve(opponent, yours) : null;
+
     public void SelectYourDisposition(MissionArchetype disposition)
     {
         YourDisposition = disposition;

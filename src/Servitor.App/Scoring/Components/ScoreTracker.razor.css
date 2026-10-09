@@ -1,0 +1,144 @@
+.score-tracker {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--crt-fg-dim);
+    padding-top: 1rem;
+}
+
+.history-scroll {
+    overflow-x: auto;
+}
+
+.side-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.score-tracker ::deep .score-line {
+    font-size: 1.2rem;
+}
+
+.score-tracker ::deep .lead-indicator {
+    margin-left: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.score-tracker ::deep .chip,
+.score-tracker ::deep button {
+    border: 1px solid var(--crt-fg-dim);
+    background: transparent;
+    color: inherit;
+    border-radius: 0;
+    padding: 0.1rem 0.6rem;
+    margin: 0 0.25rem 0.25rem 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.score-tracker ::deep .chip.selected {
+    border-color: var(--crt-fg);
+    background: var(--crt-selected);
+}
+
+.score-tracker ::deep button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.score-tracker ::deep .round-history {
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+}
+
+.score-tracker ::deep .round-history th,
+.score-tracker ::deep .round-history td {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.1rem 0.6rem;
+    text-align: right;
+}
+
+.score-tracker ::deep .round-history th:first-child {
+    text-align: left;
+}
+
+.score-tracker ::deep .side-total,
+.score-tracker ::deep .vp-total {
+    margin-left: 0.75rem;
+    font-size: 0.9rem;
+    opacity: 0.85;
+}
+
+.score-tracker ::deep .side-breakdown,
+.score-tracker ::deep .round-subtotal,
+.score-tracker ::deep .mode-hint {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin: 0.2rem 0;
+}
+
+.score-tracker ::deep .score-section {
+    margin-bottom: 1rem;
+}
+
+.score-tracker ::deep .entry-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.3rem 0;
+}
+
+.score-tracker ::deep .entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid var(--crt-fg-dim);
+}
+
+.score-tracker ::deep .entry-disabled {
+    opacity: 0.45;
+}
+
+.score-tracker ::deep .entry-when,
+.score-tracker ::deep .entry-relation,
+.score-tracker ::deep .turn-cap,
+.score-tracker ::deep .card-rules {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.score-tracker ::deep .entry-text {
+    flex: 1 1 14rem;
+}
+
+.score-tracker ::deep .entry-points {
+    font-weight: bold;
+}
+
+.score-tracker ::deep .entry-count {
+    display: inline-block;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.score-tracker ::deep .secondary-card {
+    border-left: 1px solid var(--crt-fg-dim);
+    padding-left: 0.75rem;
+    margin: 0.75rem 0;
+}
+
+.score-tracker ::deep .card-legend {
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.score-tracker ::deep .add-card {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--crt-fg-dim);
+    border-radius: 0;
+    font-family: inherit;
+    padding: 0.1rem 0.4rem;
+}
