@@ -117,7 +117,7 @@ public class ScryTests : BunitContext
 
         var cut = Render<Scry>();
 
-        Assert.Contains("Merge data", cut.Find(".scry-empty").TextContent);
+        Assert.Contains("Update data", cut.Find(".scry-empty").TextContent);
         Assert.Empty(cut.FindAll("table"));
     }
 

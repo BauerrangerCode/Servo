@@ -24,7 +24,7 @@ public static class ArmyExportResolver
         var rulesData = await rulesDataProvider.GetAsync(cancellationToken);
         if (rulesData is null)
         {
-            return ImportResolveResult.Failure(["No rules data is available yet — use \"Merge data\" in the top bar first."]);
+            return ImportResolveResult.Failure(["No rules data is available yet — use \"Update data\" in the settings menu first."]);
         }
 
         var allDatasheets = await catalog.GetAllAsync(cancellationToken);

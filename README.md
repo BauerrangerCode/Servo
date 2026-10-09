@@ -82,7 +82,7 @@ The merge can also be run on its own:
 dotnet run --project src/Servitor.DataMerge
 ```
 
-or from inside the app with the **Merge data** button in the top navigation, which shows a report of what was merged and lets you download it.
+The in-app **Update data** button merges as its last step and offers a report of what was merged (**Merge report**), which can be downloaded.
 
 ## Using the app
 

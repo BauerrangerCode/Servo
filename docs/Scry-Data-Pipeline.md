@@ -436,7 +436,7 @@ open question rather than the primary explanation).
 
 ```
 Build time:  MSBuild target MergeRulesData ──▶ Servitor.DataMerge ──▶ wwwroot/data/merged/{rules-data.json, manifest.json, merge-report.md}
-In the app:  "Merge data" button (top nav) ──▶ RulesDataMergeService ──▶ same RulesDataMerger, result stored in IndexedDB
+In the app:  "Update data" button (settings menu) ──▶ RulesDataMergeService ──▶ same RulesDataMerger, result stored in IndexedDB
 
 Browser opens /scry
         │
@@ -451,5 +451,5 @@ merged/rules-data.json (or the IndexedDB copy) ──▶ Datasheets in memory �
 ```
 
 - The merge reads the 45 BSData catalogues, `core/` and `factions/` through `IRulesSourceReader` (file system in the tool, HTTP in the browser). BSData datasheets pass through unchanged, faction stratagems and stratagem ids per datasheet come from the rules-text source, and missing core rules are added. Rules and layout: [CODING_GUIDELINES.md](../CODING_GUIDELINES.md) "Data & Assets".
-- `DatasheetCatalog` raises `Changed` after the "Merge data" button stored a new result, and Scry reloads. Without any merged data Scry shows the hint "No rules data yet. Use “Merge data” in the top bar to build it."
+- `DatasheetCatalog` raises `Changed` after the "Update data" button stored a new result, and Scry reloads. Without any merged data Scry shows the hint "No rules data yet. Use “Update data” in the settings menu to build it."
 - Verified on the real data: 1519 datasheets (1148 current + 371 Legends), source, merged and displayed counts identical for all 36 Scry faction labels.

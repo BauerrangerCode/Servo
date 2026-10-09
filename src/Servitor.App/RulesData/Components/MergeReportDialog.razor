@@ -1,0 +1,37 @@
+@using Servitor.App.RulesData.Merging
+@using Servitor.App.Shared.Files
+@using Servitor.RulesData.Merging
+@inject IFileDownloadService FileDownload
+
+<div class="merge-report-dialog" role="dialog" aria-label="Merge report">
+    <div class="merge-report-panel">
+        <h2>Merge report</h2>
+        @if (!Result.Stored)
+        {
+            <p class="merge-report-error">No BSData datasheets were found, so nothing was stored and the data in use is unchanged.</p>
+        }
+        <pre class="merge-report-text">@_reportMarkdown</pre>
+
+        <div class="merge-report-actions">
+            <button type="button" @onclick="DownloadReportAsync">Download report</button>
+            <button type="button" @onclick="OnClose">Close</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private const string ReportFileName = "merge-report.md";
+    private const string ReportMimeType = "text/markdown";
+
+    private string _reportMarkdown = "";
+
+    [Parameter, EditorRequired]
+    public InAppMergeResult Result { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    protected override void OnParametersSet() => _reportMarkdown = MergeReportFormatter.ToMarkdown(Result.Outcome.Report);
+
+    private Task DownloadReportAsync() => FileDownload.DownloadTextAsync(ReportFileName, _reportMarkdown, ReportMimeType);
+}

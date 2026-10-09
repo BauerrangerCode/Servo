@@ -116,7 +116,7 @@ public static class SavedArmyResolver
         var rulesData = await rulesDataProvider.GetAsync(cancellationToken);
         if (rulesData is null)
         {
-            return Plan.Failed(["No rules data is available yet — use \"Merge data\" in the top bar first."]);
+            return Plan.Failed(["No rules data is available yet — use \"Update data\" in the settings menu first."]);
         }
 
         var faction = rulesData.Factions.FirstOrDefault(f => f.FactionId == saved.FactionId);

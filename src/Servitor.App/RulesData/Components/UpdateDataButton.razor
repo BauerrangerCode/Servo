@@ -1,11 +1,12 @@
 @using Servitor.App.RulesData.Merging
 @using Servitor.App.RulesData.Updating
+@using Servitor.RulesData.Merging
 @inject IDataUpdateService UpdateService
 @inject IRulesDataMergeService MergeService
 
 <div class="update-data">
     <button type="button" class="update-data-button" disabled="@_isRunning" @onclick="RunUpdateAsync">
-        @(_isRunning ? "Updating…" : "Update data")
+        @(_isRunning ? _statusText : "Update data")
     </button>
 
     @if (_progressLines.Count > 0)
@@ -21,7 +22,8 @@
     @if (_notAvailable)
     {
         <p class="update-message update-error">
-            The update service is not running. Start it in a terminal in the repository, then try again:
+            The update service is not running, so the sources were not refreshed and only the data already present was merged.
+            To update, start it in a terminal in the repository and try again:
             <code>@HttpDataUpdateService.StartCommand</code>
         </p>
     }
@@ -29,8 +31,12 @@
     @if (_result is { } result)
     {
         <p class="update-message @(result.Success ? "" : "update-error")">@(result.Success ? "Update finished." : "Update failed.")</p>
+    }
+
+    @if (_result is not null || _mergeSummary is not null)
+    {
         <ul class="update-summary">
-            @foreach (var line in result.Summary)
+            @foreach (var line in _result?.Summary ?? [])
             {
                 <li>@line</li>
             }
@@ -39,52 +45,78 @@
                 <li>@_mergeSummary</li>
             }
         </ul>
-        @if (result.Warnings.Count > 0)
-        {
-            <ul class="update-warnings">
-                @foreach (var warning in result.Warnings)
-                {
-                    <li>@warning</li>
-                }
-            </ul>
-        }
+    }
+
+    @if (_result is { Warnings.Count: > 0 } withWarnings)
+    {
+        <ul class="update-warnings">
+            @foreach (var warning in withWarnings.Warnings)
+            {
+                <li>@warning</li>
+            }
+        </ul>
+    }
+
+    @if (_mergeResult is not null)
+    {
+        <button type="button" class="merge-report-open" @onclick="() => _showReport = true">Merge report</button>
     }
 </div>
 
+@if (_showReport && _mergeResult is not null)
+{
+    <MergeReportDialog Result="_mergeResult" OnClose="() => _showReport = false" />
+}
+
 @code {
+    // The merge reports once per source file; re-rendering on every one of the ~1,700 datasheet files would cost
+    // more than the merge itself, so the button only repaints on every Nth step.
+    private const int RenderEveryNthStep = 25;
+
     private bool _isRunning;
     private bool _notAvailable;
+    private bool _showReport;
+    private string _statusText = "";
     private DataUpdateResult? _result;
+    private InAppMergeResult? _mergeResult;
     private string? _mergeSummary;
     private readonly List<string> _progressLines = [];
 
+    // One action for the whole refresh: fetch the sources through the update service, then rebuild the merged data
+    // the app works with. Without the service the sources already on disk are merged, so the button still works.
     private async Task RunUpdateAsync()
     {
         _isRunning = true;
         _notAvailable = false;
+        _showReport = false;
         _result = null;
+        _mergeResult = null;
         _mergeSummary = null;
+        _statusText = "Updating…";
         _progressLines.Clear();
 
         try
         {
-            if (!await UpdateService.IsAvailableAsync())
+            if (await UpdateService.IsAvailableAsync())
+            {
+                var progress = new Progress<DataUpdateProgress>(step =>
+                {
+                    _progressLines.Add($"{step.Step}: {step.Message}");
+                    InvokeAsync(StateHasChanged);
+                });
+
+                _result = await UpdateService.UpdateAsync(progress);
+                if (!_result.Success)
+                {
+                    return;
+                }
+            }
+            else
             {
                 _notAvailable = true;
-                return;
             }
 
-            var progress = new Progress<DataUpdateProgress>(step =>
-            {
-                _progressLines.Add($"{step.Step}: {step.Message}");
-                InvokeAsync(StateHasChanged);
-            });
-
-            _result = await UpdateService.UpdateAsync(progress);
-            if (_result.Success)
-            {
-                _mergeSummary = await MergeAfterUpdateAsync();
-            }
+            _mergeSummary = await MergeAsync();
         }
         catch (HttpRequestException ex)
         {
@@ -96,14 +128,23 @@
         }
     }
 
-    // The update replaced the source files, so the merged data the app works with is rebuilt from them right away.
-    private async Task<string> MergeAfterUpdateAsync()
+    private async Task<string> MergeAsync()
     {
+        _statusText = "Merging…";
+        var progress = new Progress<MergeProgress>(step =>
+        {
+            _statusText = $"{step.Stage} {step.Completed}/{step.Total}";
+            if (step.Completed % RenderEveryNthStep == 0 || step.Completed == step.Total)
+            {
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
         try
         {
-            var merge = await MergeService.MergeAsync();
-            return merge.Stored
-                ? $"Merge: {merge.Outcome.Report.Summary.BsDataDatasheets} datasheets merged and stored."
+            _mergeResult = await MergeService.MergeAsync(progress);
+            return _mergeResult.Stored
+                ? $"Merge: {_mergeResult.Outcome.Report.Summary.BsDataDatasheets} datasheets merged and stored."
                 : "Merge: no datasheets found, nothing was stored.";
         }
         catch (Exception ex) when (ex is HttpRequestException or System.Text.Json.JsonException or Microsoft.JSInterop.JSException)

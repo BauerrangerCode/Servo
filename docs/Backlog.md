@@ -124,7 +124,7 @@ Raised by the project owner while reviewing E2 (Scry): the BSData wh40k-11e cata
 **Delivered:**
 
 - New class library `Servitor.RulesData` (domain, mappers, `RulesDataMerger`), console tool `Servitor.DataMerge` and an MSBuild target `MergeRulesData`, so the merge runs at build time and produces `wwwroot/data/merged/{rules-data.json, manifest.json, merge-report.md}`.
-- "Merge data" button in the top navigation: runs the same merge in the browser, stores the result in IndexedDB, shows the report and offers it as a download. At startup the newer of the IndexedDB copy and the shipped files wins.
+- The "Update data" button in the settings menu runs the same merge in the browser as its last step (there is no separate merge button), stores the result in IndexedDB, and offers the report as a download. At startup the newer of the IndexedDB copy and the shipped files wins.
 - Raw source files are never modified. `core/` and `factions/` moved into `src/Servitor.App/wwwroot/data/`; BSData stays as the clone in `/data/bsdata/`.
 - Join key: faction + normalized name + Legends flag only. Ambiguous matches take the union of stratagem ids; unresolved ids are dropped and reported.
 

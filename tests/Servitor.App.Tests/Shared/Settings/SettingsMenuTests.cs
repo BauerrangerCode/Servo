@@ -67,12 +67,12 @@ public class SettingsMenuTests : BunitContext
     }
 
     [Fact]
-    public void The_panel_holds_the_screen_effects_and_the_merge_button_even_while_closed()
+    public void The_panel_holds_the_screen_effects_and_a_single_update_button_even_while_closed()
     {
         var cut = Render<SettingsMenu>();
 
         Assert.Single(cut.FindAll(".settings-panel .crt-effects-control"));
-        Assert.Single(cut.FindAll(".settings-panel button.merge-data-button"));
+        Assert.Empty(cut.FindAll(".settings-panel button.merge-data-button"));
         Assert.Single(cut.FindAll(".settings-panel button.update-data-button"));
         Assert.Equal(1, _effects.LoadCount);
     }
