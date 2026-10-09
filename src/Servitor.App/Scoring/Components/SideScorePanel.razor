@@ -1,0 +1,35 @@
+@using Servitor.App.Scoring.Tracking
+@inherits TrackingComponentBase
+
+@{
+    var score = Tracking.ScoreOf(Side);
+}
+
+<article class="side-panel side-@Side.ToString().ToLowerInvariant()">
+    <h2>@Title <span class="side-total">@score.Total VP</span></h2>
+    <p class="side-breakdown">@score.Primary + @score.Secondary + @score.Paint@(score.Challenger > 0 ? $" + {score.Challenger}" : "")</p>
+
+    <PrimaryScorePanel Side="Side" />
+    <SecondaryScorePanel Side="Side" />
+
+    <section class="score-section extras">
+        <label class="paint-bonus">
+            <input type="checkbox" class="paint-check" checked="@(score.Paint > 0)" @onchange="e => Tracking.SetPainted(Side, (bool)e.Value!)" />
+            Battle Ready army (+@(ScoringRules.PaintVp) VP)
+        </label>
+        <span class="challenger">
+            Challenger
+            <button type="button" class="chall-down" disabled="@(score.Challenger == 0)" @onclick="() => Tracking.AdjustChallenger(Side, -1)">−</button>
+            <span class="entry-count">@score.Challenger</span>
+            <button type="button" class="chall-up" @onclick="() => Tracking.AdjustChallenger(Side, 1)">+</button>
+        </span>
+    </section>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public Side Side { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+}

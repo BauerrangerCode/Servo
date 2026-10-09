@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Servitor.App.ArmyImport.Parsing;
@@ -148,7 +149,7 @@ public static partial class WarscribeExportParser
         }
         else
         {
-            totalPoints = int.Parse(pointsMatch.Groups[1].Value);
+            totalPoints = ParseNumber(pointsMatch.Groups[1].Value, errors, "the header's TOTAL ARMY POINTS");
         }
 
         if (!header.TryGetValue("WARLORD", out var warlordValue))
@@ -166,7 +167,7 @@ public static partial class WarscribeExportParser
             }
             else
             {
-                warlordNumber = int.Parse(match.Groups[1].Value);
+                warlordNumber = ParseNumber(match.Groups[1].Value, errors, "the header's WARLORD field");
                 warlordName = match.Groups[2].Value.Trim();
             }
         }
@@ -268,6 +269,18 @@ public static partial class WarscribeExportParser
         return (units, i);
     }
 
+    // The regexes only guarantee digits, so a number beyond Int32 range is bad input to report, not an exception.
+    private static int ParseNumber(string digits, List<string> errors, string context)
+    {
+        if (int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var value))
+        {
+            return value;
+        }
+
+        errors.Add($"The number {digits} in {context} is too large.");
+        return 0;
+    }
+
     private static bool TryParseCharacterLine(string line, List<string> errors, out ParsedCharacter? character)
     {
         var match = CharacterLineRegex().Match(line);
@@ -277,10 +290,10 @@ public static partial class WarscribeExportParser
             return false;
         }
 
-        var number = int.Parse(match.Groups[1].Value);
-        var qty = int.Parse(match.Groups[2].Value);
         var name = match.Groups[3].Value.Trim();
-        var points = int.Parse(match.Groups[4].Value);
+        var number = ParseNumber(match.Groups[1].Value, errors, $"the character line \"{name}\"");
+        var qty = ParseNumber(match.Groups[2].Value, errors, $"the character line \"{name}\"");
+        var points = ParseNumber(match.Groups[4].Value, errors, $"the character line \"{name}\"");
         var tail = match.Groups[5].Value;
 
         var isWarlord = false;
@@ -309,9 +322,9 @@ public static partial class WarscribeExportParser
             return false;
         }
 
-        var qty = int.Parse(match.Groups[1].Value);
         var name = match.Groups[2].Value.Trim();
-        var points = int.Parse(match.Groups[3].Value);
+        var qty = ParseNumber(match.Groups[1].Value, errors, $"the unit line \"{name}\"");
+        var points = ParseNumber(match.Groups[3].Value, errors, $"the unit line \"{name}\"");
         var tail = match.Groups[4].Value;
 
         string? ledBy = null;
@@ -337,7 +350,7 @@ public static partial class WarscribeExportParser
         }
 
         var name = match.Groups[1].Value.Trim();
-        var points = int.Parse(match.Groups[2].Value);
+        var points = ParseNumber(match.Groups[2].Value, errors, $"the enhancement \"{name}\"");
 
         const string upgradeSuffix = " (Upgrade)";
         var hasUpgrade = name.EndsWith(upgradeSuffix, StringComparison.Ordinal);
@@ -358,7 +371,7 @@ public static partial class WarscribeExportParser
             var match = WargearItemRegex().Match(trimmed);
             if (match.Success)
             {
-                items.Add(new ParsedWargearItem(int.Parse(match.Groups[1].Value), match.Groups[2].Value.Trim()));
+                items.Add(new ParsedWargearItem(ParseNumber(match.Groups[1].Value, errors, context), match.Groups[2].Value.Trim()));
             }
             else
             {

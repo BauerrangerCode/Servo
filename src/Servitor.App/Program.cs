@@ -10,6 +10,7 @@ using Servitor.App.RulesData.Storage;
 using Servitor.App.RulesData.Updating;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
+using Servitor.App.Scoring.Tracking;
 using Servitor.App.Shared.Backdrop;
 using Servitor.App.Shared.Effects;
 using Servitor.App.Shared.Files;
@@ -26,6 +27,7 @@ builder.Services.AddScoped<IDetachmentRuleProvider, HttpDetachmentRuleProvider>(
 builder.Services.AddScoped<IArmyBuilderState, ArmyBuilderState>();
 builder.Services.AddScoped<IMissionDeckProvider, HttpMissionDeckProvider>();
 builder.Services.AddScoped<IBattleSetupState, BattleSetupState>();
+builder.Services.AddScoped<IScoreTrackingState, ScoreTrackingState>();
 builder.Services.AddScoped<IArmyCollectionStore, ArmyCollectionStore>();
 builder.Services.AddScoped<IRulesDataMergeService, RulesDataMergeService>();
 builder.Services.AddScoped<IDataUpdateService, HttpDataUpdateService>();

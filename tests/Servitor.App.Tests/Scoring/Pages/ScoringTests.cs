@@ -2,6 +2,7 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
+using Servitor.App.Scoring.Tracking;
 using Servitor.App.Tests.Scoring.State;
 using Servitor.RulesData.Domain;
 
@@ -29,8 +30,11 @@ public class ScoringTests : BunitContext
             [Card]);
         _state = new BattleSetupState(new FakeMissionDeckProvider(new MissionDeckSet(deck, [])));
 
+        var provider = new FakeMissionDeckProvider(new MissionDeckSet(deck, []));
+
         Services.AddSingleton<IBattleSetupState>(_state);
-        Services.AddSingleton<IMissionDeckProvider>(new FakeMissionDeckProvider(new MissionDeckSet(deck, [])));
+        Services.AddSingleton<IMissionDeckProvider>(provider);
+        Services.AddSingleton<IScoreTrackingState>(new ScoreTrackingState(_state, provider));
     }
 
     // Several disposition chips share the same label between the "Your Disposition" and "Opponent Disposition"

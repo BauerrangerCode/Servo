@@ -18,6 +18,9 @@ public interface IBattleSetupState
     /// <summary>The Primary Mission resolved from both dispositions; null until both are picked.</summary>
     PrimaryMission? ResolvedMission { get; }
 
+    /// <summary>The opponent's own Primary Mission: the same two dispositions, read from their side of the table.</summary>
+    PrimaryMission? OpponentMission { get; }
+
     /// <summary>The Mission Deck's 6 named Deployment cards, for the layout picker.</summary>
     IReadOnlyList<DeploymentCard> DeploymentCards { get; }
 

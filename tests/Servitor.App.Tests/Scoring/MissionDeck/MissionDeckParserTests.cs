@@ -22,7 +22,8 @@ public class MissionDeckParserTests
           ],
           "deploymentCards": [
             { "name": "Hammer and Anvil", "attackerZone": "Top edge.", "defenderZone": "Bottom edge.", "objectives": "One central objective." }
-          ]
+          ],
+          "secondaryMissions": []
         }
         """;
 
@@ -89,7 +90,113 @@ public class MissionDeckParserTests
         Assert.Single(set.Warnings);
     }
 
+    [Fact]
+    public void Secondary_missions_keep_their_per_mode_values_and_rounds()
+    {
+        var set = MissionDeckParser.Parse("""
+            {
+              "primaryMissions": [], "deploymentCards": [],
+              "secondaryMissions": [
+                {
+                  "name": "Assassination", "legend": "Hunt.", "fixedEligible": true, "turnCap": 5, "whenDrawn": "Pick one.",
+                  "additionalRules": ["Note."],
+                  "conditions": [
+                    { "roundScope": "Any Battle Round", "when": "End of a turn.", "condition": "For each model.", "fixedPoints": 3 },
+                    { "roundScope": "Second Battle Round Onwards", "when": "End of a turn.", "condition": "Bonus.", "tacticalPoints": 5, "relation": "Cumulative", "firstRound": 2, "lastRound": 5 },
+                    { "condition": "Has no value in any mode." }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        Assert.Empty(set.Warnings);
+        var card = Assert.Single(set.Data.SecondaryMissions);
+        Assert.True(card.FixedEligible);
+        Assert.Equal(5, card.TurnCap);
+        Assert.Equal("Pick one.", card.WhenDrawn);
+        Assert.Equal(["Note."], card.AdditionalRules);
+        Assert.Equal(2, card.Conditions.Count);
+        Assert.Equal(3, card.Conditions[0].PointsIn(SecondaryMode.Fixed));
+        Assert.Null(card.Conditions[0].PointsIn(SecondaryMode.Tactical));
+        Assert.Equal(5, card.Conditions[1].PointsIn(SecondaryMode.Tactical));
+        Assert.Equal((2, 5), (card.Conditions[1].FirstRound, card.Conditions[1].LastRound));
+        Assert.Equal(ScoringRelation.Cumulative, card.Conditions[1].Relation);
+        Assert.Same(card, set.Data.FindSecondary("Assassination"));
+    }
+
+    [Fact]
+    public void A_secondary_mission_without_a_readable_condition_is_skipped_with_a_warning()
+    {
+        var set = MissionDeckParser.Parse("""
+            { "primaryMissions": [], "deploymentCards": [], "secondaryMissions": [ { "name": "Empty", "conditions": [] } ] }
+            """);
+
+        Assert.Empty(set.Data.SecondaryMissions);
+        Assert.Contains(set.Warnings, w => w.Contains("Empty", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Primary_conditions_read_their_round_range_and_end_of_battle_flag()
+    {
+        var set = MissionDeckParser.Parse("""
+            {
+              "primaryMissions": [ { "yourDisposition": "TakeAndHold", "opponentDisposition": "TakeAndHold", "name": "X", "scoringConditions": [
+                { "roundScope": "Second Battle Round Onwards", "when": "w", "condition": "c", "points": 2, "firstRound": 2, "lastRound": 5 },
+                { "roundScope": "End of the Battle", "when": "", "condition": "c", "points": 5, "firstRound": 5, "lastRound": 5, "endOfBattle": true },
+                { "roundScope": "Any Battle Round", "when": "w", "condition": "c", "points": 1 }
+              ] } ],
+              "deploymentCards": [], "secondaryMissions": []
+            }
+            """);
+
+        var conditions = set.Data.Resolve(MissionArchetype.TakeAndHold, MissionArchetype.TakeAndHold)!.ScoringConditions;
+        Assert.Equal((2, 5, false), (conditions[0].FirstRound, conditions[0].LastRound, conditions[0].IsEndOfBattle));
+        Assert.Equal((5, 5, true), (conditions[1].FirstRound, conditions[1].LastRound, conditions[1].IsEndOfBattle));
+        Assert.Equal((1, 5, false), (conditions[2].FirstRound, conditions[2].LastRound, conditions[2].IsEndOfBattle));
+    }
+
     // ---- the shipped Mission Deck file ------------------------------------------------------------------------
+
+    [Fact]
+    public void The_shipped_deck_has_the_18_secondary_missions_and_exactly_4_fixed_eligible_ones()
+    {
+        var deck = MissionDeckParser.Parse(File.ReadAllText(DeckFile)).Data;
+
+        Assert.Equal(18, deck.SecondaryMissions.Count);
+        Assert.Equal(
+            ["A Grievous Blow", "Assassination", "Bring It Down", "Engage on All Fronts"],
+            deck.SecondaryMissions.Where(m => m.FixedEligible).Select(m => m.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Every_shipped_secondary_condition_scores_in_at_least_one_mode_and_fixed_cards_differ_only_where_the_source_does()
+    {
+        var deck = MissionDeckParser.Parse(File.ReadAllText(DeckFile)).Data;
+
+        Assert.All(
+            deck.SecondaryMissions.SelectMany(m => m.Conditions),
+            c => Assert.True(c.FixedPoints is not null || c.TacticalPoints is not null));
+        Assert.All(
+            deck.SecondaryMissions.Where(m => !m.FixedEligible).SelectMany(m => m.Conditions),
+            c => Assert.Equal(c.FixedPoints, c.TacticalPoints));
+        Assert.Equal(4, deck.FindSecondary("A Grievous Blow")!.Conditions[0].FixedPoints);
+        Assert.Equal(5, deck.FindSecondary("A Grievous Blow")!.Conditions[0].TacticalPoints);
+    }
+
+    [Fact]
+    public void Every_shipped_end_of_battle_condition_is_flagged_and_only_scoreable_in_the_last_round()
+    {
+        var deck = MissionDeckParser.Parse(File.ReadAllText(DeckFile)).Data;
+        var conditions = deck.PrimaryMissions.Values.SelectMany(m => m.ScoringConditions).ToList();
+
+        Assert.All(
+            conditions.Where(c => c.RoundScope == "End of the Battle"),
+            c => Assert.True(c.IsEndOfBattle && c.FirstRound == 5 && c.LastRound == 5));
+        Assert.All(conditions.Where(c => c.IsEndOfBattle), c => Assert.Equal("End of the Battle", c.RoundScope));
+        Assert.All(conditions, c => Assert.InRange(c.FirstRound, 1, c.LastRound));
+    }
+
 
     private static string DeckFile => TestPaths.WwwrootDataFile("missions", "mission-deck.json");
 

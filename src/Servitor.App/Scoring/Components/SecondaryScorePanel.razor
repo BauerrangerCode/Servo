@@ -1,0 +1,106 @@
+@using Servitor.App.Scoring.MissionDeck
+@using Servitor.App.Scoring.Tracking
+@inherits TrackingComponentBase
+
+@{
+    var mode = Tracking.ModeOf(Side);
+    var score = Tracking.ScoreOf(Side);
+}
+
+<section class="score-section secondary-panel">
+    <h3>Secondary <span class="vp-total">@score.Secondary/@ScoringRules.SecondaryMaxVp VP</span></h3>
+    <p class="round-subtotal">Round @Tracking.CurrentRound: @score.SecondaryRounds[Tracking.CurrentRound - 1]/@ScoringRules.MaxVpPerRound VP</p>
+
+    <div class="mode-toggle">
+        <button type="button" class="chip mode-fixed @(mode == SecondaryMode.Fixed ? "selected" : "")" @onclick="() => Tracking.SetMode(Side, SecondaryMode.Fixed)">Fixed</button>
+        <button type="button" class="chip mode-tactical @(mode == SecondaryMode.Tactical ? "selected" : "")" @onclick="() => Tracking.SetMode(Side, SecondaryMode.Tactical)">Tactical</button>
+    </div>
+
+    @if (mode == SecondaryMode.Fixed)
+    {
+        var picks = Tracking.FixedPicks(Side);
+        <p class="mode-hint">Pick @ScoringRules.FixedPickCount Fixed Missions (@picks.Count/@ScoringRules.FixedPickCount).</p>
+        <div class="fixed-choices">
+            @foreach (var choice in Tracking.FixedChoices)
+            {
+                var name = choice.Name;
+                <button type="button" class="chip fixed-choice @(picks.Contains(name) ? "selected" : "")" @onclick="() => Tracking.ToggleFixedPick(Side, name)">@name</button>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="mode-hint deck-info">@Tracking.DeckRemaining(Side) cards remaining in the deck. Draw @ScoringRules.TacticalDrawCount at the start of your Command phase.</p>
+        <div class="deck-controls">
+            <button type="button" class="draw-card" disabled="@(Tracking.DeckRemaining(Side) == 0)" @onclick="() => Tracking.Draw(Side)">Draw</button>
+            <select class="add-card" value="" @onchange="OnAddCard">
+                <option value="">(add a specific card)</option>
+                @foreach (var card in Tracking.DeckCards(Side).OrderBy(c => c.Name, StringComparer.Ordinal))
+                {
+                    <option value="@card.Name">@card.Name</option>
+                }
+            </select>
+        </div>
+        @if (Tracking.DiscardedCards(Side).Count > 0)
+        {
+            <p class="discarded-cards">Discarded: @string.Join(", ", Tracking.DiscardedCards(Side))</p>
+        }
+    }
+
+    @foreach (var card in Tracking.ScoringCards(Side))
+    {
+        var name = card.Name;
+        <div class="secondary-card">
+            <h4>@name @if (card.TurnCap is { } cap) { <span class="turn-cap">(up to @(cap)VP per turn)</span> }</h4>
+            <p class="card-legend">@card.Legend</p>
+            @if (card.WhenDrawn.Length > 0)
+            {
+                <p class="card-rules">WHEN DRAWN: @card.WhenDrawn</p>
+            }
+            @foreach (var rule in card.AdditionalRules)
+            {
+                <p class="card-rules">@rule</p>
+            }
+            <ul class="entry-list">
+                @for (var index = 0; index < card.Conditions.Count; index++)
+                {
+                    var i = index;
+                    var condition = card.Conditions[i];
+                    if (condition.PointsIn(mode) is not { } points)
+                    {
+                        continue;
+                    }
+
+                    <ConditionEntry Text="@condition.Condition"
+                                    When="@condition.When"
+                                    PointsLabel="@($"{(condition.Relation == ScoringRelation.Cumulative ? "+" : "")}{points}VP")"
+                                    Relation="@condition.Relation"
+                                    IsCountable="@ScoringRules.IsCountable(condition.Condition)"
+                                    Enabled="@ScoringRules.IsActiveIn(condition.FirstRound, condition.LastRound, Tracking.CurrentRound)"
+                                    Count="@Tracking.SecondaryCount(Side, name, Tracking.CurrentRound, i)"
+                                    OnAdjust="@(delta => Tracking.AdjustSecondary(Side, name, i, delta))" />
+                }
+            </ul>
+            @if (mode == SecondaryMode.Tactical)
+            {
+                <div class="card-actions">
+                    <button type="button" class="discard-card" @onclick="() => Tracking.Discard(Side, name)">Discard</button>
+                    <button type="button" class="replace-card" disabled="@(Tracking.ReplaceUsed(Side) || Tracking.DeckRemaining(Side) == 0)" @onclick="() => Tracking.Replace(Side, name)">Discard &amp; draw (1CP, once per battle)</button>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public Side Side { get; set; }
+
+    private void OnAddCard(ChangeEventArgs args)
+    {
+        if (args.Value?.ToString() is { Length: > 0 } name)
+        {
+            Tracking.AddCard(Side, name);
+        }
+    }
+}

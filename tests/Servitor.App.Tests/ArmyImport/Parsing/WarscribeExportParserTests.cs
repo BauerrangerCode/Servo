@@ -156,6 +156,26 @@ public class WarscribeExportParserTests
         Assert.Contains(result.Errors, e => e.Contains("NUMBER OF UNITS"));
     }
 
+    [Theory]
+    [InlineData("20x Boyz (180 pts)", "99999999999x Boyz (180 pts)")]
+    [InlineData("20x Boyz (180 pts)", "20x Boyz (99999999999 pts)")]
+    [InlineData("1x Big Mek Dakkarig (135 pts): 1x Multi-busta Launcha", "99999999999x Big Mek Dakkarig (135 pts): 1x Multi-busta Launcha")]
+    [InlineData("Char2: 1x Big Mek", "Char99999999999: 1x Big Mek")]
+    [InlineData("Mekwaaagh! Mastermind (+30pts)", "Mekwaaagh! Mastermind (+99999999999pts)")]
+    [InlineData("1x Multi-busta Launcha, 1x Stompy Feet", "99999999999x Multi-busta Launcha, 1x Stompy Feet")]
+    [InlineData("TOTAL ARMY POINTS: 2005pts", "TOTAL ARMY POINTS: 99999999999pts")]
+    [InlineData("WARLORD: Char3:", "WARLORD: Char99999999999:")]
+    public void A_number_beyond_the_int_range_is_a_handled_failure_not_an_exception(string original, string tampered)
+    {
+        var text = ReadArmy("Army1.txt");
+        Assert.Contains(original, text);
+
+        var result = WarscribeExportParser.Parse(text.Replace(original, tampered));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, e => e.Contains("too large", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void A_missing_warlord_marker_is_a_handled_failure()
     {
