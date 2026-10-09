@@ -1,18 +1,26 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.Scoring.Components;
+using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.Scoring.History;
 
 namespace Servitor.App.Tests.Scoring.Components;
 
 public class ScoreTrackerTests : BunitContext
 {
     private readonly ScoreTrackingState _tracking;
+    private readonly FakeScorecardStore _scorecards = new();
+    private readonly Servitor.App.Scoring.State.BattleSetupState _setup;
 
     public ScoreTrackerTests()
     {
-        _tracking = ScoringFixtures.Prepared().Tracking;
+        var (setup, tracking) = ScoringFixtures.Prepared();
+        _tracking = tracking;
+        _setup = setup;
         Services.AddSingleton<IScoreTrackingState>(_tracking);
+        Services.AddSingleton<IScorecardStore>(_scorecards);
+        Services.AddSingleton<IGameRecorder>(new GameRecorder(setup, tracking, _scorecards, TimeProvider.System));
     }
 
     private IRenderedComponent<ScoreTracker> RenderTracker() => Render<ScoreTracker>();
@@ -174,5 +182,52 @@ public class ScoreTrackerTests : BunitContext
 
         Assert.Contains("4/45 VP", cut.Find(".side-you .secondary-panel h3").TextContent);
         Assert.Equal("4", cut.Find(".history-you-secondary td").TextContent);
+    }
+
+    [Fact]
+    public void End_game_asks_for_confirmation_and_cancel_keeps_the_game_running()
+    {
+        var cut = RenderTracker();
+        cut.Find(YouPrimaryEntry(1, ".step-up")).Click();
+
+        cut.Find(".end-game-button").Click();
+
+        Assert.Contains("You 5 — Enemy 0", cut.Find(".end-game-confirm-text").TextContent);
+        cut.Find(".end-game-cancel").Click();
+        Assert.Empty(cut.FindAll(".end-game-confirm"));
+        Assert.Empty(_scorecards.Scorecards);
+        Assert.Equal(5, _tracking.ScoreOf(Side.You).Total);
+    }
+
+    [Fact]
+    public void Confirming_end_game_saves_the_scorecard_and_clears_the_game()
+    {
+        var cut = RenderTracker();
+        cut.Find(YouPrimaryEntry(1, ".step-up")).Click();
+
+        cut.Find(".end-game-button").Click();
+        cut.Find(".end-game-confirm").Click();
+
+        var card = Assert.Single(_scorecards.Scorecards);
+        Assert.Equal(GameResult.Victory, card.Result);
+        Assert.Equal(5, card.You.Total);
+        Assert.Null(_setup.YourDisposition);
+        Assert.Equal(0, _tracking.ScoreOf(Side.You).Total);
+    }
+
+    [Fact]
+    public void A_failing_save_keeps_the_game_and_shows_why()
+    {
+        _scorecards.FailSavesWith = new Microsoft.JSInterop.JSException("storage unavailable");
+        var cut = RenderTracker();
+        cut.Find(YouPrimaryEntry(1, ".step-up")).Click();
+
+        cut.Find(".end-game-button").Click();
+        cut.Find(".end-game-confirm").Click();
+
+        Assert.Contains("storage unavailable", cut.Find(".end-game-error").TextContent);
+        Assert.Empty(_scorecards.Scorecards);
+        Assert.Equal(5, _tracking.ScoreOf(Side.You).Total);
+        Assert.NotNull(_setup.YourDisposition);
     }
 }

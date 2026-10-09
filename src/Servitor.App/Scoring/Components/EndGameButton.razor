@@ -1,0 +1,56 @@
+@using Microsoft.JSInterop
+@using Servitor.App.Scoring.History
+@using Servitor.App.Scoring.Tracking
+@inherits TrackingComponentBase
+@inject IGameRecorder Recorder
+
+<div class="end-game">
+    @if (_confirming)
+    {
+        <p class="end-game-confirm-text">
+            End the game and save the scorecard? You @Tracking.ScoreOf(Side.You).Total — Enemy @Tracking.ScoreOf(Side.Enemy).Total.
+        </p>
+        <button type="button" class="end-game-confirm" disabled="@_saving" @onclick="EndGame">Yes, end game</button>
+        <button type="button" class="end-game-cancel" disabled="@_saving" @onclick="Cancel">Cancel</button>
+    }
+    else
+    {
+        <button type="button" class="end-game-button" @onclick="() => _confirming = true">End Game</button>
+    }
+
+    @if (_error is not null)
+    {
+        <p class="end-game-error">@_error</p>
+    }
+</div>
+
+@code {
+    private bool _confirming;
+    private bool _saving;
+    private string? _error;
+
+    private void Cancel()
+    {
+        _confirming = false;
+        _error = null;
+    }
+
+    private async Task EndGame()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            await Recorder.EndGameAsync();
+            _confirming = false;
+        }
+        catch (JSException ex)
+        {
+            _error = $"The scorecard could not be saved, the game is still running: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

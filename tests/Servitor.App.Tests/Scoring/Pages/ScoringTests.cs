@@ -1,8 +1,10 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.Scoring.History;
 using Servitor.App.Tests.Scoring.State;
 using Servitor.RulesData.Domain;
 
@@ -22,6 +24,7 @@ public class ScoringTests : BunitContext
     private static readonly DeploymentCard Card = new("Hammer and Anvil", "Top edge zone.", "Bottom edge zone.", "One central objective.");
 
     private readonly BattleSetupState _state;
+    private readonly FakeScorecardStore _scorecards = new();
 
     public ScoringTests()
     {
@@ -34,7 +37,10 @@ public class ScoringTests : BunitContext
 
         Services.AddSingleton<IBattleSetupState>(_state);
         Services.AddSingleton<IMissionDeckProvider>(provider);
-        Services.AddSingleton<IScoreTrackingState>(new ScoreTrackingState(_state, provider));
+        var tracking = new ScoreTrackingState(_state, provider);
+        Services.AddSingleton<IScoreTrackingState>(tracking);
+        Services.AddSingleton<IScorecardStore>(_scorecards);
+        Services.AddSingleton<IGameRecorder>(new GameRecorder(_state, tracking, _scorecards, TimeProvider.System));
     }
 
     // Several disposition chips share the same label between the "Your Disposition" and "Opponent Disposition"
@@ -113,5 +119,28 @@ public class ScoringTests : BunitContext
 
         Assert.DoesNotContain("Immovable Object", cut.Markup);
         Assert.DoesNotContain("Opponent Disposition", cut.Markup);
+    }
+
+    [Fact]
+    public void Ending_the_game_shows_a_banner_adds_the_scorecard_to_the_history_and_resets_the_wizard()
+    {
+        var cut = Render<Servitor.App.Scoring.Pages.Scoring>();
+        Assert.Contains("No finished games yet", cut.Markup);
+        SelectBothDispositions(cut);
+        ClickInSection(cut, 4, "You are the Attacker");
+        ClickInSection(cut, 5, "You");
+        cut.Find(".side-you .paint-check").Change(true);
+
+        cut.Find(".end-game-button").Click();
+        cut.Find(".end-game-confirm").Click();
+
+        Assert.Contains("Game ended — scorecard saved: Victory, You 10 — Enemy 0.", cut.Find(".game-ended").TextContent);
+        Assert.Single(cut.FindAll(".history-entry"));
+        Assert.Contains("Immovable Object", cut.Find(".history-entry").TextContent);
+        Assert.Empty(cut.FindAll(".score-tracker"));
+        Assert.DoesNotContain("Opponent Disposition", cut.Markup);
+
+        ClickInSection(cut, 0, "Take and Hold");
+        Assert.Empty(cut.FindAll(".game-ended"));
     }
 }
