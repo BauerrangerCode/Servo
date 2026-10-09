@@ -290,9 +290,10 @@ As a player, I want a battle round counter and a phase stepper (Deployment, Comm
 ### E6.2 Action Queue — 8 pts
 As a player, I want phase-relevant Core Stratagems, Army Rules, and Detachment Stratagems from my army surfaced automatically as the active phase changes, with an option to hide passive auras, so that I don't have to manually recall every timing-sensitive rule on my datasheets.
 
-- ✓ Queue content filters strictly by phase category (E6.1); the Your-Turn/Enemy-Turn tag is informational only, per confirmed Core Rules structure ([Reference-App-Analysis.md](Reference-App-Analysis.md) Section 11) — both tags are shown simultaneously during one player's turn, this is correct behavior
+- ✓ Queue content is filtered by phase category (E6.1) **and by whose turn it is**, using the stratagem's own timing (project owner decision, supersedes the earlier "turn tag is informational only" reading): "Your" shows only in the player's own turn, "Enemy" only in the opponent's turn, "Any" in both, and a phase-less ("any phase") stratagem in every phase. Timing tags read e.g. "Your Shooting phase", "Enemy Shooting phase", "Any Shooting phase"
+- ✓ A stratagem tied to a moment instead of a phase (start/end of the battle round, start/end of your or the enemy's turn) shows in the first or last phase of that round/turn only, recognised from the opening of its WHEN text
 - ✓ The three categories (Core Stratagems, Army Rules, Detachment Stratagems) are distinguishable
-- ✓ Each stratagem/rule renders CP cost (if any), category tag, turn-scope tag, WHEN/TARGET/EFFECT (or Passive text), and RESTRICTIONS/SECONDARY EFFECT when present
+- ✓ Each stratagem/rule renders CP cost (if any), category tag, timing tag, WHEN/TARGET/EFFECT (or Passive text), and RESTRICTIONS/SECONDARY EFFECT when present
 - ✓ A rule that presents multiple named sub-options (e.g. a doctrine-style choice with 2-3 alternatives) is supported as its own entry shape, not forced into the plain stratagem card layout
 - ✓ A rule whose effect persists across phases (e.g. an entered target that lasts until the next Command phase) stays visible/pinned across phase changes instead of disappearing outside its trigger phase
 - ✓ Auras toggle hides/shows aura-tagged abilities without affecting other queue entries
