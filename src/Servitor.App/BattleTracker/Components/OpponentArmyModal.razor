@@ -1,0 +1,116 @@
+@using Servitor.App.ArmyImport.Resolution
+@using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.BattleTracker.Opponent
+@using Servitor.App.RulesData.Components
+@using Servitor.App.RulesData.Loading
+@implements IDisposable
+@inject IOpponentArmyState Opponent
+@inject IMergedRulesDataProvider RulesData
+
+<div class="modal-backdrop" role="presentation">
+    <section class="opponent-modal" role="dialog" aria-modal="true" aria-label="Opponent's Army">
+        <header>
+            <h2>Opponent's Army</h2>
+            <div>
+                @if (Opponent.HasArmy)
+                {
+                    <button type="button" class="clear-opponent" @onclick="ClearArmy">Clear loaded army</button>
+                }
+                <button type="button" class="close-opponent" @onclick="OnClose">Close</button>
+            </div>
+        </header>
+
+        @if (!Opponent.HasArmy)
+        {
+            <label for="opponent-text">Paste the opponent's army list</label>
+            <textarea id="opponent-text" class="opponent-textarea" @bind="_pastedText" @bind:event="oninput"
+                      placeholder="Paste a Warscribe army list export here…"></textarea>
+            <button type="button" class="load-opponent" disabled="@(_isLoading || string.IsNullOrWhiteSpace(_pastedText))" @onclick="LoadArmy">
+                @(_isLoading ? "Loading…" : "Load army")
+            </button>
+            @if (_errors.Count > 0)
+            {
+                <ul class="opponent-errors">
+                    @foreach (var error in _errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            }
+        }
+        else
+        {
+            @if (_rules.Count > 0)
+            {
+                <details class="opponent-rules">
+                    <summary>Army Rules (@_rules.Count)</summary>
+                    @foreach (var group in _rules.GroupBy(r => r.Owner))
+                    {
+                        <h4 class="rule-owner">@group.Key</h4>
+                        @foreach (var rule in group)
+                        {
+                            <article class="rule-block">
+                                <h5>@rule.Title</h5>
+                                <RuleTags Entry="rule" />
+                                <div class="rule-text">@MarkdownRenderer.Render(rule.Markdown)</div>
+                            </article>
+                        }
+                    }
+                </details>
+            }
+
+            <ul class="opponent-roster">
+                @foreach (var unit in Opponent.Army.Units)
+                {
+                    <OpponentUnitCard @key="unit.Id" Unit="unit" LeaderName="@LeaderNameOf(unit)" />
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+@code {
+    private string _pastedText = string.Empty;
+    private bool _isLoading;
+    private List<string> _errors = [];
+    private IReadOnlyList<ArmyRuleEntry> _rules = [];
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Opponent.Changed += OnOpponentChanged;
+        await RefreshRulesAsync();
+    }
+
+    public void Dispose() => Opponent.Changed -= OnOpponentChanged;
+
+    private string? LeaderNameOf(Servitor.App.ArmyBuilder.State.ArmyUnit unit) =>
+        unit.LeaderUnitId is { } leaderId ? Opponent.Army.Units.FirstOrDefault(u => u.Id == leaderId)?.Datasheet.Name : null;
+
+    private async Task LoadArmy()
+    {
+        _isLoading = true;
+        _errors = [];
+        ImportResolveResult result = await Opponent.LoadAsync(_pastedText);
+        _errors = [.. result.Errors];
+        if (result.IsSuccess)
+        {
+            _pastedText = string.Empty;
+        }
+
+        _isLoading = false;
+    }
+
+    private void ClearArmy() => Opponent.Clear();
+
+    private void OnOpponentChanged() => InvokeAsync(async () =>
+    {
+        await RefreshRulesAsync();
+        StateHasChanged();
+    });
+
+    private async Task RefreshRulesAsync() =>
+        _rules = ArmyRuleCollector.Collect(await RulesData.GetAsync(), Opponent.Army.Setup, Opponent.Army.Units);
+}

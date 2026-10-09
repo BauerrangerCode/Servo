@@ -25,6 +25,8 @@
     @Section("Restrictions", Stratagem.Restrictions)
     @Section("Additional", Stratagem.AdditionalText)
 
+    @if (Usable)
+    {
     <div class="stratagem-use">
         <select class="use-target" value="@_target" @onchange="e => _target = e.Value?.ToString() ?? string.Empty" disabled="@IsUsed" aria-label="Target unit">
             <option value="">(no unit of mine)</option>
@@ -54,6 +56,7 @@
             }
         }
     </div>
+    }
 </article>
 
 @code {
@@ -65,6 +68,10 @@
 
     [Parameter]
     public IReadOnlyList<UnitChoice> Units { get; set; } = [];
+
+    /// <summary>False for the reference view (Commands), where a stratagem is only read, not used.</summary>
+    [Parameter]
+    public bool Usable { get; set; } = true;
 
     private int Cost => Stratagem.CpCost ?? 0;
 

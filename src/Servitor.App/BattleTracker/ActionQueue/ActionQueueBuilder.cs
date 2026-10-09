@@ -22,6 +22,16 @@ public static class ActionQueueBuilder
             ForTurn(DetachmentStratagems(data, setup), context));
     }
 
+    /// <summary>The standard-game stratagems of the army, whatever the phase and turn: the unfiltered Commands reference.</summary>
+    public static ActionQueueContent BuildAll(MergedRulesData? data, ArmySetup setup) =>
+        data is null
+            ? ActionQueueContent.Empty
+            : new ActionQueueContent(
+                [.. data.CoreStratagems.Where(IsStandard)],
+                [.. DetachmentStratagems(data, setup).Where(IsStandard)]);
+
+    private static bool IsStandard(Stratagem stratagem) => stratagem.Mode == GameMode.Standard;
+
     private static IEnumerable<Stratagem> DetachmentStratagems(MergedRulesData data, ArmySetup setup)
     {
         var faction = data.Factions.FirstOrDefault(f => f.FactionId == setup.FactionId);
@@ -36,6 +46,6 @@ public static class ActionQueueBuilder
 
     private static IReadOnlyList<Stratagem> ForTurn(IEnumerable<Stratagem> stratagems, TurnContext context) =>
         stratagems
-            .Where(s => s.Mode == GameMode.Standard && StratagemTiming.Of(s).IsActive(context))
+            .Where(s => IsStandard(s) && StratagemTiming.Of(s).IsActive(context))
             .ToList();
 }

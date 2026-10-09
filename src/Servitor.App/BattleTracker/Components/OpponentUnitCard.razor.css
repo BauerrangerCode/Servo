@@ -1,0 +1,45 @@
+.opponent-unit {
+    list-style: none;
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.5rem 0.7rem;
+    margin-bottom: 0.6rem;
+}
+
+.opponent-unit.destroyed {
+    opacity: 0.5;
+}
+
+.opponent-unit.destroyed .unit-name {
+    text-decoration: line-through;
+}
+
+.unit-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.badge,
+.pill {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    font-size: 0.8rem;
+    margin-right: 0.3rem;
+}
+
+.pill {
+    opacity: 0.8;
+    text-transform: uppercase;
+}
+
+.stat-badges,
+.pills {
+    margin: 0.3rem 0;
+}
+
+.unit-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

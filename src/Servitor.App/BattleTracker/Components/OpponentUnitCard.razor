@@ -1,0 +1,68 @@
+@using Servitor.App.ArmyBuilder.Catalog
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.BattleTracker.Opponent
+@inject IOpponentArmyState Opponent
+
+@{
+    var sheet = Unit.Datasheet;
+    var stats = sheet.StatLine;
+}
+
+<li class="opponent-unit @(IsDestroyed ? "destroyed" : "")">
+    <div class="unit-head">
+        <strong class="unit-name">@sheet.Name</strong>
+        <span class="badge models-badge">@Math.Max(1, Unit.Size.Models) @(Math.Max(1, Unit.Size.Models) == 1 ? "model" : "models")</span>
+        @if (LeaderName is not null)
+        {
+            <span class="badge leader-badge">Led by @LeaderName</span>
+        }
+    </div>
+
+    <p class="stat-badges">
+        <span class="badge stat">M @stats.Movement</span>
+        <span class="badge stat">T @stats.Toughness</span>
+        <span class="badge stat">Sv @stats.Save</span>
+        @if (stats.InvulnerableSave is not null)
+        {
+            <span class="badge stat">Inv @stats.InvulnerableSave</span>
+        }
+        <span class="badge stat">W @stats.Wounds</span>
+        <span class="badge stat">Ld @stats.Leadership</span>
+        <span class="badge stat">OC @stats.ObjectiveControl</span>
+    </p>
+
+    <p class="pills">
+        <span class="pill role-pill">@RoleLabel</span>
+        @foreach (var keyword in sheet.Keywords.Where(k => !k.Equals(RoleLabel, StringComparison.OrdinalIgnoreCase)))
+        {
+            <span class="pill keyword-pill">@keyword</span>
+        }
+    </p>
+
+    <div class="unit-actions">
+        <button type="button" class="add-token" @onclick="() => Opponent.AddToken(Unit.Id)">+ Token</button>
+        @if (Tokens > 0)
+        {
+            <span class="token-count">Tokens: @Tokens</span>
+            <button type="button" class="remove-token" aria-label="Remove a token" @onclick="() => Opponent.RemoveToken(Unit.Id)">−</button>
+        }
+        <button type="button" class="toggle-destroyed" aria-pressed="@IsDestroyed" @onclick="() => Opponent.ToggleDestroyed(Unit.Id)">
+            @(IsDestroyed ? "Restore" : "Destroyed")
+        </button>
+    </div>
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public ArmyUnit Unit { get; set; } = default!;
+
+    /// <summary>The character leading this unit, if any.</summary>
+    [Parameter]
+    public string? LeaderName { get; set; }
+
+    private string RoleLabel => UnitRoles.Label(UnitRoles.Of(Unit.Datasheet));
+
+    private int Tokens => Opponent.Tokens(Unit.Id);
+
+    private bool IsDestroyed => Opponent.IsDestroyed(Unit.Id);
+}

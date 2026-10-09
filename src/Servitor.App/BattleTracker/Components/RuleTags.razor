@@ -1,0 +1,23 @@
+@using Servitor.App.BattleTracker.ActionQueue
+
+<p class="rule-tags">
+    <span class="tag tag-timing">@(Entry.Timing is null ? "Passive" : TimingLabels.Timing(Entry.Timing))</span>
+    @if (Entry.IsAura)
+    {
+        <span class="tag tag-aura">Aura</span>
+    }
+    @if (Entry.IsChoice)
+    {
+        <span class="tag tag-choice">Choose one</span>
+    }
+    @ChildContent
+</p>
+
+@code {
+    [Parameter, EditorRequired]
+    public ArmyRuleEntry Entry { get; set; } = default!;
+
+    /// <summary>Further tags the host adds, e.g. "Pinned".</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -22,10 +22,32 @@ else
 {
     <BattleProgressBar />
     <CommandPointsPanel />
-    <ActionQueuePanel />
+
+    <nav class="play-nav">
+        <button type="button" class="chip view-queue @(_showCommands ? "" : "selected")" @onclick="() => _showCommands = false">Action Queue</button>
+        <button type="button" class="chip view-commands @(_showCommands ? "selected" : "")" @onclick="() => _showCommands = true">Commands</button>
+        <button type="button" class="chip open-opponent" @onclick="() => _showOpponent = true">Opponent's Army</button>
+    </nav>
+
+    @if (_showCommands)
+    {
+        <CommandsPanel />
+    }
+    else
+    {
+        <ActionQueuePanel />
+    }
+
+    @if (_showOpponent)
+    {
+        <OpponentArmyModal OnClose="() => _showOpponent = false" />
+    }
 }
 
 @code {
+    private bool _showCommands;
+    private bool _showOpponent;
+
     protected override async Task OnInitializedAsync()
     {
         Army.Changed += OnArmyChanged;

@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Servitor.App.ArmyBuilder.State;
+using Servitor.App.BattleTracker.Opponent;
 using Servitor.App.BattleTracker.State;
 using Servitor.App.RulesData.Loading;
 using Servitor.App.Tests.ArmyBuilder.Catalog;
@@ -21,6 +22,8 @@ public class PlayTests : BunitContext
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
+        Services.AddSingleton<IOpponentArmyState>(sp => new OpponentArmyState(
+            sp.GetRequiredService<IMergedRulesDataProvider>(), new FakeDatasheetCatalog([])));
         Services.AddSingleton<IArmyBuilderState>(BattleTrackerFixtures.OrkArmy());
         Services.AddSingleton<IMergedRulesDataProvider>(new BattleTrackerFixtures.FakeRulesDataProvider(BattleTrackerFixtures.Data()));
     }

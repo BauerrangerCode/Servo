@@ -19,11 +19,7 @@
     margin: 0;
 }
 
-.rule-tags {
-    margin: 0.3rem 0;
-}
-
-.tag {
+.rule-option .tag {
     border: 1px solid var(--crt-fg-dim);
     padding: 0 0.4rem;
     margin-right: 0.4rem;
