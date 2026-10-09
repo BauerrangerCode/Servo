@@ -6,7 +6,7 @@ Servitor is a Blazor WebAssembly app (.NET 10). It can be installed as a PWA.
 
 ## Quick start with Servo
 
-Servo is a small launcher with a skull-and-gear icon. Start it and it serves the app on your own computer and opens it in a full-screen window. Closing that window stops Servo. Nothing is installed and no internet connection is needed once the rules data is loaded.
+Servo is a small launcher with a skull-and-gear icon. Start it and it serves the app on your own computer and opens it in a full-screen window. Closing that window stops Servo a few seconds later. Nothing is installed and no internet connection is needed once the rules data is loaded.
 
 | System | Package | Start |
 | --- | --- | --- |

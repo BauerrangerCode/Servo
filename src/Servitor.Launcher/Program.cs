@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Servitor.Launcher;
 
 // Servo: one double-clickable program that serves the Servitor app locally and opens it as a full-screen app window.
-// Closing that window stops Servo.
+// Closing that window stops Servo a few seconds later.
 
 var options = ServoOptions.FromArguments(args);
 
@@ -27,24 +27,39 @@ try
         return 0;
     }
 
-    await using var app = ServoHost.Build(options);
+    var monitor = new SessionMonitor(TimeProvider.System);
+    await using var app = ServoHost.Build(options, monitor);
     await app.StartAsync();
 
-    if (!options.OpenBrowser)
+    if (options.OpenBrowser)
     {
-        await app.WaitForShutdownAsync();
-        return 0;
+        // The browser process is not waited for (see SessionMonitor); the page tells Servo when it is closed.
+        using var browser = BrowserLauncher.Start(options.AppUrl, options.BrowserProfileDirectory);
+        if (browser is null)
+        {
+            Fail(options, "Servo needs Microsoft Edge, Google Chrome, Chromium or Brave to show the app in full screen, and none was found. Install one of them and start Servo again.");
+            await app.StopAsync();
+            return 1;
+        }
     }
 
-    using var browser = BrowserLauncher.Start(options.AppUrl, options.BrowserProfileDirectory);
-    if (browser is null)
+    var stopping = app.Lifetime.ApplicationStopping;
+    using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+    try
     {
-        Fail(options, "Servo needs Microsoft Edge, Google Chrome, Chromium or Brave to show the app in full screen, and none was found. Install one of them and start Servo again.");
-        await app.StopAsync();
-        return 1;
+        while (await timer.WaitForNextTickAsync(stopping))
+        {
+            if (options.OpenBrowser && monitor.ShouldExit())
+            {
+                break;
+            }
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        // Ctrl+C or a system shutdown: stop below like any other exit.
     }
 
-    await browser.WaitForExitAsync();
     await app.StopAsync();
     return 0;
 }

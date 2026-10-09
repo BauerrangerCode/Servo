@@ -58,6 +58,7 @@ public sealed class BrowserLauncherTests
 public sealed class ServoHostTests : IAsyncLifetime
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "servo-tests-" + Guid.NewGuid().ToString("N"));
+    private SessionMonitor _monitor = null!;
     private WebApplication _app = null!;
     private HttpClient _client = null!;
 
@@ -72,7 +73,8 @@ public sealed class ServoHostTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(home, "data", "rules.json"), "{\"from\":\"home\"}");
 
         var options = new ServoOptions(["http://127.0.0.1:0"], "http://127.0.0.1:0", webRoot, home, OpenBrowser: false);
-        _app = ServoHost.Build(options);
+        _monitor = new SessionMonitor(TimeProvider.System);
+        _app = ServoHost.Build(options, _monitor);
         await _app.StartAsync();
         _client = new HttpClient { BaseAddress = new Uri(_app.Urls.Single()) };
     }
@@ -129,10 +131,114 @@ public sealed class ServoHostTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TheHeartbeatAndTheClosingReportReachTheMonitor()
+    {
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.GetAsync(ServoHost.HeartbeatPath)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.PostAsync(ServoHost.ClosingPath, null)).StatusCode);
+
+        // Only the grace period after the closing report is left, so a later heartbeat has to cancel it again.
+        await _client.GetAsync(ServoHost.HeartbeatPath);
+        Assert.False(_monitor.ShouldExit());
+    }
+
+    [Fact]
     public async Task HostsTheUpdateApi()
     {
         var response = await _client.GetAsync("/api/status");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+}
+
+public sealed class SessionMonitorTests
+{
+    private sealed class ManualTime : TimeProvider
+    {
+        private DateTimeOffset _now = new(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
+        public override DateTimeOffset GetUtcNow() => _now;
+
+        public void Advance(TimeSpan span) => _now += span;
+    }
+
+    private static readonly TimeSpan Second = TimeSpan.FromSeconds(1);
+
+    [Fact]
+    public void KeepsRunningWhileTheBrowserLoadsTheApp()
+    {
+        var time = new ManualTime();
+        var monitor = new SessionMonitor(time);
+
+        time.Advance(SessionMonitor.StartupTimeout - Second);
+
+        Assert.False(monitor.ShouldExit());
+    }
+
+    [Fact]
+    public void GivesUpWhenNoPageEverReportsIn()
+    {
+        var time = new ManualTime();
+        var monitor = new SessionMonitor(time);
+
+        time.Advance(SessionMonitor.StartupTimeout + Second);
+
+        Assert.True(monitor.ShouldExit());
+    }
+
+    [Fact]
+    public void KeepsRunningWhileHeartbeatsArrive()
+    {
+        var time = new ManualTime();
+        var monitor = new SessionMonitor(time);
+
+        for (var beat = 0; beat < 100; beat++)
+        {
+            monitor.Heartbeat();
+            time.Advance(TimeSpan.FromSeconds(5));
+        }
+
+        Assert.False(monitor.ShouldExit());
+    }
+
+    [Fact]
+    public void StopsShortlyAfterThePageReportsBeingClosed()
+    {
+        var time = new ManualTime();
+        var monitor = new SessionMonitor(time);
+        monitor.Heartbeat();
+
+        monitor.Closing();
+        time.Advance(SessionMonitor.CloseGrace - Second);
+        Assert.False(monitor.ShouldExit());
+
+        time.Advance(Second * 2);
+        Assert.True(monitor.ShouldExit());
+    }
+
+    [Fact]
+    public void AReloadedPageCancelsTheClosingReport()
+    {
+        var time = new ManualTime();
+        var monitor = new SessionMonitor(time);
+        monitor.Heartbeat();
+        monitor.Closing();
+
+        time.Advance(Second);
+        monitor.Heartbeat();
+        time.Advance(SessionMonitor.CloseGrace);
+
+        Assert.False(monitor.ShouldExit());
+    }
+
+    [Fact]
+    public void StopsWhenTheHeartbeatsStopWithoutAClosingReport()
+    {
+        var time = new ManualTime();
+        var monitor = new SessionMonitor(time);
+        monitor.Heartbeat();
+
+        time.Advance(SessionMonitor.StaleAfter + Second);
+
+        Assert.True(monitor.ShouldExit());
     }
 }

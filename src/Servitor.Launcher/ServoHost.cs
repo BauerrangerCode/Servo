@@ -13,8 +13,10 @@ public static class ServoHost
 {
     public const string PingPath = "/servo-ping";
     public const string PingAnswer = "servo";
+    public const string HeartbeatPath = "/servo-heartbeat";
+    public const string ClosingPath = "/servo-closing";
 
-    public static WebApplication Build(ServoOptions options)
+    public static WebApplication Build(ServoOptions options, SessionMonitor monitor)
     {
         Directory.CreateDirectory(options.DataDirectory);
 
@@ -51,6 +53,16 @@ public static class ServoHost
         });
 
         app.MapGet(PingPath, () => PingAnswer);
+        app.MapGet(HeartbeatPath, () =>
+        {
+            monitor.Heartbeat();
+            return Results.NoContent();
+        });
+        app.MapPost(ClosingPath, () =>
+        {
+            monitor.Closing();
+            return Results.NoContent();
+        });
         app.MapUpdateApi(new UpdateOptions(
             DataRoot: options.DataDirectory,
             BsDataRepository: options.BsDataClone,
