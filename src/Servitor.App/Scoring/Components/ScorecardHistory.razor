@@ -1,0 +1,133 @@
+@using Servitor.App.Scoring.History
+@using Servitor.RulesData.Domain
+@implements IDisposable
+@inject IScorecardStore Store
+@inject IGameRecorder Recorder
+
+<section class="scorecard-history">
+    <h2>Scorecard history</h2>
+
+    @if (_scorecards is null)
+    {
+        <p>Loading history…</p>
+    }
+    else if (_scorecards.Count == 0)
+    {
+        <p class="history-empty">No finished games yet. Use "End Game" to save one.</p>
+    }
+    else
+    {
+        <ul class="history-list">
+            @foreach (var card in _scorecards)
+            {
+                var id = card.Id;
+                <li class="history-entry history-@card.Result.ToString().ToLowerInvariant()">
+                    <div class="history-summary">
+                        <span class="history-date">@card.EndedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                        <span class="history-result">@card.Result</span>
+                        <span class="history-score">You @card.You.Total — Enemy @card.Enemy.Total</span>
+                        <span class="history-mission">@MissionArchetypeLabels.Label(card.YourDisposition) vs @MissionArchetypeLabels.Label(card.OpponentDisposition): @card.YourMission</span>
+                        <button type="button" class="history-toggle" @onclick="() => Toggle(id)">@(_expanded.Contains(id) ? "Hide details" : "Details")</button>
+                        @if (_confirmingDelete == id)
+                        {
+                            <span class="history-delete-confirm">Delete this scorecard?</span>
+                            <button type="button" class="history-delete-yes" @onclick="() => DeleteAsync(id)">Yes, delete</button>
+                            <button type="button" class="history-delete-cancel" @onclick="() => _confirmingDelete = null">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="history-delete" @onclick="() => _confirmingDelete = id">Delete</button>
+                        }
+                    </div>
+
+                    @if (_expanded.Contains(id))
+                    {
+                        <div class="history-details">
+                            <p class="history-meta">
+                                Enemy mission: @card.OpponentMission
+                                @if (card.Layout is not null) { <text> · Layout: @card.Layout</text> }
+                                @if (card.Role is not null) { <text> · You were the @card.Role</text> }
+                                @if (card.FirstTurn is not null) { <text> · First turn: @card.FirstTurn</text> }
+                            </p>
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        @for (var round = 1; round <= card.You.PrimaryRounds.Count; round++) { <th>R@(round)</th> }
+                                        <th>End</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var (label, side) in new[] { ("You", card.You), ("Enemy", card.Enemy) })
+                                    {
+                                        <tr class="history-primary">
+                                            <th>@label · Primary</th>
+                                            @foreach (var vp in side.PrimaryRounds) { <td>@vp</td> }
+                                            <td>@side.PrimaryEndOfBattle</td>
+                                            <td>@side.Primary</td>
+                                        </tr>
+                                        <tr class="history-secondary">
+                                            <th>@label · Secondary (@side.SecondaryMode)</th>
+                                            @foreach (var vp in side.SecondaryRounds) { <td>@vp</td> }
+                                            <td>—</td>
+                                            <td>@side.Secondary</td>
+                                        </tr>
+                                        <tr class="history-extras">
+                                            <th>@label · Paint / Challenger</th>
+                                            <td colspan="@(card.You.PrimaryRounds.Count + 1)">@side.Paint / @side.Challenger</td>
+                                            <td>@(side.Paint + side.Challenger)</td>
+                                        </tr>
+                                        <tr class="history-total">
+                                            <th>@label · Total</th>
+                                            <td colspan="@(card.You.PrimaryRounds.Count + 1)"></td>
+                                            <td>@side.Total</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private readonly HashSet<Guid> _expanded = [];
+    private IReadOnlyList<Scorecard>? _scorecards;
+    private Guid? _confirmingDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Recorder.Saved += OnSaved;
+        await ReloadAsync();
+    }
+
+    public void Dispose() => Recorder.Saved -= OnSaved;
+
+    private void OnSaved() => InvokeAsync(async () =>
+    {
+        await ReloadAsync();
+        StateHasChanged();
+    });
+
+    private async Task ReloadAsync() => _scorecards = await Store.ListAsync();
+
+    private void Toggle(Guid id)
+    {
+        if (!_expanded.Remove(id))
+        {
+            _expanded.Add(id);
+        }
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        await Store.DeleteAsync(id);
+        _expanded.Remove(id);
+        _confirmingDelete = null;
+        await ReloadAsync();
+    }
+}

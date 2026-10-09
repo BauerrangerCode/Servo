@@ -1,11 +1,13 @@
 @page "/scoring"
 @using Servitor.App.Scoring.Components
+@using Servitor.App.Scoring.History
 @using Servitor.App.Scoring.MissionDeck
 @using Servitor.App.Scoring.State
 @using Servitor.RulesData.Domain
 @implements IDisposable
 @inject IBattleSetupState State
 @inject IMissionDeckProvider DeckProvider
+@inject IGameRecorder Recorder
 
 <PageTitle>Scoring</PageTitle>
 
@@ -25,6 +27,11 @@ else
                 <li>@warning</li>
             }
         </ul>
+    }
+
+    @if (Recorder.LastEnded is { } ended && State.YourDisposition is null)
+    {
+        <p class="game-ended">Game ended — scorecard saved: @ended.Result, You @ended.You.Total — Enemy @ended.Enemy.Total.</p>
     }
 
     <section class="setup-step">
@@ -135,6 +142,8 @@ else
     }
 
     <button type="button" class="reset-setup" @onclick="State.Reset">Reset</button>
+
+    <ScorecardHistory />
 }
 
 @code {
