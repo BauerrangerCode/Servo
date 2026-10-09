@@ -1,0 +1,48 @@
+.battle-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.round-counter {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.2rem;
+}
+
+.turn-indicator {
+    margin: 0;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+}
+
+.first-turn-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.phase-stepper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.battle-progress button {
+    border: 1px solid var(--crt-fg-dim);
+    background: transparent;
+    color: inherit;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+}
+
+.battle-progress button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.battle-progress .selected {
+    background: var(--crt-fg-dim);
+    color: var(--crt-bg);
+}

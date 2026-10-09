@@ -282,6 +282,8 @@ The most complex epic – integrates the army (E3/E4), rules data (E2), and Scor
 As a player, I want a battle round counter and a phase stepper (Deployment, Command, Movement, Shooting, Charge, Fight, End of Turn) with previous/next controls, so that the app always reflects where we are in the current game.
 
 - ✓ Phase order matches the sequence above exactly, both directions (next/previous), starting with Deployment before the round-based phases
+- ✓ A turn indicator shows "Your turn" / "Enemy turn"; it switches when End of Turn is stepped past, and the battle round advances after both turns of a round were played
+- ✓ During Deployment the player picks who takes the first turn (the single source for the first turn; the Scoring wizard no longer asks)
 - ✓ Round counter increments/decrements independently of phase state
 - ✓ State survives a page reload mid-game (persisted, not just in-memory)
 

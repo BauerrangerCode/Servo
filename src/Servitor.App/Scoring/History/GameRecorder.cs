@@ -1,9 +1,10 @@
+using Servitor.App.BattleTracker.State;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
 
 namespace Servitor.App.Scoring.History;
 
-public sealed class GameRecorder(IBattleSetupState setup, IScoreTrackingState tracking, IScorecardStore store, TimeProvider time) : IGameRecorder
+public sealed class GameRecorder(IBattleSetupState setup, IScoreTrackingState tracking, IBattleProgressState progress, IScorecardStore store, TimeProvider time) : IGameRecorder
 {
     public event Action? Saved;
 
@@ -11,7 +12,7 @@ public sealed class GameRecorder(IBattleSetupState setup, IScoreTrackingState tr
 
     public async Task<Scorecard?> EndGameAsync(CancellationToken cancellationToken = default)
     {
-        if (ScorecardFactory.Create(setup, tracking, time.GetUtcNow()) is not { } scorecard)
+        if (ScorecardFactory.Create(setup, tracking, progress, time.GetUtcNow()) is not { } scorecard)
         {
             return null;
         }

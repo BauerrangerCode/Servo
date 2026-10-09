@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Servitor.App.BattleTracker.State;
 using Servitor.App.RulesData.Storage;
 using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
@@ -12,27 +13,31 @@ namespace Servitor.App.Tests.Scoring.History;
 
 public class ScorecardFactoryTests
 {
+    private static BattleProgressState NewProgress() => new(new InMemoryRulesDataStore());
+
     private static readonly DateTimeOffset Ended = new(2026, 10, 9, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void The_scorecard_copies_missions_dispositions_setup_and_vp_per_round_and_category()
+    public async Task The_scorecard_copies_missions_dispositions_setup_and_vp_per_round_and_category()
     {
         var (setup, tracking) = ScoringFixtures.Prepared();
         setup.SelectDeploymentCard("Hammer and Anvil");
         setup.SelectRole(BattleRole.Defender);
-        setup.SelectFirstTurn(FirstTurn.Enemy);
+        var progress = NewProgress();
+        await progress.SetFirstTurnAsync(Side.Enemy);
+        await progress.NextPhaseAsync();
         tracking.AdjustPrimary(Side.You, ScoringFixtures.CountableIndex, 2);
         tracking.SetPainted(Side.You, true);
         tracking.AdjustChallenger(Side.Enemy, 1);
         tracking.SetRound(5);
         tracking.AdjustPrimary(Side.You, ScoringFixtures.EndOfBattleIndex, 1);
 
-        var card = ScorecardFactory.Create(setup, tracking, Ended)!;
+        var card = ScorecardFactory.Create(setup, tracking, progress, Ended)!;
 
         Assert.Equal(Ended, card.EndedAtUtc);
         Assert.Equal((MissionArchetype.TakeAndHold, MissionArchetype.PurgeTheFoe), (card.YourDisposition, card.OpponentDisposition));
         Assert.Equal(("Immovable Object", "Unstoppable Force"), (card.YourMission, card.OpponentMission));
-        Assert.Equal(("Hammer and Anvil", BattleRole.Defender, FirstTurn.Enemy), (card.Layout, card.Role, card.FirstTurn));
+        Assert.Equal(("Hammer and Anvil", BattleRole.Defender, Side.Enemy), (card.Layout, card.Role, card.FirstTurn));
         Assert.Equal([10, 0, 0, 0, 0], card.You.PrimaryRounds);
         Assert.Equal(8, card.You.PrimaryEndOfBattle);
         Assert.Equal((18, 0, 10, 0, 28), (card.You.Primary, card.You.Secondary, card.You.Paint, card.You.Challenger, card.You.Total));
@@ -57,7 +62,7 @@ public class ScorecardFactoryTests
         tracking.SetPainted(Side.You, true);
         tracking.SetPainted(Side.Enemy, true);
 
-        Assert.Equal(GameResult.Draw, ScorecardFactory.Create(setup, tracking, Ended)!.Result);
+        Assert.Equal(GameResult.Draw, ScorecardFactory.Create(setup, tracking, NewProgress(), Ended)!.Result);
     }
 
     [Fact]
@@ -68,7 +73,7 @@ public class ScorecardFactoryTests
         var tracking = new ScoreTrackingState(setup, provider);
         setup.SelectYourDisposition(MissionArchetype.TakeAndHold);
 
-        Assert.Null(ScorecardFactory.Create(setup, tracking, Ended));
+        Assert.Null(ScorecardFactory.Create(setup, tracking, NewProgress(), Ended));
     }
 
     [Fact]
@@ -76,11 +81,21 @@ public class ScorecardFactoryTests
     {
         var (setup, tracking) = ScoringFixtures.Prepared();
 
-        var card = ScorecardFactory.Create(setup, tracking, Ended)!;
+        var card = ScorecardFactory.Create(setup, tracking, NewProgress(), Ended)!;
 
         Assert.Null(card.Layout);
         Assert.Null(card.Role);
         Assert.Null(card.FirstTurn);
+    }
+
+    [Fact]
+    public async Task The_first_turn_stays_unset_while_play_is_still_in_deployment()
+    {
+        var (setup, tracking) = ScoringFixtures.Prepared();
+        var progress = NewProgress();
+        await progress.SetFirstTurnAsync(Side.Enemy);
+
+        Assert.Null(ScorecardFactory.Create(setup, tracking, progress, Ended)!.FirstTurn);
     }
 }
 
@@ -95,7 +110,7 @@ public class ScorecardStoreTests
         "Surveil the Foe",
         "Dawn of War",
         BattleRole.Attacker,
-        FirstTurn.You,
+        Side.You,
         SideCard(youTotal),
         SideCard(3),
         GameResult.Victory);
@@ -184,11 +199,13 @@ public class ScorecardStoreTests
 
 public class GameRecorderTests
 {
+    private static BattleProgressState NewProgress() => new(new InMemoryRulesDataStore());
+
     private static (GameRecorder Recorder, FakeScorecardStore Store, BattleSetupState Setup, ScoreTrackingState Tracking) Create()
     {
         var (setup, tracking) = ScoringFixtures.Prepared();
         var store = new FakeScorecardStore();
-        return (new GameRecorder(setup, tracking, store, TimeProvider.System), store, setup, tracking);
+        return (new GameRecorder(setup, tracking, NewProgress(), store, TimeProvider.System), store, setup, tracking);
     }
 
     [Fact]
@@ -217,7 +234,7 @@ public class GameRecorderTests
         var provider = ScoringFixtures.Provider();
         var setup = new BattleSetupState(provider);
         var store = new FakeScorecardStore();
-        var recorder = new GameRecorder(setup, new ScoreTrackingState(setup, provider), store, TimeProvider.System);
+        var recorder = new GameRecorder(setup, new ScoreTrackingState(setup, provider), NewProgress(), store, TimeProvider.System);
 
         Assert.Null(await recorder.EndGameAsync());
         Assert.Empty(store.Scorecards);
@@ -247,7 +264,7 @@ public class GameRecorderTests
         var (_, store, setup, tracking) = Create();
         var clock = new FixedTime(new DateTimeOffset(2026, 3, 4, 5, 6, 7, TimeSpan.Zero));
 
-        await new GameRecorder(setup, tracking, store, clock).EndGameAsync();
+        await new GameRecorder(setup, tracking, NewProgress(), store, clock).EndGameAsync();
 
         Assert.Equal(clock.Now, Assert.Single(store.Scorecards).EndedAtUtc);
     }

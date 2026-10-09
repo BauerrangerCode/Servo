@@ -1,3 +1,4 @@
+using Servitor.App.BattleTracker.State;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
 
@@ -5,8 +6,11 @@ namespace Servitor.App.Scoring.History;
 
 public static class ScorecardFactory
 {
-    /// <summary>Null when the setup has no pair of dispositions, i.e. there is no game to record.</summary>
-    public static Scorecard? Create(IBattleSetupState setup, IScoreTrackingState tracking, DateTimeOffset endedAtUtc)
+    /// <summary>
+    /// Null when the setup has no pair of dispositions, i.e. there is no game to record. The first turn comes from Play,
+    /// where it is chosen during Deployment, and stays unset while Play has not left Deployment.
+    /// </summary>
+    public static Scorecard? Create(IBattleSetupState setup, IScoreTrackingState tracking, IBattleProgressState progress, DateTimeOffset endedAtUtc)
     {
         if (setup.YourDisposition is not { } yours || setup.OpponentDisposition is not { } opponent)
         {
@@ -24,7 +28,7 @@ public static class ScorecardFactory
             setup.OpponentMission?.Name ?? "",
             setup.SelectedDeploymentCard?.Name,
             setup.Role,
-            setup.FirstTurn,
+            progress.Phase == BattlePhase.Deployment ? null : progress.FirstTurn,
             you,
             enemy,
             ResultOf(you.Total, enemy.Total));

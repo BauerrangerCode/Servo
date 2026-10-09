@@ -30,8 +30,6 @@ public interface IBattleSetupState
 
     BattleRole? Role { get; }
 
-    FirstTurn? FirstTurn { get; }
-
     void SelectYourDisposition(MissionArchetype disposition);
 
     void SelectOpponentDisposition(MissionArchetype disposition);
@@ -39,8 +37,6 @@ public interface IBattleSetupState
     void SelectDeploymentCard(string name);
 
     void SelectRole(BattleRole role);
-
-    void SelectFirstTurn(FirstTurn firstTurn);
 
     /// <summary>Discards the whole setup in progress, so a new game can be started from a clean slate.</summary>
     void Reset();

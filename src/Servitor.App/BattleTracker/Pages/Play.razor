@@ -1,5 +1,14 @@
 @page "/play"
+@using Servitor.App.BattleTracker.Components
+@using Servitor.App.BattleTracker.State
+@inject IBattleProgressState Progress
 
 <PageTitle>Play</PageTitle>
 
 <h1>Play</h1>
+
+<BattleProgressBar />
+
+@code {
+    protected override Task OnInitializedAsync() => Progress.LoadAsync();
+}

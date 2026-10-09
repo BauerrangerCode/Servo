@@ -1,5 +1,6 @@
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
+using Servitor.App.Scoring.Tracking;
 using Servitor.RulesData.Domain;
 
 namespace Servitor.App.Scoring.History;
@@ -36,7 +37,7 @@ public sealed record Scorecard(
     string OpponentMission,
     string? Layout,
     BattleRole? Role,
-    FirstTurn? FirstTurn,
+    Side? FirstTurn,
     SideScorecard You,
     SideScorecard Enemy,
     GameResult Result);
