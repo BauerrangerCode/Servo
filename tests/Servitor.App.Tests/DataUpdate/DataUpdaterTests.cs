@@ -66,10 +66,13 @@ public sealed class DataUpdaterTests : IDisposable
         Assert.True(File.Exists(Path.Combine(DataRoot, "factions", "faction-00", "datasheets", "D00.json")));
         Assert.True(File.Exists(Path.Combine(DataRoot, "core", "core-stratagems.json")));
         Assert.True(File.Exists(Path.Combine(DataRoot, "core", "chapter-1.json")));
+        Assert.True(File.Exists(Path.Combine(DataRoot, "missions", "mission-deck.json")));
         Assert.Equal(UpdateOptions.BsDataRepositoryUrl, _git.UpdatedUrl);
         Assert.Contains(result.Summary, s => s.StartsWith("BSData: 12 catalogues at abc1234", StringComparison.Ordinal));
         Assert.Contains(result.Summary, s => s.StartsWith("Factions: 12 factions", StringComparison.Ordinal));
         Assert.Contains(result.Summary, s => s.StartsWith("Core rules: 12 chapters", StringComparison.Ordinal));
+        Assert.Contains(result.Summary, s => s.StartsWith("Mission deck: 15 primary missions, 5 deployment cards, 10 secondary missions", StringComparison.Ordinal));
+        Assert.Contains(result.Warnings, w => w.StartsWith("Mission deck: Deployment card \"Unknown Layout\"", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -83,6 +86,7 @@ public sealed class DataUpdaterTests : IDisposable
         Assert.Contains("BSData", steps);
         Assert.Contains("Wahapedia data", steps);
         Assert.Contains("Core rules", steps);
+        Assert.Contains("Mission deck", steps);
         Assert.Contains("Manifest", steps);
     }
 
@@ -135,6 +139,20 @@ public sealed class DataUpdaterTests : IDisposable
     }
 
     [Fact]
+    public async Task A_changed_mission_deck_page_fails_the_update_and_keeps_the_existing_deck()
+    {
+        _http.MissionDeckPage = "<html><h1>Now completely different</h1></html>";
+        Directory.CreateDirectory(Path.Combine(DataRoot, "missions"));
+        File.WriteAllText(Path.Combine(DataRoot, "missions", "mission-deck.json"), "OLD");
+
+        var result = await CreateUpdater().RunAsync(null, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Warnings, w => w.Contains("Mission Deck page produced", StringComparison.Ordinal));
+        Assert.Equal("OLD", File.ReadAllText(Path.Combine(DataRoot, "missions", "mission-deck.json")));
+    }
+
+    [Fact]
     public async Task A_failed_download_is_reported_not_thrown()
     {
         _http.Failing = true;
@@ -184,6 +202,8 @@ public sealed class DataUpdaterTests : IDisposable
 
         public string CorePage { get; set; } = SampleWahapediaData.CorePage();
 
+        public string MissionDeckPage { get; set; } = SampleMissionDeckPage.Page();
+
         public bool Failing { get; set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -195,7 +215,9 @@ public sealed class DataUpdaterTests : IDisposable
 
             var path = request.RequestUri!.AbsolutePath;
             var name = path[(path.LastIndexOf('/') + 1)..];
-            var body = path.EndsWith("/core-rules/", StringComparison.Ordinal) ? CorePage : Tables.GetValueOrDefault(name);
+            var body = path.EndsWith("/core-rules/", StringComparison.Ordinal) ? CorePage
+                : path.Contains("/mission-deck-", StringComparison.Ordinal) ? MissionDeckPage
+                : Tables.GetValueOrDefault(name);
             return Task.FromResult(body is null
                 ? new HttpResponseMessage(HttpStatusCode.NotFound)
                 : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body) });

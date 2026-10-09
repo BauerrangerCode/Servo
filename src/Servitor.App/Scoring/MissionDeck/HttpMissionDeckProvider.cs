@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace Servitor.App.Scoring.MissionDeck;
@@ -6,6 +7,7 @@ namespace Servitor.App.Scoring.MissionDeck;
 public sealed class HttpMissionDeckProvider(HttpClient httpClient) : IMissionDeckProvider
 {
     public const string DeckUrl = "data/missions/mission-deck.json";
+    private const string UpdateHint = " Use “Update data” in the settings menu to download it.";
 
     public MissionDeckSet Current { get; private set; } = MissionDeckSet.Empty;
 
@@ -20,7 +22,7 @@ public sealed class HttpMissionDeckProvider(HttpClient httpClient) : IMissionDec
             using var response = await httpClient.SendAsync(request, cancellationToken);
             Current = response.IsSuccessStatusCode
                 ? MissionDeckParser.Parse(await response.Content.ReadAsStringAsync(cancellationToken))
-                : Unavailable($"the server answered {(int)response.StatusCode}");
+                : Unavailable($"the server answered {(int)response.StatusCode}", response.StatusCode == HttpStatusCode.NotFound);
         }
         catch (HttpRequestException ex)
         {
@@ -28,6 +30,6 @@ public sealed class HttpMissionDeckProvider(HttpClient httpClient) : IMissionDec
         }
     }
 
-    private static MissionDeckSet Unavailable(string reason) =>
-        new(MissionDeckData.Empty, [$"The Mission Deck file ({DeckUrl}) could not be loaded: {reason}."]);
+    private static MissionDeckSet Unavailable(string reason, bool suggestUpdate = false) =>
+        new(MissionDeckData.Empty, [$"The Mission Deck file ({DeckUrl}) could not be loaded: {reason}.{(suggestUpdate ? UpdateHint : "")}"]);
 }

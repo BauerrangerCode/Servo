@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Servitor.DataUpdate.CoreRules;
+using Servitor.DataUpdate.MissionDeck;
 using Servitor.DataUpdate.Wahapedia;
 using Servitor.RulesData.Merging;
 
@@ -7,8 +8,8 @@ namespace Servitor.DataUpdate.Updating;
 
 /// <summary>
 /// Refreshes the raw rules sources under <c>wwwroot/data</c>: the BSData catalogues, the faction / datasheet /
-/// core-stratagem files generated from the Wahapedia CSV exports (what depot used to produce) and the core-rules
-/// text scraped from the Wahapedia rules page. Everything is fetched and validated before a source's files are
+/// core-stratagem files generated from the Wahapedia CSV exports (what depot used to produce), the core-rules
+/// text scraped from the Wahapedia rules page and the Mission Deck scraped from its page. Everything is fetched and validated before a source's files are
 /// touched, so a failed download or a changed page format leaves the existing data as it was.
 /// </summary>
 public sealed class DataUpdater(UpdateOptions options, IGitClient git, HttpClient http)
@@ -18,6 +19,12 @@ public sealed class DataUpdater(UpdateOptions options, IGitClient git, HttpClien
     private const int MinimumCoreFiles = 10;
     private const string CoreRulesUrl = WahapediaTables.BaseUrl + "the-rules/core-rules/";
     private const string CoreStratagemsFileName = "core-stratagems.json";
+    private const int MinimumPrimaryMissions = 15;
+    private const int MinimumDeploymentCards = 4;
+    private const int MinimumSecondaryMissions = 10;
+    private const string MissionDeckUrl = WahapediaTables.BaseUrl + "the-rules/mission-deck-2026-27/";
+    private const string MissionsDirectory = "missions";
+    private const string MissionDeckFileName = "mission-deck.json";
 
     private string? _bsDataCommit;
 
@@ -31,6 +38,7 @@ public sealed class DataUpdater(UpdateOptions options, IGitClient git, HttpClien
             summary.Add(await UpdateBsDataAsync(progress, cancellationToken));
             summary.Add(await UpdateFactionsAsync(progress, cancellationToken));
             summary.Add(await UpdateCoreRulesAsync(progress, cancellationToken));
+            summary.Add(await UpdateMissionDeckAsync(progress, warnings, cancellationToken));
             warnings.AddRange(SyncManifest(progress, summary));
             return new UpdateResult(true, summary, warnings);
         }
@@ -156,6 +164,30 @@ public sealed class DataUpdater(UpdateOptions options, IGitClient git, HttpClien
         }
 
         return $"Core rules: {files.Count} chapters, {files.Sum(f => f.Entries.Count)} sections";
+    }
+
+    // ---- mission deck page -> missions/mission-deck.json -------------------------------------------------------------
+
+    private async Task<string> UpdateMissionDeckAsync(IProgress<UpdateProgress>? progress, List<string> warnings, CancellationToken cancellationToken)
+    {
+        progress?.Report(new UpdateProgress("Mission deck", "Downloading the Mission Deck page"));
+        var page = await http.GetStringAsync(MissionDeckUrl, cancellationToken);
+
+        progress?.Report(new UpdateProgress("Mission deck", "Reading the mission cards"));
+        var deck = MissionDeckScraper.Scrape(page, DateOnly.FromDateTime(DateTime.UtcNow));
+        if (deck.PrimaryMissions < MinimumPrimaryMissions || deck.DeploymentCards < MinimumDeploymentCards || deck.SecondaryMissions < MinimumSecondaryMissions)
+        {
+            throw new InvalidOperationException(
+                $"The Mission Deck page produced {deck.PrimaryMissions} primary missions, {deck.DeploymentCards} deployment cards and {deck.SecondaryMissions} secondary missions; "
+                + $"expected at least {MinimumPrimaryMissions}, {MinimumDeploymentCards} and {MinimumSecondaryMissions}. Its layout may have changed.");
+        }
+
+        var directory = Path.Combine(options.DataRoot, MissionsDirectory);
+        Directory.CreateDirectory(directory);
+        await File.WriteAllTextAsync(Path.Combine(directory, MissionDeckFileName), deck.Json, cancellationToken);
+
+        warnings.AddRange(deck.Warnings.Select(w => $"Mission deck: {w}"));
+        return $"Mission deck: {deck.PrimaryMissions} primary missions, {deck.DeploymentCards} deployment cards, {deck.SecondaryMissions} secondary missions";
     }
 
     // ---- manifest ----------------------------------------------------------------------------------------------

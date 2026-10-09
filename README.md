@@ -74,7 +74,7 @@ The rules data (datasheets, stratagems, core rules) is not part of the repositor
 
 2. In the running app, open the settings menu (gear icon, top right) and choose **Update data**.
 
-The update downloads the sources, converts them and runs the merge. The app then uses the merged result. The service is only needed for updating; once the data is loaded, the app works without it.
+The update downloads the sources (rules, datasheets and the mission cards used by Scoring), converts them and runs the merge. The app then uses the merged result. The service is only needed for updating; once the data is loaded, the app works without it.
 
 The merge can also be run on its own:
 
