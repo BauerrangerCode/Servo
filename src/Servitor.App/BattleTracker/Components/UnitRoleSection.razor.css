@@ -12,17 +12,11 @@
     margin: 0 0 0.3rem;
 }
 
-.badge,
-.pill {
+.badge {
     border: 1px solid var(--crt-fg-dim);
     padding: 0 0.4rem;
     font-size: 0.8rem;
     margin-right: 0.3rem;
-}
-
-.pill {
-    opacity: 0.8;
-    text-transform: uppercase;
 }
 
 .stat-badges,
@@ -57,9 +51,9 @@
     gap: 0.4rem;
 }
 
-.model-dots,
-.weapon-name {
+.model-dots {
     line-height: 1;
+    white-space: nowrap;
 }
 
 .dot {
@@ -71,7 +65,7 @@
     background: var(--crt-fg);
 }
 
-.weapon-name .dot:first-of-type {
+.weapon-name .model-dots {
     margin-left: 0.5rem;
 }
 
@@ -82,20 +76,28 @@
 .weapon-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 0.4rem 0;
+    margin: 0.5rem 0;
     font-size: 0.9rem;
 }
 
-.weapon-table caption {
+.weapon-table th {
     text-align: left;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     opacity: 0.8;
+    border-bottom: 1px solid var(--crt-fg-dim);
+    padding: 0.2rem 0.6rem 0.2rem 0;
 }
 
 .weapon-table td {
-    padding: 0.15rem 0.5rem 0.15rem 0;
+    padding: 0.2rem 0.6rem 0.2rem 0;
     border-bottom: 1px solid var(--crt-fg-faint);
+    vertical-align: top;
+}
+
+.weapon-table tr.melee td:first-child {
+    border-left: 2px solid var(--crt-fg-dim);
+    padding-left: 0.4rem;
 }
 
 .weapon-unknown {

@@ -143,48 +143,48 @@ public class GroupWoundsTests
 
         Assert.Equal(2, GroupWounds.Destroyed(Tough, condition));
         Assert.Equal(1, GroupWounds.Alive(Tough, condition));
-        Assert.Equal(1, GroupWounds.WoundedModelDamage(Tough, condition));
+        Assert.Equal(3, GroupWounds.WoundedModelRemaining(Tough, condition));
         Assert.Equal(3, GroupWounds.WoundsRemaining(Tough, condition));
     }
 
     [Fact]
-    public void Wounds_are_clamped_between_none_and_the_whole_group()
+    public void Taking_more_wounds_than_a_model_has_destroys_it()
+    {
+        var onTheLastWound = new GroupCondition(Damage: 3);
+
+        var next = GroupWounds.Adjust(Tough, onTheLastWound, 1);
+
+        Assert.Equal(0, GroupWounds.Destroyed(Tough, onTheLastWound));
+        Assert.Equal(1, GroupWounds.Destroyed(Tough, next));
+        Assert.Equal(2, GroupWounds.Alive(Tough, next));
+    }
+
+    [Fact]
+    public void Healing_past_the_maximum_of_the_surviving_model_brings_a_destroyed_one_back()
+    {
+        var oneLeft = new GroupCondition(Damage: 8);
+
+        var healed = GroupWounds.Adjust(Tough, oneLeft, -1);
+
+        Assert.Equal(1, GroupWounds.Alive(Tough, oneLeft));
+        Assert.Equal(2, GroupWounds.Alive(Tough, healed));
+        Assert.Equal(1, GroupWounds.WoundedModelRemaining(Tough, healed));
+    }
+
+    [Fact]
+    public void The_total_stays_between_none_and_the_models_times_their_wounds()
     {
         Assert.Equal(0, GroupWounds.Adjust(Five, GroupCondition.Fresh, -3).Damage);
         Assert.Equal(5, GroupWounds.Adjust(Five, new GroupCondition(Damage: 4), 9).Damage);
+        Assert.Equal(12, GroupWounds.MaxDamage(Tough));
+        Assert.True(GroupWounds.IsDestroyed(Tough, GroupWounds.Adjust(Tough, GroupCondition.Fresh, 99)));
     }
 
     [Fact]
-    public void Killing_a_model_destroys_the_next_one_even_when_it_was_already_hurt()
+    public void Restoring_heals_the_whole_group()
     {
-        var hurt = new GroupCondition(Damage: 5);
+        var gone = GroupWounds.Adjust(Five, GroupCondition.Fresh, 5);
 
-        var killed = GroupWounds.KillModel(Tough, hurt);
-
-        Assert.Equal(8, killed.Damage);
-        Assert.Equal(2, GroupWounds.Destroyed(Tough, killed));
-    }
-
-    [Fact]
-    public void Reviving_brings_back_one_destroyed_model_and_keeps_the_wounds_of_the_hurt_one()
-    {
-        var condition = new GroupCondition(Damage: 9);
-
-        var revived = GroupWounds.ReviveModel(Tough, condition);
-
-        Assert.Equal(5, revived.Damage);
-        Assert.Equal(1, GroupWounds.Destroyed(Tough, revived));
-        Assert.Equal(1, GroupWounds.WoundedModelDamage(Tough, revived));
-    }
-
-    [Fact]
-    public void Reviving_without_a_destroyed_model_and_killing_a_destroyed_group_change_nothing()
-    {
-        var hurt = new GroupCondition(Damage: 2);
-        var gone = GroupWounds.Destroy(Five, GroupCondition.Fresh);
-
-        Assert.Equal(hurt, GroupWounds.ReviveModel(Tough, hurt));
-        Assert.Equal(gone, GroupWounds.KillModel(Five, gone));
         Assert.True(GroupWounds.IsDestroyed(Five, gone));
         Assert.Equal(0, GroupWounds.Restore(gone).Damage);
     }

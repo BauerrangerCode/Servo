@@ -7,7 +7,7 @@
     var alive = Card.Roles.SelectMany(r => r.Loadout.Groups.Select(g => (r, g))).Sum(x => GroupWounds.Alive(x.g, Conditions.Of(UnitKeys.GroupKey(x.r.UnitKey, x.g))));
 }
 
-<article class="unit-card @(alive == 0 ? "destroyed" : "")">
+<article class="unit-card @(alive == 0 ? "destroyed" : "") @(_collapsed ? "collapsed" : "")">
     <header>
         <h3>@Card.Title</h3>
         <span class="badge unit-models">@alive / @total models</span>
@@ -15,32 +15,25 @@
         {
             <button type="button" class="restore-unit" @onclick="RestoreUnitAsync">Restore unit</button>
         }
-        else
-        {
-            <button type="button" class="destroy-unit" @onclick="DestroyUnitAsync">Destroy unit</button>
-        }
+        <button type="button" class="toggle-card" aria-expanded="@((!_collapsed).ToString().ToLowerInvariant())" @onclick="() => _collapsed = !_collapsed">
+            @(_collapsed ? "Expand" : "Collapse")
+        </button>
     </header>
 
-    @foreach (var role in Card.Roles)
+    @if (!_collapsed)
     {
-        <UnitRoleSection @key="role.UnitKey" Role="role" ShowRoleLabel="Card.Roles.Count > 1" />
+        @foreach (var role in Card.Roles)
+        {
+            <UnitRoleSection @key="role.UnitKey" Role="role" ShowRoleLabel="Card.Roles.Count > 1" />
+        }
     }
 </article>
 
 @code {
+    private bool _collapsed;
+
     [Parameter, EditorRequired]
     public UnitCardModel Card { get; set; } = default!;
-
-    private async Task DestroyUnitAsync()
-    {
-        foreach (var role in Card.Roles)
-        {
-            foreach (var group in role.Loadout.Groups)
-            {
-                await Conditions.DestroyGroupAsync(UnitKeys.GroupKey(role.UnitKey, group), group);
-            }
-        }
-    }
 
     private async Task RestoreUnitAsync()
     {

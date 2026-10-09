@@ -9,6 +9,10 @@
     var stats = sheet.StatLine;
     var destroyed = Role.Loadout.Groups.All(g => GroupWounds.IsDestroyed(g, ConditionOf(g)));
     var abilities = sheet.NamedAbilities.Concat(sheet.WargearAbilities).Where(a => !AttachmentAbilities.Contains(a.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+    var rows = Role.Loadout.Weapons
+        .SelectMany(w => w.Profiles.Select(p => (Weapon: w, Profile: p)))
+        .OrderBy(r => r.Profile.Type)
+        .ToList();
 }
 
 <section class="role-section @(destroyed ? "role-destroyed" : "")">
@@ -41,25 +45,17 @@
                 <span class="group-label">@group.Models× @group.Label</span>
                 <span class="model-dots" title="@alive of @group.Models models alive">@Dots(group.Models, alive)</span>
                 <span class="wounds-readout">
-                    @if (condition.CountsDown)
+                    Wounds left <strong>@GroupWounds.WoundsRemaining(group, condition)</strong> / @GroupWounds.MaxDamage(group)
+                    @if (group.WoundsPerModel > 1 && !groupDestroyed)
                     {
-                        <text>Wounds left <strong>@GroupWounds.WoundsRemaining(group, condition)</strong> / @GroupWounds.MaxDamage(group)</text>
-                    }
-                    else
-                    {
-                        <text>Wounds taken <strong>@condition.Damage</strong> / @GroupWounds.MaxDamage(group)</text>
+                        <text> · hurt model <strong>@GroupWounds.WoundedModelRemaining(group, condition)</strong> / @group.WoundsPerModel</text>
                     }
                 </span>
                 <span class="group-actions">
-                    <button type="button" class="wound-down" aria-label="@(condition.CountsDown ? "Take a wound" : "Heal a wound")"
-                            @onclick="() => Conditions.AdjustDamageAsync(key, group, condition.CountsDown ? 1 : -1)">−</button>
-                    <button type="button" class="wound-up" aria-label="@(condition.CountsDown ? "Heal a wound" : "Take a wound")"
-                            @onclick="() => Conditions.AdjustDamageAsync(key, group, condition.CountsDown ? -1 : 1)">+</button>
-                    <button type="button" class="kill-model" disabled="@groupDestroyed" @onclick="() => Conditions.KillModelAsync(key, group)">Kill model</button>
-                    <button type="button" class="revive-model" disabled="@(GroupWounds.Destroyed(group, condition) == 0)" @onclick="() => Conditions.ReviveModelAsync(key, group)">Revive model</button>
-                    <button type="button" class="toggle-count-mode" @onclick="() => Conditions.SetCountsDownAsync(key, !condition.CountsDown)">
-                        @(condition.CountsDown ? "Count up" : "Count down")
-                    </button>
+                    <button type="button" class="wound-down" aria-label="Take a wound" disabled="@groupDestroyed"
+                            @onclick="() => Conditions.AdjustDamageAsync(key, group, 1)">−</button>
+                    <button type="button" class="wound-up" aria-label="Heal a wound" disabled="@(condition.Damage == 0)"
+                            @onclick="() => Conditions.AdjustDamageAsync(key, group, -1)">+</button>
                     <button type="button" class="add-token" @onclick="() => Conditions.AddTokenAsync(key)">+ Token</button>
                     @if (condition.Tokens > 0)
                     {
@@ -70,21 +66,43 @@
                     {
                         <button type="button" class="restore-group" @onclick="() => Conditions.RestoreGroupAsync(key)">Restore</button>
                     }
-                    else
-                    {
-                        <button type="button" class="destroy-group" @onclick="() => Conditions.DestroyGroupAsync(key, group)">Destroy</button>
-                    }
                 </span>
             </li>
         }
     </ul>
 
-    @WeaponTable("Ranged weapons", WeaponType.Ranged)
-    @WeaponTable("Melee weapons", WeaponType.Melee)
+    @if (rows.Count > 0)
+    {
+        <table class="weapon-table">
+            <thead>
+                <tr><th>Name</th><th>Range</th><th>Attack</th><th>Skill</th><th>Strength</th><th>AP</th><th>Damage</th><th>Rules</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var (weapon, profile) in rows)
+                {
+                    <tr class="@(profile.Type == WeaponType.Ranged ? "ranged" : "melee")">
+                        <td class="weapon-name">@profile.Name <span class="model-dots">@Dots(weapon.Models, AliveWith(weapon))</span></td>
+                        <td>@(profile.Range ?? "Melee")</td>
+                        <td>@profile.Attacks</td>
+                        <td>@profile.Skill</td>
+                        <td>@profile.Strength</td>
+                        <td>@profile.ArmourPenetration</td>
+                        <td>@profile.Damage</td>
+                        <td class="weapon-rules">
+                            @foreach (var rule in profile.Keywords.Where(k => k != "-"))
+                            {
+                                <RuleKeyword Text="@rule" />
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 
     @foreach (var weapon in Role.Loadout.Weapons.Where(w => w.Profiles.Count == 0))
     {
-        <p class="weapon-unknown">@weapon.Name <span class="weapon-name">@Dots(weapon.Models, AliveWith(weapon))</span></p>
+        <p class="weapon-unknown">@weapon.Name <span class="model-dots">@Dots(weapon.Models, AliveWith(weapon))</span></p>
     }
 
     @if (abilities.Count > 0)
@@ -102,7 +120,7 @@
     <p class="pills">
         @foreach (var keyword in sheet.Keywords)
         {
-            <span class="pill keyword-pill">@keyword</span>
+            <RuleKeyword Text="@keyword" />
         }
     </p>
 </section>
@@ -127,51 +145,6 @@
             builder.CloseElement();
         }
     };
-
-    private RenderFragment WeaponTable(string title, WeaponType type) => builder =>
-    {
-        var rows = Role.Loadout.Weapons
-            .SelectMany(w => w.Profiles.Where(p => p.Type == type).Select(p => (Weapon: w, Profile: p)))
-            .ToList();
-        if (rows.Count == 0)
-        {
-            return;
-        }
-
-        builder.OpenElement(0, "table");
-        builder.AddAttribute(1, "class", $"weapon-table {(type == WeaponType.Ranged ? "ranged" : "melee")}");
-        builder.OpenElement(2, "caption");
-        builder.AddContent(3, title);
-        builder.CloseElement();
-        builder.OpenElement(4, "tbody");
-        foreach (var (weapon, profile) in rows)
-        {
-            builder.OpenElement(5, "tr");
-            builder.OpenElement(6, "td");
-            builder.AddAttribute(7, "class", "weapon-name");
-            builder.AddContent(8, profile.Name);
-            builder.AddContent(9, Dots(weapon.Models, AliveWith(weapon)));
-            builder.CloseElement();
-            AddCell(builder, profile.Range ?? "Melee");
-            AddCell(builder, $"A {profile.Attacks}");
-            AddCell(builder, $"{(type == WeaponType.Ranged ? "BS" : "WS")} {profile.Skill}");
-            AddCell(builder, $"S {profile.Strength}");
-            AddCell(builder, $"AP {profile.ArmourPenetration}");
-            AddCell(builder, $"D {profile.Damage}");
-            AddCell(builder, string.Join(", ", profile.Keywords));
-            builder.CloseElement();
-        }
-
-        builder.CloseElement();
-        builder.CloseElement();
-    };
-
-    private static void AddCell(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder, string text)
-    {
-        builder.OpenElement(20, "td");
-        builder.AddContent(21, text);
-        builder.CloseElement();
-    }
 
     private int AliveWith(EquippedWeapon weapon) =>
         Role.Loadout.GroupsWith(weapon).Sum(g => GroupWounds.Alive(g, ConditionOf(g)));

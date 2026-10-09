@@ -2,7 +2,9 @@ namespace Servitor.App.BattleTracker.Units;
 
 /// <summary>
 /// The wound arithmetic of a group of identical models. Damage is taken by one model at a time, so a group that has
-/// taken <c>d</c> wounds with <c>w</c> wounds per model has <c>d / w</c> models destroyed and the next one hurt by <c>d % w</c>.
+/// taken <c>d</c> wounds with <c>w</c> wounds per model has <c>d / w</c> models destroyed and the next one hurt by
+/// <c>d % w</c>. Healing runs the same way backwards: the wound that heals past the surviving model's maximum brings a
+/// destroyed model back (with that one wound). The total can never go below none or above the models times their wounds.
 /// </summary>
 public static class GroupWounds
 {
@@ -17,27 +19,13 @@ public static class GroupWounds
 
     public static int WoundsRemaining(ModelGroup group, GroupCondition condition) => MaxDamage(group) - condition.Damage;
 
-    /// <summary>Wounds taken by the one model currently being hurt; 0 when none is.</summary>
-    public static int WoundedModelDamage(ModelGroup group, GroupCondition condition) =>
-        IsDestroyed(group, condition) ? 0 : condition.Damage % group.WoundsPerModel;
+    /// <summary>The wounds the model currently being hurt has left; the full amount when none is hurt, 0 when the group is destroyed.</summary>
+    public static int WoundedModelRemaining(ModelGroup group, GroupCondition condition) =>
+        IsDestroyed(group, condition) ? 0 : group.WoundsPerModel - condition.Damage % group.WoundsPerModel;
 
+    /// <summary>Takes wounds (positive) or heals them (negative).</summary>
     public static GroupCondition Adjust(ModelGroup group, GroupCondition condition, int delta) =>
         condition with { Damage = Math.Clamp(condition.Damage + delta, 0, MaxDamage(group)) };
-
-    /// <summary>Destroys the next model of the group, whatever damage it already took.</summary>
-    public static GroupCondition KillModel(ModelGroup group, GroupCondition condition) =>
-        IsDestroyed(group, condition)
-            ? condition
-            : condition with { Damage = Math.Min(MaxDamage(group), (Destroyed(group, condition) + 1) * group.WoundsPerModel) };
-
-    /// <summary>Brings one destroyed model back with the wounds of the group left as they were.</summary>
-    public static GroupCondition ReviveModel(ModelGroup group, GroupCondition condition) =>
-        Destroyed(group, condition) == 0
-            ? condition
-            : condition with { Damage = condition.Damage - group.WoundsPerModel };
-
-    public static GroupCondition Destroy(ModelGroup group, GroupCondition condition) =>
-        condition with { Damage = MaxDamage(group) };
 
     public static GroupCondition Restore(GroupCondition condition) => condition with { Damage = 0 };
 }

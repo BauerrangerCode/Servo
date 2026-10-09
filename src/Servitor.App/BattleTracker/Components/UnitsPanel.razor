@@ -1,20 +1,25 @@
 @using Servitor.App.ArmyBuilder.State
 @using Servitor.App.BattleTracker.State
 @using Servitor.App.BattleTracker.Units
+@using Servitor.App.RulesData.Loading
 @implements IDisposable
 @inject IArmyBuilderState Army
 @inject IUnitConditionState Conditions
+@inject IMergedRulesDataProvider RulesData
 
 <section class="units-panel">
     <h2>Units</h2>
-    @foreach (var card in _cards)
-    {
-        <UnitCard @key="card.Roles[0].UnitKey" Card="card" />
-    }
+    <CascadingValue Value="_keywordRules">
+        @foreach (var card in _cards)
+        {
+            <UnitCard @key="card.Roles[0].UnitKey" Card="card" />
+        }
+    </CascadingValue>
 </section>
 
 @code {
     private IReadOnlyList<UnitCardModel> _cards = [];
+    private KeywordRules _keywordRules = KeywordRules.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -22,6 +27,7 @@
         Conditions.Changed += OnConditionsChanged;
         _cards = UnitCards.Build(Army.Units);
         await Conditions.LoadAsync();
+        _keywordRules = new KeywordRules((await RulesData.GetAsync())?.CoreRules ?? []);
     }
 
     public void Dispose()

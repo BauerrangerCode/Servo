@@ -88,19 +88,16 @@ public class UnitConditionStateTests
     private readonly InMemoryRulesDataStore _store = new();
 
     [Fact]
-    public async Task Wounds_kills_revives_and_tokens_survive_a_reload()
+    public async Task Wounds_and_tokens_survive_a_reload()
     {
         var before = new UnitConditionState(_store);
         await before.AdjustDamageAsync("u|g0", Group, 3);
         await before.AddTokenAsync("u|g0");
-        await before.SetCountsDownAsync("u|g0", true);
-        await before.KillModelAsync("u|g0", Group);
-        await before.ReviveModelAsync("u|g0", Group);
 
         var after = new UnitConditionState(_store);
         await after.LoadAsync();
 
-        Assert.Equal(new Servitor.App.BattleTracker.Units.GroupCondition(Damage: 2, Tokens: 1, CountsDown: true), after.Of("u|g0"));
+        Assert.Equal(new Servitor.App.BattleTracker.Units.GroupCondition(Damage: 3, Tokens: 1), after.Of("u|g0"));
     }
 
     [Fact]
@@ -115,6 +112,18 @@ public class UnitConditionStateTests
 
         Assert.Equal(Servitor.App.BattleTracker.Units.GroupCondition.Fresh, state.Of("u|g0"));
         Assert.Equal(0, state.Of("v|g0").Tokens);
+    }
+
+    [Fact]
+    public async Task Restoring_a_group_heals_it_but_keeps_its_tokens()
+    {
+        var state = new UnitConditionState(_store);
+        await state.AdjustDamageAsync("u|g0", Group, 6);
+        await state.AddTokenAsync("u|g0");
+
+        await state.RestoreGroupAsync("u|g0");
+
+        Assert.Equal(new Servitor.App.BattleTracker.Units.GroupCondition(Damage: 0, Tokens: 1), state.Of("u|g0"));
     }
 }
 
@@ -153,7 +162,7 @@ public class UnitsPanelTests : BunitContext
         cut.FindAll(".unit-card").First(c => c.QuerySelector("h3")!.TextContent == title);
 
     private static AngleSharp.Dom.IElement WeaponRow(AngleSharp.Dom.IElement card, string weapon) =>
-        card.QuerySelectorAll(".weapon-table tr").First(r => r.QuerySelector(".weapon-name")!.TextContent.StartsWith(weapon, StringComparison.Ordinal));
+        card.QuerySelectorAll(".weapon-table tbody tr").First(r => r.QuerySelector(".weapon-name")!.TextContent.StartsWith(weapon, StringComparison.Ordinal));
 
     [Fact]
     public void Every_unit_of_the_army_is_listed_and_a_leader_shares_the_card_of_the_unit_it_leads()
@@ -182,68 +191,127 @@ public class UnitsPanelTests : BunitContext
         Assert.All(boyz.QuerySelectorAll(".dot"), d => Assert.DoesNotContain("dead", d.ClassList));
     }
 
+    private static AngleSharp.Dom.IElement NobGroup(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut) =>
+        Card(cut, "Boyz + Painboy").QuerySelectorAll(".model-group").First(g => g.TextContent.Contains("Kustom Choppa"));
+
     [Fact]
-    public void Killing_a_model_of_a_group_fades_its_dot_on_exactly_the_weapons_that_group_carries()
+    public void Taking_wounds_until_a_model_dies_fades_its_dots_on_exactly_the_weapons_of_its_group()
     {
         var cut = OpenUnits();
+
+        NobGroup(cut).QuerySelector(".wound-down")!.Click();
+
         var boyz = Card(cut, "Boyz + Painboy");
-        var nobs = boyz.QuerySelectorAll(".model-group").First(g => g.TextContent.Contains("Kustom Choppa"));
-
-        nobs.QuerySelector(".kill-model")!.Click();
-
-        boyz = Card(cut, "Boyz + Painboy");
         Assert.Equal(1, WeaponRow(boyz, "Kustom Choppa").QuerySelectorAll(".dot.dead").Length);
         Assert.Equal(0, WeaponRow(boyz, "Slugga").QuerySelectorAll(".dot.dead").Length);
         Assert.Contains("20 / 21 models", boyz.QuerySelector(".unit-models")!.TextContent);
+        Assert.Contains("Wounds left 1 / 2", NobGroup(cut).QuerySelector(".wounds-readout")!.TextContent.Replace("\n", " ").Trim());
     }
 
     [Fact]
-    public void A_destroyed_model_can_be_revived_and_wounds_can_be_healed()
+    public void Healing_past_the_maximum_brings_a_destroyed_model_back()
     {
         var cut = OpenUnits();
-        var nobs = () => Card(cut, "Boyz + Painboy").QuerySelectorAll(".model-group").First(g => g.TextContent.Contains("Kustom Choppa"));
+        NobGroup(cut).QuerySelector(".wound-down")!.Click();
+        NobGroup(cut).QuerySelector(".wound-down")!.Click();
+        Assert.Equal(2, WeaponRow(Card(cut, "Boyz + Painboy"), "Kustom Choppa").QuerySelectorAll(".dot.dead").Length);
 
-        nobs().QuerySelector(".kill-model")!.Click();
-        nobs().QuerySelector(".revive-model")!.Click();
-        Assert.Empty(Card(cut, "Boyz + Painboy").QuerySelectorAll(".dot.dead"));
+        NobGroup(cut).QuerySelector(".wound-up")!.Click();
 
-        nobs().QuerySelector(".wound-up")!.Click();
-        Assert.Contains("Wounds taken 1 / 2", nobs().QuerySelector(".wounds-readout")!.TextContent.Replace("\n", " ").Trim());
-        nobs().QuerySelector(".wound-down")!.Click();
-        Assert.Contains("Wounds taken 0 / 2", nobs().QuerySelector(".wounds-readout")!.TextContent.Replace("\n", " ").Trim());
+        Assert.Equal(1, WeaponRow(Card(cut, "Boyz + Painboy"), "Kustom Choppa").QuerySelectorAll(".dot.dead").Length);
     }
 
     [Fact]
-    public void The_count_mode_switches_between_wounds_taken_and_wounds_left_and_the_buttons_follow_it()
+    public void The_wounds_are_shown_counting_down_without_any_switch_and_there_are_no_kill_or_destroy_buttons()
     {
         var cut = OpenUnits();
         var trukk = () => Card(cut, "Trukk").QuerySelector(".model-group")!;
 
-        trukk().QuerySelector(".toggle-count-mode")!.Click();
-        Assert.Contains("Wounds left", trukk().QuerySelector(".wounds-readout")!.TextContent);
-
+        Assert.Contains("Wounds left 10 / 10", trukk().QuerySelector(".wounds-readout")!.TextContent.Replace("\n", " ").Trim());
         trukk().QuerySelector(".wound-down")!.Click();
         Assert.Contains("Wounds left 9 / 10", trukk().QuerySelector(".wounds-readout")!.TextContent.Replace("\n", " ").Trim());
+        Assert.Contains("hurt model 9 / 10", trukk().QuerySelector(".wounds-readout")!.TextContent.Replace("\n", " ").Trim());
+
+        Assert.Empty(cut.FindAll(".kill-model, .revive-model, .destroy-group, .destroy-unit, .toggle-count-mode"));
     }
 
     [Fact]
-    public void Destroying_the_leader_role_marks_only_that_role_and_the_unit_can_be_destroyed_and_restored()
+    public void A_role_whose_models_are_all_gone_is_marked_and_the_unit_can_be_restored()
     {
         var cut = OpenUnits();
         var card = () => Card(cut, "Boyz + Painboy");
+        var leader = () => card().QuerySelectorAll(".role-section")[0];
+        var painboyWounds = int.Parse(leader().QuerySelector(".wounds-readout strong")!.TextContent);
 
-        card().QuerySelectorAll(".role-section")[0].QuerySelector(".destroy-group")!.Click();
+        for (var i = 0; i < painboyWounds; i++)
+        {
+            leader().QuerySelector(".wound-down")!.Click();
+        }
 
-        Assert.Contains("role-destroyed", card().QuerySelectorAll(".role-section")[0].ClassList);
+        Assert.Contains("role-destroyed", leader().ClassList);
         Assert.DoesNotContain("role-destroyed", card().QuerySelectorAll(".role-section")[1].ClassList);
         Assert.DoesNotContain("destroyed", card().ClassList);
 
-        card().QuerySelector(".destroy-unit")!.Click();
-        Assert.Contains("destroyed", card().ClassList);
+        leader().QuerySelector(".restore-group")!.Click();
+        Assert.DoesNotContain("role-destroyed", leader().ClassList);
+    }
 
-        card().QuerySelector(".restore-unit")!.Click();
-        Assert.DoesNotContain("destroyed", card().ClassList);
-        Assert.Empty(card().QuerySelectorAll(".dot.dead"));
+    [Fact]
+    public void A_card_collapses_to_its_header_and_expands_again()
+    {
+        var cut = OpenUnits();
+        var card = () => Card(cut, "Trukk");
+        Assert.NotEmpty(card().QuerySelectorAll(".role-section"));
+
+        card().QuerySelector(".toggle-card")!.Click();
+        Assert.Empty(card().QuerySelectorAll(".role-section"));
+        Assert.Contains("collapsed", card().ClassList);
+        Assert.Equal("false", card().QuerySelector(".toggle-card")!.GetAttribute("aria-expanded"));
+        Assert.NotNull(card().QuerySelector(".unit-models"));
+
+        card().QuerySelector(".toggle-card")!.Click();
+        Assert.NotEmpty(card().QuerySelectorAll(".role-section"));
+    }
+
+    [Fact]
+    public void Ranged_and_melee_weapons_share_one_table_with_the_requested_columns()
+    {
+        var cut = OpenUnits();
+        var boyz = Card(cut, "Boyz + Painboy");
+
+        var table = Assert.Single(boyz.QuerySelectorAll(".role-section")[1].QuerySelectorAll("table.weapon-table"));
+        Assert.Equal(["Name", "Range", "Attack", "Skill", "Strength", "AP", "Damage", "Rules"], table.QuerySelectorAll("th").Select(h => h.TextContent));
+        Assert.NotEmpty(table.QuerySelectorAll("tr.ranged"));
+        Assert.NotEmpty(table.QuerySelectorAll("tr.melee"));
+        Assert.Equal("Melee", table.QuerySelector("tr.melee td:nth-child(2)")!.TextContent);
+    }
+
+    [Fact]
+    public void Clicking_a_keyword_that_has_a_core_rule_opens_it_in_a_popup_and_others_are_not_clickable()
+    {
+        var cut = OpenUnits();
+        var trukk = Card(cut, "Trukk");
+        var withRule = trukk.QuerySelectorAll("button.keyword.has-rule").First();
+        var ruleName = withRule.TextContent;
+
+        withRule.Click();
+
+        Assert.StartsWith(cut.Find(".modal-dialog h2").TextContent, ruleName, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEmpty(cut.Find(".keyword-rule-text").TextContent);
+        cut.Find(".modal-close").Click();
+        Assert.Empty(cut.FindAll(".modal-dialog"));
+        Assert.NotEmpty(trukk.QuerySelectorAll("span.keyword.plain"));
+    }
+
+    [Fact]
+    public void Weapon_rules_like_blast_are_clickable_too()
+    {
+        var cut = OpenUnits();
+        var ruleButtons = cut.FindAll(".weapon-rules button.keyword.has-rule");
+
+        Assert.NotEmpty(ruleButtons);
+        ruleButtons[0].Click();
+        Assert.NotEmpty(cut.FindAll(".modal-dialog"));
     }
 
     [Fact]

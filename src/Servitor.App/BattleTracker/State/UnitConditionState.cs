@@ -32,19 +32,11 @@ public sealed class UnitConditionState(IRulesDataStore store) : IUnitConditionSt
     public Task AdjustDamageAsync(string groupKey, ModelGroup group, int delta) =>
         UpdateAsync(groupKey, c => GroupWounds.Adjust(group, c, delta));
 
-    public Task KillModelAsync(string groupKey, ModelGroup group) => UpdateAsync(groupKey, c => GroupWounds.KillModel(group, c));
-
-    public Task ReviveModelAsync(string groupKey, ModelGroup group) => UpdateAsync(groupKey, c => GroupWounds.ReviveModel(group, c));
-
-    public Task DestroyGroupAsync(string groupKey, ModelGroup group) => UpdateAsync(groupKey, c => GroupWounds.Destroy(group, c));
-
     public Task RestoreGroupAsync(string groupKey) => UpdateAsync(groupKey, GroupWounds.Restore);
 
     public Task AddTokenAsync(string groupKey) => UpdateAsync(groupKey, c => c with { Tokens = c.Tokens + 1 });
 
     public Task RemoveTokenAsync(string groupKey) => UpdateAsync(groupKey, c => c with { Tokens = Math.Max(0, c.Tokens - 1) });
-
-    public Task SetCountsDownAsync(string groupKey, bool countsDown) => UpdateAsync(groupKey, c => c with { CountsDown = countsDown });
 
     public Task ResetAsync()
     {

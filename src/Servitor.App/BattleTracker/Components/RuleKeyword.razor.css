@@ -1,0 +1,18 @@
+.keyword {
+    display: inline-block;
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    margin: 0 0.3rem 0.2rem 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.keyword.plain {
+    opacity: 0.8;
+}
+
+.keyword.has-rule {
+    background: transparent;
+    text-decoration: underline dotted;
+    cursor: pointer;
+}
