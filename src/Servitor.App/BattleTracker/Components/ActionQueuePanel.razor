@@ -23,7 +23,7 @@
     }
     else
     {
-        var queue = ActionQueueBuilder.Build(_data, Army.Setup, Progress.Phase);
+        var queue = ActionQueueBuilder.Build(_data, Army.Setup, new TurnContext(Progress.Phase, Progress.ActiveTurn, Progress.FirstTurn));
 
         <h3 class="queue-heading">Core Stratagems</h3>
         @Cards(queue.CoreStratagems)

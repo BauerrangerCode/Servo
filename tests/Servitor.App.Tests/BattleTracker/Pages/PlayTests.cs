@@ -135,7 +135,7 @@ public class PlayTests : BunitContext
         var card = cut.FindAll(".stratagem-card").Last();
         Assert.Contains("1 CP", card.QuerySelector(".stratagem-cost")!.TextContent);
         Assert.Contains("Battle Tactic", card.QuerySelector(".tag-category")!.TextContent);
-        Assert.Contains("Your turn", card.QuerySelector(".tag-scope")!.TextContent);
+        Assert.Contains("Your Shooting or Charge phase", card.QuerySelector(".tag-timing")!.TextContent);
         Assert.Contains("When text.", card.QuerySelector(".section-when")!.TextContent);
         Assert.Contains("Target text.", card.QuerySelector(".section-target")!.TextContent);
         Assert.Contains("Effect text.", card.QuerySelector(".section-effect")!.TextContent);
