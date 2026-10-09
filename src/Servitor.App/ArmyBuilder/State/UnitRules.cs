@@ -1,0 +1,43 @@
+using Servitor.App.ArmyBuilder.Catalog;
+using Servitor.App.ArmyBuilder.Rules;
+using Servitor.RulesData.Domain;
+
+namespace Servitor.App.ArmyBuilder.State;
+
+/// <summary>Which units an army may still take. UI-independent so it is testable on its own.</summary>
+public static class UnitRules
+{
+    /// <summary>How many copies of the datasheet are in the list. A datasheet is identified by name and catalogue.</summary>
+    public static int CountOf(IEnumerable<ArmyUnit> units, Datasheet datasheet) =>
+        units.Count(u => u.Datasheet.Name == datasheet.Name && u.Datasheet.Faction == datasheet.Faction);
+
+    public static AddUnitResult CanAdd(ArmySetup setup, IReadOnlyList<ArmyUnit> units, Datasheet datasheet, DetachmentRuleSet? rules = null, string? allyFaction = null)
+    {
+        if (setup.BattleSize is not { } battleSize)
+        {
+            return AddUnitResult.NoBattleSize;
+        }
+
+        if (setup.FactionId is not { } factionId)
+        {
+            return AddUnitResult.NoFaction;
+        }
+
+        if (allyFaction is not null)
+        {
+            if (!setup.AllyFactionIds.Contains(allyFaction) || !datasheet.FactionSlugs.Contains(allyFaction))
+            {
+                return AddUnitResult.AllyNotAllowed;
+            }
+        }
+        else if (!datasheet.FactionSlugs.Contains(factionId))
+        {
+            return AddUnitResult.NotInFaction;
+        }
+
+        var active = (rules ?? DetachmentRuleSet.Empty).ActiveFor(setup);
+        return UnitLimits.MaxPerArmy(datasheet, battleSize, active, factionId) is { } max && CountOf(units, datasheet) >= max
+            ? AddUnitResult.AtLimit
+            : AddUnitResult.Added;
+    }
+}

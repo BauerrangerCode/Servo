@@ -1,0 +1,90 @@
+using System.Text.Json.Serialization;
+
+namespace Servitor.RulesData.Mapping.RulesText;
+
+public sealed class RtFactionDocument
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("slug")]
+    public string Slug { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("dataVersion")]
+    public string DataVersion { get; set; } = "";
+
+    [JsonPropertyName("datasheets")]
+    public List<RtDatasheetSummary> Datasheets { get; set; } = [];
+
+    [JsonPropertyName("detachments")]
+    public List<RtDetachment> Detachments { get; set; } = [];
+}
+
+public sealed class RtDatasheetSummary
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("isLegends")]
+    public bool IsLegends { get; set; }
+}
+
+public sealed class RtDatasheetDocument
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("stratagemIds")]
+    public List<string> StratagemIds { get; set; } = [];
+
+    [JsonPropertyName("modelCosts")]
+    public List<RtModelCost> ModelCosts { get; set; } = [];
+}
+
+public sealed class RtModelCost
+{
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("cost")]
+    public string Cost { get; set; } = "";
+
+    [JsonPropertyName("section")]
+    public string? Section { get; set; }
+}
+
+public sealed class RtDetachment
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = "";
+
+    [JsonPropertyName("legend")]
+    public string Legend { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
+
+    [JsonPropertyName("dp")]
+    public string Dp { get; set; } = "";
+
+    [JsonPropertyName("forceDisposition")]
+    public string ForceDisposition { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("abilities")]
+    public List<RtAbilityEntry> Abilities { get; set; } = [];
+
+    [JsonPropertyName("enhancements")]
+    public List<RtEnhancementEntry> Enhancements { get; set; } = [];
+
+    [JsonPropertyName("stratagems")]
+    public List<RtStratagemEntry> Stratagems { get; set; } = [];
+}

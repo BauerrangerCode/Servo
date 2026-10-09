@@ -1,0 +1,120 @@
+@using Servitor.App.ArmyBuilder.Catalog
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.RulesData.Domain
+@implements IDisposable
+@inject IArmyBuilderState State
+
+@if (State.Setup.FactionId is not null)
+{
+    <section class="army-list">
+        <h2>Army list (@State.Units.Count)</h2>
+
+        @if (State.Units.Count == 0)
+        {
+            <p class="army-empty">No units yet. Add units from the catalog.</p>
+        }
+        else
+        {
+            <ul class="army-units">
+                @foreach (var priced in ArmyPricing.Price(State.Units))
+                {
+                    var unit = priced.Unit;
+                    var hasWargear = WargearConfig.HasOptions(unit.Datasheet);
+                    <li class="army-unit-card">
+                        <div class="army-unit">
+                            <span class="army-unit-name">@unit.Datasheet.Name</span>
+                            @if (unit.AlliedFaction is { } ally)
+                            {
+                                <span class="army-unit-ally">Ally: @AllyName(ally)</span>
+                            }
+                            @if (unit.Size.Models > 0)
+                            {
+                                <span class="army-unit-models">@unit.Size.Models models</span>
+                            }
+                            <span class="army-unit-points">@priced.Points pts</span>
+                            @if (hasWargear)
+                            {
+                                <button type="button" class="edit-wargear" aria-expanded="@_editing.Contains(unit.Id)"
+                                        @onclick="() => ToggleEditor(unit.Id)">Wargear</button>
+                            }
+                            <button type="button" class="remove-unit" @onclick="() => State.RemoveUnit(unit.Id)">Remove</button>
+                        </div>
+                        @if (hasWargear)
+                        {
+                            <p class="army-unit-loadout">
+                                @WargearConfig.Loadout(unit)@(priced.WargearPoints > 0 ? $" (wargear +{priced.WargearPoints} pts)" : "")
+                            </p>
+                            @if (_editing.Contains(unit.Id))
+                            {
+                                <WargearEditor Unit="unit" />
+                            }
+                        }
+                        @if (EnhancementsFor(unit).Count > 0)
+                        {
+                            <label class="army-unit-enhancement">
+                                Enhancement
+                                <select class="enhancement-select" @onchange="e => OnEnhancementChanged(unit.Id, e)">
+                                    <option value="" selected="@(unit.Enhancement is null)">(none)</option>
+                                    @foreach (var enhancement in EnhancementsFor(unit))
+                                    {
+                                        <option value="@enhancement.Id" selected="@(unit.Enhancement?.Id == enhancement.Id)">
+                                            @enhancement.Name (@enhancement.Cost pts@(enhancement.IsUpgrade ? ", Upgrade" : ""))
+                                        </option>
+                                    }
+                                </select>
+                            </label>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+
+        <ArmySummary />
+    </section>
+}
+
+@code {
+    /// <summary>The enhancements of the army's selected detachments a unit can be given.</summary>
+    [Parameter]
+    public IReadOnlyList<Enhancement> Enhancements { get; set; } = [];
+
+    /// <summary>The factions whose units the army may take as allies, for naming the faction of an allied unit.</summary>
+    [Parameter]
+    public IReadOnlyList<AllyFaction> Allies { get; set; } = [];
+
+    private string AllyName(string slug) => Allies.FirstOrDefault(a => a.Slug == slug)?.Name ?? slug;
+
+    private readonly HashSet<Guid> _editing = [];
+
+    // Only Characters (not Epic Heroes) can take any enhancement; other units only the ones tagged Upgrade.
+    private IReadOnlyList<Enhancement> EnhancementsFor(ArmyUnit unit)
+    {
+        var role = UnitRoles.Of(unit.Datasheet);
+        return role switch
+        {
+            UnitRole.EpicHero => [],
+            UnitRole.Character => Enhancements,
+            _ => Enhancements.Where(e => e.IsUpgrade).ToList(),
+        };
+    }
+
+    private void OnEnhancementChanged(Guid unitId, ChangeEventArgs args)
+    {
+        var id = args.Value?.ToString();
+        State.SetEnhancement(unitId, string.IsNullOrEmpty(id) ? null : Enhancements.FirstOrDefault(e => e.Id == id));
+    }
+
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    public void Dispose() => State.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void ToggleEditor(Guid unitId)
+    {
+        if (!_editing.Remove(unitId))
+        {
+            _editing.Add(unitId);
+        }
+    }
+}

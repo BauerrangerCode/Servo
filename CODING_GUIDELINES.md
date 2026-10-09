@@ -8,7 +8,7 @@ All code, identifiers, comments, commit messages, and technical documentation ar
 
 ## Stack
 
-- .NET 8 (LTS), Blazor WebAssembly (standalone, PWA-capable)
+- .NET 10 (LTS), Blazor WebAssembly (standalone, PWA-capable)
 - Nullable reference types: enabled (`<Nullable>enable</Nullable>`), warnings as errors in release builds
 - Tests: xUnit for business logic, bUnit for component tests
 
@@ -18,12 +18,23 @@ Feature-based, not layer-based. No project-wide top-level `Controllers/`, `Model
 
 Rationale: the reference app has clearly separated feature areas (import, build, battle tracker/scry, scoring). Feature folders keep related code together instead of spreading one feature's change across three layer folders.
 
+Projects: `Servitor.App` (Blazor WebAssembly UI, feature folders as above), `Servitor.RulesData` (class library without any Blazor dependency: rules domain records, source mappers, the data merge), `Servitor.DataMerge` (console tool that runs the merge at build time), `Servitor.DataUpdate` (local web service + logic that refreshes the raw sources, see "Data & Assets"). Code that both the app and the build tool need lives in `Servitor.RulesData`, never in `Servitor.App`.
+
 ## Data & Assets
 
-- All Warhammer-rules-related data and other assets (images, 3D models, etc.) live under `/data/` at the repo root. `/data/` is gitignored — it is never committed.
-- Source for rules data (this iteration): [BSData/wh40k-11e](https://github.com/BSData/wh40k-11e). Planned to extend to Age of Sigmar and Spearhead BSData repositories later.
-- Suggested layout: `/data/bsdata/<game-system>/` (e.g. `/data/bsdata/wh40k-11e/`) for cloned/pulled BSData catalogues, `/data/assets/` for images/3D models, kept separate since they have different lifecycles and storage needs.
-- A future feature will let the user refresh this data via a button or command (re-pull the BSData source, re-parse into the internal format). Not part of V0.1 — do not build this ahead of being asked (see [CLAUDE.md](CLAUDE.md) Scope Discipline).
+- All Warhammer-rules-related data and other assets (images, 3D models, etc.) are external and gitignored — never committed.
+- Two homes, because Blazor WebAssembly can only fetch static files via `HttpClient` from `wwwroot`:
+  - `/data/` (repo root): the pull source. Currently only the clone of [BSData/wh40k-11e](https://github.com/BSData/wh40k-11e) at `/data/bsdata/wh40k-11e/` (a git repository — never copy its `.git` into `wwwroot`). Planned to extend to Age of Sigmar and Spearhead BSData repositories later; `/data/assets/` is reserved for images/3D models.
+  - `src/Servitor.App/wwwroot/data/`: everything the app and the merge tool read at runtime.
+    - `bsdata/wh40k-11e/*.json`: the catalogue JSON files copied from the clone. After pulling a newer BSData source, copy them here (no automated copy step yet) and update `RulesSourceManifest.BsDataVersion`.
+    - `core/` and `factions/<faction>/`: the rules-text source (core rules, stratagems, faction/detachment/datasheet files). It is delivered directly into `wwwroot` and has no copy under `/data/`.
+    - `merged/`: generated, see below. Never edit by hand.
+    - `assets/factions/<faction-slug>.png`: optional faction icons shown as the page background for the faction clicked last (`<faction-slug>` is a folder name under `factions/`, e.g. `orks`, `space-marines`). Local only, never committed; a faction without a file shows `assets/factions/generic.png` instead (and no background if that is missing too).
+- Raw source files are never modified. `Servitor.RulesData.Merging.RulesDataMerger` builds a separate merged single source of truth from them (`merged/rules-data.json`, `manifest.json`, `merge-report.md`), and the app reads only that.
+- Merge rules: BSData is authoritative. Its datasheets and core rules pass through unchanged. From the rules-text source, the merge takes over (1) the stratagem ids per datasheet, the sizes a unit can be fielded in (`Datasheet.Sizes`: model count and points of the first cost bracket, from the datasheet file's `modelCosts`; the project owner chose this over parsing BSData's nested cost modifiers) the per-item wargear prices (`Datasheet.WargearCosts`, from the "per X" rows) and the armies that can take it (`Datasheet.FactionSlugs`: every rules-text faction listing a unit of that name, so a shared unit is in all of them), joined by faction and normalized name (`FactionCatalogueMap` maps each BSData catalogue to its rules-text factions), (2) all stratagems (core and faction), converted from HTML to BSData-style Markdown and split into When/Target/Effect/Restrictions, and (3) the core rules BSData has no rule of that name for. Core rules carry a kind (`CoreRuleKind`: general, weapon rule, unit rule, action) so datasheets can link to them; cost-free entries of `core-stratagems.json` are actions, not stratagems (a stratagem always has CP). Stratagems carry a `GameMode` (standard, Boarding Actions, Challenger). Older duplicates in the core file are dropped by the merge and listed in the report. Everything that could not be matched is listed in the merge report, not guessed.
+- The merge runs in two places with the same code: at build time (MSBuild target `MergeRulesData` in `Servitor.App.csproj`, incremental, skipped when the data is absent or with `-p:SkipRulesDataMerge=true`; manual run: `dotnet run --project src/Servitor.DataMerge`) and in the browser via the "Merge data" button in the top navigation, which stores the result in IndexedDB and shows/downloads the report. At startup the newer of the IndexedDB copy and the shipped `merged/` files wins.
+- `RulesSourceManifest` lists every source file by hand (the browser cannot list a folder); tests keep it in sync with `wwwroot/data`.
+- Updating the sources: the "Update data" button in the settings menu (gear) calls the local update service `Servitor.DataUpdate` (`dotnet run --project src/Servitor.DataUpdate`, listens on `http://localhost:5180`, accepts localhost origins only) because a browser can neither run git nor write files. The update (1) pulls the BSData clone (`data/bsdata/wh40k-11e`, cloned on first run) and copies its catalogues to `wwwroot/data/bsdata/wh40k-11e`, (2) downloads the Wahapedia CSV exports and generates `factions/<slug>/faction.json`, `factions/<slug>/datasheets/*.json` and `core/core-stratagems.json` (a C# port of depot's CLI, so depot is not a dependency), (3) scrapes the core rules page (https://wahapedia.ru/wh40k11ed/the-rules/core-rules/) into `core/<chapter>.json`, (4) writes the new BSData commit into `RulesSourceManifest.BsDataVersion` and lists every shipped file the hand-kept manifest lists do not match — a new catalogue, core chapter or faction is ignored by the merge until it is added there. A source is only replaced after its download and conversion succeeded and passed a sanity check (minimum number of catalogues, factions, chapters). The app then runs the in-app merge on the new files.
 
 ## Architecture / State Management
 
@@ -37,11 +48,21 @@ Rationale: the reference app has clearly separated feature areas (import, build,
 - The external data source (BSData XML/JSON) and the internal domain model are kept separate: an explicit mapping/parsing step, never direct deserialization of BSData's catalogue format into internal domain types. External formats change outside our control; the domain must not depend on their shape.
 - Rules data versioning is considered from the start (GW balance updates change values) — no hardcoding of rules values in logic code.
 
+## Detachment Rules (must include / cannot include)
+
+The rules a detachment adds to an army list are data, not code, because the rules change over time: `src/Servitor.App/wwwroot/rules/detachment-rules.json` (committed, not part of the gitignored data). The Build page reads it on every load, so a change of the file takes effect without rebuilding.
+
+- Each entry has `faction` (rules-text slug), `detachment`, `type`, `label` (how messages name the units), usually `units` (a selector) and the parameters of its type: `mustInclude` (+ `min`), `cannotInclude`, `pointsCap` (+ `caps` by battle size name) and `unitLimit` (+ `max`, raises the datasheet's own limit). `note` is for maintainers. The format is documented in `DetachmentRuleParser`.
+- A selector matches units by `names`, `keywords` (any of), `allKeywords`, `roles`, `excludeNames`, `excludeKeywords` and `outsideFaction`; every field that is set has to match. The rules-text faction files list allied units under the army's own faction, so allied units are best picked by their faction keyword ("Faction: Plague Legions").
+- A rule that cannot be read is left out and shown as a warning under the army summary; a test checks that every shipped rule names a detachment and units that exist in the rules data, so a rules-data update that renames one is noticed.
+- A new rule *type* needs a class in `ArmyBuilder/Rules` (the record), a case in `DetachmentRuleParser` and a check in `ArmyBuilder/Validation/DetachmentRuleChecks.cs`.
+- Not expressible as rules (and not enforced): Warlord requirements and ability or points changes that a detachment's text mentions. The Space Marines Chapter restriction is not in this file: it is read from the detachments' rules text (`ChapterRestrictionParser`).
+
 ## Local Data Persistence (Rules Data & Assets)
 
 No embedded SQL database for V0.1. Instead:
 
-- Parsed rules data (from BSData catalogues) is stored as compact JSON documents in IndexedDB, one entry per faction/catalogue, keyed by faction id + data version.
+- The merged rules data (see Data & Assets) is stored as compact JSON documents in IndexedDB under fixed keys, next to a small manifest (data version + generation time) that decides whether the stored copy or the shipped files are newer.
 - Binary assets (images, 3D models) are stored as Blobs in IndexedDB, keyed by asset id/path.
 - Access goes through a thin, hand-written JS interop wrapper around the native IndexedDB API — no heavy ORM-style NuGet dependency.
 - At runtime, the relevant faction's data is loaded into memory as C# records; search/filtering uses in-memory LINQ. No query engine is needed at this data volume.

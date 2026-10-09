@@ -1,0 +1,55 @@
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.ArmyBuilder.Validation
+@implements IDisposable
+@inject IArmyBuilderState State
+
+@{
+    var context = ArmyContext.Create(State.Setup, State.Units, State.Rules);
+    var totals = context.Totals;
+    var issues = ArmyValidator.Validate(context);
+    var limit = State.Setup.BattleSize?.PointsLimit;
+}
+
+<section class="army-summary">
+    <dl class="army-totals">
+        <div class="army-total army-total-points @(issues.Any(i => i.Kind == ArmyIssueKind.OverPointsBudget) ? "over-budget" : "")">
+            <dt>Points</dt>
+            <dd>@totals.Points@(limit is null ? "" : $" / {limit}")</dd>
+        </div>
+        <div class="army-total army-total-units"><dt>Units</dt><dd>@totals.Units</dd></div>
+        <div class="army-total army-total-models"><dt>Models</dt><dd>@totals.Models</dd></div>
+        <div class="army-total army-total-wounds"><dt>Wounds</dt><dd>@totals.Wounds</dd></div>
+    </dl>
+
+    <p class="army-validity @(issues.Count == 0 ? "valid" : "invalid")">
+        @(issues.Count == 0 ? "VALID" : $"INVALID – {issues.Count} {(issues.Count == 1 ? "issue" : "issues")}")
+    </p>
+
+    @if (State.Rules.Warnings.Count > 0)
+    {
+        <ul class="army-rule-warnings">
+            @foreach (var warning in State.Rules.Warnings)
+            {
+                <li>@warning</li>
+            }
+        </ul>
+    }
+
+    @if (issues.Count > 0)
+    {
+        <ul class="army-issues">
+            @foreach (var issue in issues)
+            {
+                <li>@issue.Message</li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    public void Dispose() => State.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

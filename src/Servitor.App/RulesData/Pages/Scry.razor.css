@@ -1,0 +1,121 @@
+.scry-search {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.scry-facets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.facet-group h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.chip {
+    border: 1px solid var(--crt-fg-dim);
+    background: transparent;
+    color: inherit;
+    border-radius: 0;
+    padding: 0.15rem 0.6rem;
+    margin: 0 0.25rem 0.25rem 0;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.chip-include {
+    background: var(--crt-fg);
+    border-color: var(--crt-fg);
+    color: var(--crt-bg);
+    text-shadow: none;
+}
+
+.chip-exclude {
+    background: var(--crt-danger);
+    border-color: var(--crt-danger);
+    color: var(--crt-bg);
+    text-shadow: none;
+    text-decoration: line-through;
+}
+
+.result-list {
+    height: 480px;
+    overflow-y: auto;
+    border: 1px solid var(--crt-fg-dim);
+}
+
+/* Fixed layout: column widths come from the <col> elements, never from the current content, so they cannot jump. */
+.result-list table {
+    width: 100%;
+    min-width: 640px;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.result-list .col-faction {
+    width: 220px;
+}
+
+.result-list .col-points {
+    width: 56px;
+}
+
+.result-list .col-stat {
+    width: 52px;
+}
+
+.result-list thead th {
+    position: sticky;
+    top: 0;
+    background: var(--crt-panel);
+    z-index: 1;
+}
+
+.result-list th, .result-list td {
+    text-align: left;
+    padding: 0 0.5rem;
+    height: 32px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-list tbody tr:hover {
+    background: var(--crt-hover);
+    cursor: pointer;
+}
+
+.result-list tbody tr.selected {
+    background: var(--crt-selected);
+}
+
+/* Terminal-style block cursor in front of the selected unit. */
+.result-list tbody tr.selected .cell-name::before {
+    content: "88";
+    margin-right: 0.35rem;
+    animation: cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes cursor-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .result-list tbody tr.selected .cell-name::before {
+        animation: none;
+    }
+}
+
+/* DatasheetDetail is a separate component; its own markup is styled in DatasheetDetail.razor.css. */
+::deep .datasheet-detail {
+    margin-top: 1rem;
+}

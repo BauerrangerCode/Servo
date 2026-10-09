@@ -1,0 +1,20 @@
+@using Servitor.App.Shared.Backdrop
+@using Servitor.App.Shared.Settings
+@inherits LayoutComponentBase
+
+<FactionBackdropView />
+
+<div class="page">
+    <nav class="top-nav">
+        <NavLink href="" Match="NavLinkMatch.All">Import</NavLink>
+        <NavLink href="build">Build</NavLink>
+        <NavLink href="scry">Scry</NavLink>
+        <NavLink href="scoring">Scoring</NavLink>
+        <NavLink href="play">Play</NavLink>
+        <SettingsMenu />
+    </nav>
+
+    <main>
+        @Body
+    </main>
+</div>

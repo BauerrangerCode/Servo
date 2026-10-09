@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "servitor-app",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["watch", "run", "--project", "src/Servitor.App/Servitor.App.csproj", "--launch-profile", "http"],
+      "port": 5025
+    }
+  ]
+}

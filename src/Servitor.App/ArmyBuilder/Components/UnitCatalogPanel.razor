@@ -1,0 +1,151 @@
+@using Servitor.App.ArmyBuilder.Catalog
+@using Servitor.App.ArmyBuilder.Rules
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.RulesData.Components
+@using Servitor.App.RulesData.Loading
+@using Servitor.RulesData.Domain
+@implements IDisposable
+@inject IArmyBuilderState State
+@inject IDatasheetCatalog Catalog
+
+@if (_datasheets is not null && State.Setup is { BattleSize: { } battleSize, FactionId: { } factionId })
+{
+    var browsedFaction = _allyFaction is not null && Allies.Any(a => a.Slug == _allyFaction) ? _allyFaction : null;
+    var factionUnits = UnitCatalog.ForFaction(_datasheets, browsedFaction ?? factionId, _showLegends);
+    var groups = UnitCatalog.Group(factionUnits, _query, _role);
+
+    <section class="unit-catalog">
+        <h2>Units</h2>
+
+        @if (Allies.Count > 0)
+        {
+            <p class="allies-note">Your army can also take: @string.Join(" · ", Allies.Select(a => a.Name))</p>
+            <div class="ally-tabs">
+                <button type="button" class="chip @(browsedFaction is null ? "selected" : "")" @onclick="() => SelectAlly(null)">Own units</button>
+                @foreach (var ally in Allies)
+                {
+                    <button type="button" class="chip ally-tab @(browsedFaction == ally.Slug ? "selected" : "")" @onclick="() => SelectAlly(ally.Slug)">@ally.Name</button>
+                }
+            </div>
+        }
+
+        <div class="catalog-controls">
+            <input type="text" class="catalog-search" placeholder="Search @factionUnits.Count units…" value="@_query" @oninput="OnQueryChanged" />
+            <button type="button" class="legends-toggle" @onclick="ToggleLegends">@(_showLegends ? "Legends" : "Current")</button>
+        </div>
+
+        <div class="role-tabs">
+            <button type="button" class="chip @(_role is null ? "selected" : "")" @onclick="() => _role = null">All</button>
+            @foreach (var role in UnitRoles.All.Where(r => factionUnits.Any(u => UnitRoles.Of(u) == r)))
+            {
+                <button type="button" class="chip @(_role == role ? "selected" : "")" @onclick="() => _role = role">@UnitRoles.Label(role)</button>
+            }
+        </div>
+
+        @if (groups.Count == 0)
+        {
+            <p class="catalog-empty">No units match.</p>
+        }
+
+        @foreach (var group in groups)
+        {
+            <h3 class="role-heading">@UnitRoles.Label(group.Role) (@group.Units.Count)</h3>
+            <ul class="unit-list">
+                @foreach (var unit in group.Units)
+                {
+                    var sizes = UnitSizes.For(unit);
+                    var size = sizes[Math.Min(SelectedSizeIndex(unit), sizes.Count - 1)];
+                    var count = UnitRules.CountOf(State.Units, unit);
+                    var max = UnitLimits.MaxPerArmy(unit, battleSize, State.Rules.ActiveFor(State.Setup), factionId);
+                    var models = UnitSizes.ModelsText(unit);
+                    var price = ArmyPricing.PointsFor(unit, size.Models, count + 1);
+
+                    <li class="unit-row @(ReferenceEquals(_detail, unit) ? "selected" : "")">
+                        <button type="button" class="unit-name" @onclick="() => _detail = unit">@unit.Name</button>
+                        @if (models.Length > 0)
+                        {
+                            <span class="unit-models">@models models</span>
+                        }
+                        @if (sizes.Count > 1)
+                        {
+                            <span class="size-toggle">
+                                @foreach (var option in sizes)
+                                {
+                                    <button type="button" class="chip @(option == size ? "selected" : "")" @onclick="() => SelectSize(unit, option)">@option.Models</button>
+                                }
+                            </span>
+                        }
+                        <span class="unit-points">@price pts</span>
+                        @if (count > 0 && max is not null)
+                        {
+                            <span class="unit-limit @(count >= max ? "at-limit" : "")">×@count/@max</span>
+                        }
+                        <button type="button" class="add-unit"
+                                disabled="@(UnitRules.CanAdd(State.Setup, State.Units, unit, State.Rules, browsedFaction) != AddUnitResult.Added)"
+                                @onclick="() => State.AddUnit(unit, size, browsedFaction)">Add</button>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    @if (_detail is not null)
+    {
+        <DatasheetDetail Datasheet="_detail" />
+    }
+}
+
+@code {
+    /// <summary>The factions whose units the army may take as allies.</summary>
+    [Parameter]
+    public IReadOnlyList<AllyFaction> Allies { get; set; } = [];
+
+    private string? _allyFaction;
+    private IReadOnlyList<Datasheet>? _datasheets;
+    private string _query = "";
+    private bool _showLegends;
+    private UnitRole? _role;
+    private Datasheet? _detail;
+    private readonly Dictionary<Datasheet, UnitSize> _selectedSizes = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnChanged;
+        Catalog.Changed += OnCatalogChanged;
+        _datasheets = await Catalog.GetAllAsync();
+    }
+
+    public void Dispose()
+    {
+        State.Changed -= OnChanged;
+        Catalog.Changed -= OnCatalogChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnCatalogChanged() => InvokeAsync(async () =>
+    {
+        _datasheets = await Catalog.GetAllAsync();
+        StateHasChanged();
+    });
+
+    private void SelectAlly(string? slug)
+    {
+        _allyFaction = slug;
+        _role = null;
+        _detail = null;
+    }
+
+    private void OnQueryChanged(ChangeEventArgs args) => _query = args.Value?.ToString() ?? "";
+
+    private void ToggleLegends()
+    {
+        _showLegends = !_showLegends;
+        _role = null;
+    }
+
+    private int SelectedSizeIndex(Datasheet unit) =>
+        _selectedSizes.TryGetValue(unit, out var size) ? UnitSizes.For(unit).ToList().IndexOf(size) : 0;
+
+    private void SelectSize(Datasheet unit, UnitSize size) => _selectedSizes[unit] = size;
+}

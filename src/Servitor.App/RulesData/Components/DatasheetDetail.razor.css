@@ -1,0 +1,88 @@
+/* Always the same size, whether it shows a unit or the placeholder, so the page below the list never shifts. */
+.datasheet-detail {
+    height: 460px;
+    overflow-y: auto;
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+.datasheet-placeholder {
+    opacity: 0.45;
+}
+
+.placeholder-hint {
+    margin: 0.1rem 0 0.5rem 0;
+    font-style: italic;
+}
+
+/* Fixed column widths so the tables keep their shape from one unit to the next. */
+.stat-line table {
+    table-layout: fixed;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+}
+
+.weapon-profiles table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.weapon-profiles th:first-child {
+    width: 26%;
+}
+
+.weapon-profiles th:last-child {
+    width: 26%;
+}
+
+.weapon-profiles td {
+    overflow-wrap: anywhere;
+}
+
+.datasheet-detail-header h2 {
+    margin-bottom: 0.15rem;
+}
+
+.datasheet-meta {
+    opacity: 0.8;
+    margin: 0 0 0.5rem 0;
+}
+
+.composition-constraint {
+    display: inline-block;
+    border: 1px solid var(--crt-warning);
+    color: var(--crt-warning);
+    border-radius: 4px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+table {
+    border-collapse: collapse;
+    margin-bottom: 0.75rem;
+}
+
+th, td {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.15rem 0.5rem;
+}
+
+/* AbilityList renders as a child component, so its markup needs ::deep to be reachable from here. */
+::deep .ability-list {
+    margin-bottom: 0.75rem;
+}
+
+::deep .ability {
+    margin-bottom: 0.5rem;
+}
+
+::deep .ability h4 {
+    margin: 0;
+}
+
+::deep .ability p {
+    margin: 0.1rem 0 0 0;
+}

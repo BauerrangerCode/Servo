@@ -1,0 +1,255 @@
+@page "/build"
+@using Servitor.App.ArmyBuilder.Catalog
+@using Servitor.App.ArmyBuilder.Components
+@using Servitor.App.ArmyBuilder.Rules
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.ArmyCollection.Resolution
+@using Servitor.App.ArmyCollection.State
+@using Servitor.App.RulesData.Components
+@using Servitor.App.RulesData.Loading
+@using Servitor.App.Shared.Backdrop
+@using Servitor.RulesData.Domain
+@using Servitor.RulesData.Merging
+@implements IDisposable
+@inject IArmyBuilderState State
+@inject IFactionBackdrop Backdrop
+@inject IDetachmentRuleProvider RuleProvider
+@inject IMergedRulesDataProvider RulesData
+@inject IArmyCollectionStore CollectionStore
+
+<PageTitle>Build</PageTitle>
+
+<h1>Build</h1>
+
+@if (!_isLoaded)
+{
+    <p>Loading rules data…</p>
+}
+else if (_data is null || _data.Factions.Count == 0)
+{
+    <p class="build-empty">No rules data yet. Use “Merge data” in the top bar to build it.</p>
+}
+else
+{
+    var setup = State.Setup;
+
+    <section class="build-step">
+        <h2>Battle Size</h2>
+        @foreach (var size in BattleSizes.All)
+        {
+            <button type="button" class="chip @(setup.BattleSize == size ? "selected" : "")" @onclick="() => State.SelectBattleSize(size)">
+                @size.Name — @size.PointsLimit pts · @size.DetachmentPointsLimit DP · @size.EnhancementLimit enh
+            </button>
+        }
+    </section>
+
+    @if (setup.BattleSize is { } battleSize)
+    {
+        <section class="build-step">
+            <h2>Faction</h2>
+            <select class="faction-select" value="@setup.FactionId" @onchange="OnFactionChanged">
+                <option value="">(choose a faction)</option>
+                @foreach (var faction in _data.Factions.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    <option value="@faction.FactionId">@faction.Name</option>
+                }
+            </select>
+        </section>
+
+        @if (CurrentFaction is { } current)
+        {
+            <section class="build-step">
+                <h2>Detachments</h2>
+                <p class="dp-progress @(setup.DetachmentPointsUsed > battleSize.DetachmentPointsLimit ? "over-budget" : "")">
+                    @setup.DetachmentPointsUsed/@battleSize.DetachmentPointsLimit DP
+                </p>
+
+                <ul class="detachment-list">
+                    @foreach (var detachment in current.Detachments.Where(d => d.Mode == GameMode.Standard))
+                    {
+                        var selected = setup.Detachments.Any(d => d.Id == detachment.Id);
+                        <li class="detachment @(selected ? "selected" : "")">
+                            <button type="button" class="detachment-name" @onclick="() => ToggleDetachmentRules(detachment.Id)">@detachment.Name</button>
+                            <span class="detachment-dp">@detachment.DetachmentPoints DP</span>
+                            @if (detachment.Archetype is { } archetype)
+                            {
+                                <span class="detachment-tag">@ArchetypeLabel(archetype)</span>
+                            }
+                            <span class="detachment-enh">@detachment.EnhancementCount enh</span>
+                            @if (selected)
+                            {
+                                <button type="button" class="detachment-action" @onclick="() => State.RemoveDetachment(detachment.Id)">Remove</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="detachment-action" disabled="@(DetachmentRules.CanAdd(setup, detachment) != DetachmentAddResult.Added)"
+                                        @onclick="() => State.AddDetachment(detachment)">Add</button>
+                            }
+                        </li>
+                        @if (_expandedDetachments.Contains(detachment.Id))
+                        {
+                            <li class="detachment-rules">
+                                <div class="detachment-flavor">@MarkdownRenderer.Render(detachment.Legend)</div>
+                                @if (detachment.RuleText is { } ruleText)
+                                {
+                                    <div class="detachment-rule-text">@MarkdownRenderer.Render(ruleText)</div>
+                                }
+                                @{ var enhancements = EnhancementsOf(current, detachment); }
+                                @if (enhancements.Count > 0)
+                                {
+                                    <div class="detachment-enhancements">
+                                        <h4>Enhancements</h4>
+                                        @foreach (var enhancement in enhancements)
+                                        {
+                                            <div class="detachment-enhancement">
+                                                <span class="enhancement-name">@enhancement.Name</span>
+                                                <span class="enhancement-cost">@enhancement.Cost pts</span>
+                                                <div class="enhancement-description">@((MarkupString)enhancement.DescriptionHtml)</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </li>
+                        }
+                    }
+                </ul>
+            </section>
+
+            <UnitCatalogPanel Allies="AllyFactions" />
+            <ArmyListPanel Enhancements="AvailableEnhancements" Allies="AllyFactions" />
+
+            <section class="build-step save-step">
+                <h2>Save</h2>
+                <input class="save-name" @bind="_saveName" @bind:event="oninput" placeholder="List name" />
+                <button type="button" class="save-button" @onclick="SaveToCollection">Save to My Collection</button>
+                @if (_saveMessage is not null)
+                {
+                    <p class="save-message">@_saveMessage</p>
+                }
+            </section>
+        }
+    }
+}
+
+@if (_pendingOverwriteName is { } overwriteName)
+{
+    <div class="modal-backdrop">
+        <div class="modal-box">
+            <h2>Overwrite saved army?</h2>
+            <p>An army named "@overwriteName" is already saved. Overwrite it?</p>
+            <div class="modal-actions">
+                <button type="button" class="modal-confirm" @onclick="ConfirmOverwrite">Yes, overwrite</button>
+                <button type="button" class="modal-cancel" @onclick="CancelOverwrite">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private MergedRulesData? _data;
+    private bool _isLoaded;
+    private string _saveName = "";
+    private string? _saveMessage;
+    private string? _pendingOverwriteName;
+    private Guid? _pendingOverwriteId;
+    private readonly HashSet<string> _expandedDetachments = [];
+
+    // The enhancements of the detachments the army has selected.
+    private IReadOnlyList<Enhancement> AvailableEnhancements =>
+        CurrentFaction?.Enhancements.Where(e => State.Setup.Detachments.Any(d => d.Name == e.Detachment)).ToList() ?? [];
+
+    // The factions the army's faction may ally with, named for the catalog and the list.
+    private IReadOnlyList<AllyFaction> AllyFactions => AlliesOf(State.Setup.FactionId);
+
+    private IReadOnlyList<AllyFaction> AlliesOf(string? factionId)
+    {
+        var faction = _data?.Factions.FirstOrDefault(f => f.FactionId == factionId);
+        if (faction is null || _data is null)
+        {
+            return [];
+        }
+
+        return faction.AllyFactionIds
+            .Select(id => _data.Factions.FirstOrDefault(f => f.FactionId == id))
+            .OfType<MergedFactionRules>()
+            .Select(f => new AllyFaction(f.FactionId, f.Name))
+            .ToList();
+    }
+
+    private MergedFactionRules? CurrentFaction =>
+        _data?.Factions.FirstOrDefault(f => f.FactionId == State.Setup.FactionId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.Changed += OnStateChanged;
+        _data = await RulesData.GetAsync();
+        await RuleProvider.LoadAsync();
+        _isLoaded = true;
+    }
+
+    public void Dispose() => State.Changed -= OnStateChanged;
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnFactionChanged(ChangeEventArgs args)
+    {
+        if (args.Value?.ToString() is { Length: > 0 } factionId)
+        {
+            State.SelectFaction(factionId, AlliesOf(factionId).Select(a => a.Slug).ToList());
+            Backdrop.ShowFaction(factionId);
+            _saveName = _data?.Factions.FirstOrDefault(f => f.FactionId == factionId)?.Name ?? factionId;
+            _saveMessage = null;
+        }
+    }
+
+    private async Task SaveToCollection()
+    {
+        var name = string.IsNullOrWhiteSpace(_saveName) ? (CurrentFaction?.Name ?? "Unnamed army") : _saveName.Trim();
+        var existing = (await CollectionStore.ListAsync())
+            .FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        if (existing is not null)
+        {
+            _pendingOverwriteName = name;
+            _pendingOverwriteId = existing.Id;
+            return;
+        }
+
+        await StoreSnapshot(name, null);
+    }
+
+    private Task ConfirmOverwrite() => StoreSnapshot(_pendingOverwriteName!, _pendingOverwriteId);
+
+    private void CancelOverwrite()
+    {
+        _pendingOverwriteName = null;
+        _pendingOverwriteId = null;
+    }
+
+    private async Task StoreSnapshot(string name, Guid? existingId)
+    {
+        var saved = ArmySnapshot.Capture(name, State);
+        if (existingId is { } id)
+        {
+            saved = saved with { Id = id };
+        }
+
+        await CollectionStore.SaveAsync(saved);
+        _saveMessage = $"Saved \"{name}\" to My Collection.";
+        _pendingOverwriteName = null;
+        _pendingOverwriteId = null;
+    }
+
+    private static IReadOnlyList<Enhancement> EnhancementsOf(MergedFactionRules faction, Detachment detachment) =>
+        faction.Enhancements.Where(e => e.Detachment == detachment.Name).ToList();
+
+    private void ToggleDetachmentRules(string detachmentId)
+    {
+        if (!_expandedDetachments.Remove(detachmentId))
+        {
+            _expandedDetachments.Add(detachmentId);
+        }
+    }
+
+    private static string ArchetypeLabel(MissionArchetype archetype) => MissionArchetypeLabels.Label(archetype);
+}

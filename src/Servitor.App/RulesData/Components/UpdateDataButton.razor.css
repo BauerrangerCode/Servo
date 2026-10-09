@@ -1,0 +1,27 @@
+.update-data {
+    margin-bottom: 0.75rem;
+}
+
+.update-progress,
+.update-summary,
+.update-warnings {
+    margin: 0.4rem 0 0 0;
+    padding-left: 1.2rem;
+    font-size: 0.75rem;
+}
+
+.update-progress {
+    max-height: 8rem;
+    overflow-y: auto;
+    opacity: 0.8;
+}
+
+.update-message {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.8rem;
+}
+
+.update-error,
+.update-warnings {
+    color: var(--crt-warning);
+}

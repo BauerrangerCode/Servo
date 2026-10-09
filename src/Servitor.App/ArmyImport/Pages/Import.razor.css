@@ -1,0 +1,36 @@
+.import-step {
+    margin-bottom: 1rem;
+}
+
+.import-textarea {
+    display: block;
+    width: 100%;
+    max-width: 40rem;
+    height: 12rem;
+    margin: 0.5rem 0;
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--crt-fg-dim);
+    border-radius: 0;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.import-note {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.import-errors {
+    max-width: 40rem;
+    margin: 0.5rem 0;
+    padding-left: 1.25rem;
+    color: var(--crt-danger);
+    font-size: 0.85rem;
+}
+
+.build-fallback,
+.collection-link {
+    display: inline-block;
+    margin-right: 1rem;
+}

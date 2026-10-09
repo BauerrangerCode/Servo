@@ -1,0 +1,53 @@
+.army-list {
+    margin-top: 1.5rem;
+}
+
+.army-units {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.army-unit {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.army-unit-name {
+    flex: 1;
+}
+
+.army-unit-models,
+.army-unit-points {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.army-unit-loadout {
+    margin: 0 0 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.army-unit-enhancement {
+    display: block;
+    margin: 0 0 0.4rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.enhancement-select {
+    margin-left: 0.5rem;
+    max-width: 24rem;
+}
+
+.army-unit-ally {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0 0.4rem;
+    border: 1px solid var(--crt-warning);
+    color: var(--crt-warning);
+    white-space: nowrap;
+}

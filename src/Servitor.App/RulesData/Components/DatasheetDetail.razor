@@ -1,0 +1,178 @@
+@namespace Servitor.App.RulesData.Components
+@using Servitor.RulesData.Domain
+
+@if (Datasheet is null)
+{
+    <article class="datasheet-detail datasheet-placeholder" aria-label="No unit selected">
+        <header class="datasheet-detail-header">
+            <h2>Unit Name</h2>
+            <p class="datasheet-meta">Faction &middot; Points cost</p>
+        </header>
+
+        <section class="stat-line">
+            <table>
+                <thead>
+                    <tr><th>M</th><th>T</th><th>Sv</th><th>W</th><th>Ld</th><th>OC</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="weapon-profiles">
+            <h3>Ranged</h3>
+            <p class="placeholder-hint">Weapon profiles</p>
+        </section>
+
+        <section class="weapon-profiles">
+            <h3>Melee</h3>
+            <p class="placeholder-hint">Weapon profiles</p>
+        </section>
+
+        <section class="ability-list">
+            <h3>Abilities</h3>
+            <p class="placeholder-hint">Select a unit in the list above.</p>
+        </section>
+
+        <section class="keywords">
+            <h3>Keywords</h3>
+            <p class="placeholder-hint">Unit keywords</p>
+        </section>
+    </article>
+}
+else
+{
+    var sheet = Datasheet;
+
+    <article class="datasheet-detail">
+        <header class="datasheet-detail-header">
+            <h2>@sheet.Name</h2>
+            <p class="datasheet-meta">@sheet.Faction &middot; @sheet.Points pts</p>
+            @if (sheet.CompositionConstraint is { } constraint)
+            {
+                <p class="composition-constraint">
+                    MAX @constraint.StrikeForceAndOnslaughtLimit PER ARMY
+                    @if (constraint.IncursionLimit is { } incursionLimit && incursionLimit != constraint.StrikeForceAndOnslaughtLimit)
+                    {
+                        <text> (@incursionLimit in Incursion)</text>
+                    }
+                </p>
+            }
+        </header>
+
+        <section class="stat-line">
+            <table>
+                <thead>
+                    <tr>
+                        <th>M</th>
+                        <th>T</th>
+                        <th>Sv</th>
+                        @if (sheet.StatLine.InvulnerableSave is not null)
+                        {
+                            <th>Inv</th>
+                        }
+                        <th>W</th>
+                        <th>Ld</th>
+                        <th>OC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>@sheet.StatLine.Movement</td>
+                        <td>@sheet.StatLine.Toughness</td>
+                        <td>@sheet.StatLine.Save</td>
+                        @if (sheet.StatLine.InvulnerableSave is { } invulnerableSave)
+                        {
+                            <td>@invulnerableSave</td>
+                        }
+                        <td>@sheet.StatLine.Wounds</td>
+                        <td>@sheet.StatLine.Leadership</td>
+                        <td>@sheet.StatLine.ObjectiveControl</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        @if (sheet.RangedWeapons.Count > 0)
+        {
+            <section class="weapon-profiles">
+                <h3>Ranged</h3>
+                <table>
+                    <thead>
+                        <tr><th>Name</th><th>Rng</th><th>A</th><th>BS</th><th>S</th><th>AP</th><th>D</th><th>Keywords</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var weapon in sheet.RangedWeapons)
+                        {
+                            <tr>
+                                <td>@weapon.Name</td>
+                                <td>@weapon.Range</td>
+                                <td>@weapon.Attacks</td>
+                                <td>@weapon.Skill</td>
+                                <td>@weapon.Strength</td>
+                                <td>@weapon.ArmourPenetration</td>
+                                <td>@weapon.Damage</td>
+                                <td>@string.Join(", ", weapon.Keywords)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+
+        @if (sheet.MeleeWeapons.Count > 0)
+        {
+            <section class="weapon-profiles">
+                <h3>Melee</h3>
+                <table>
+                    <thead>
+                        <tr><th>Name</th><th>A</th><th>WS</th><th>S</th><th>AP</th><th>D</th><th>Keywords</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var weapon in sheet.MeleeWeapons)
+                        {
+                            <tr>
+                                <td>@weapon.Name</td>
+                                <td>@weapon.Attacks</td>
+                                <td>@weapon.Skill</td>
+                                <td>@weapon.Strength</td>
+                                <td>@weapon.ArmourPenetration</td>
+                                <td>@weapon.Damage</td>
+                                <td>@string.Join(", ", weapon.Keywords)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+
+        @if (sheet.NamedAbilities.Count > 0)
+        {
+            <AbilityList Title="Abilities" Abilities="sheet.NamedAbilities" />
+        }
+
+        @if (sheet.WargearAbilities.Count > 0)
+        {
+            <AbilityList Title="Wargear Abilities" Abilities="sheet.WargearAbilities" />
+        }
+
+        @if (sheet.CoreAbilities.Count > 0)
+        {
+            <AbilityList Title="Core Abilities" Abilities="sheet.CoreAbilities" />
+        }
+
+        @if (sheet.Keywords.Count > 0)
+        {
+            <section class="keywords">
+                <h3>Keywords</h3>
+                <p>@string.Join(", ", sheet.Keywords)</p>
+            </section>
+        }
+    </article>
+}
+
+@code {
+    [Parameter]
+    public Datasheet? Datasheet { get; set; }
+}

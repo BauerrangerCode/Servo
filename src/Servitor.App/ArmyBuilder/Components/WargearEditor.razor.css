@@ -1,0 +1,54 @@
+.wargear-editor {
+    margin: 0.4rem 0 0.6rem 1rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 2px solid var(--crt-fg-dim);
+    font-size: 0.85rem;
+}
+
+.wargear-model {
+    border: 0;
+    padding: 0;
+    margin: 0 0 0.5rem 0;
+}
+
+.wargear-model legend {
+    padding: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
+}
+
+.wargear-slot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 0.2rem 0;
+}
+
+.wargear-slot-name {
+    min-width: 6rem;
+    opacity: 0.7;
+}
+
+.wargear-choice {
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.wargear-pool {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.3rem 0;
+}
+
+.wargear-stepper {
+    white-space: nowrap;
+}
+
+.wargear-count {
+    display: inline-block;
+    min-width: 3rem;
+    text-align: center;
+}
