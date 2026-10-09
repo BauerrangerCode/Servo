@@ -1,0 +1,40 @@
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.BattleTracker.Units
+@implements IDisposable
+@inject IArmyBuilderState Army
+@inject IUnitConditionState Conditions
+
+<section class="units-panel">
+    <h2>Units</h2>
+    @foreach (var card in _cards)
+    {
+        <UnitCard @key="card.Roles[0].UnitKey" Card="card" />
+    }
+</section>
+
+@code {
+    private IReadOnlyList<UnitCardModel> _cards = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Army.Changed += OnArmyChanged;
+        Conditions.Changed += OnConditionsChanged;
+        _cards = UnitCards.Build(Army.Units);
+        await Conditions.LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        Army.Changed -= OnArmyChanged;
+        Conditions.Changed -= OnConditionsChanged;
+    }
+
+    private void OnArmyChanged()
+    {
+        _cards = UnitCards.Build(Army.Units);
+        OnConditionsChanged();
+    }
+
+    private void OnConditionsChanged() => InvokeAsync(StateHasChanged);
+}

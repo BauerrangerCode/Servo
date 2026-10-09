@@ -1,0 +1,26 @@
+.unit-card {
+    border: 1px solid var(--crt-fg);
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.unit-card.destroyed h3 {
+    text-decoration: line-through;
+}
+
+.unit-card header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.unit-card h3 {
+    margin: 0;
+}
+
+.unit-models {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    font-size: 0.8rem;
+}

@@ -10,6 +10,9 @@ public sealed record ArmyUnit(Guid Id, Datasheet Datasheet, UnitSize Size)
 {
     public WargearSelection Wargear { get; init; } = WargearSelection.Default;
 
+    /// <summary>The weapons an imported list says the unit carries; null for a unit built by hand, where only <see cref="Wargear"/> is known.</summary>
+    public IReadOnlyList<DeclaredWeapon>? DeclaredWeapons { get; init; }
+
     /// <summary>The enhancement the unit carries, or null. Its cost is added to the unit's points.</summary>
     public Enhancement? Enhancement { get; init; }
 

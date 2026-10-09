@@ -86,6 +86,9 @@ public class OpponentArmyModalTests : BunitContext
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
+        Services.AddSingleton<IUnitConditionState, UnitConditionState>();
+        Services.AddSingleton<IActiveArmyStore>(sp => new ActiveArmyStore(
+            sp.GetRequiredService<IRulesDataStore>(), sp.GetRequiredService<IMergedRulesDataProvider>(), new FakeDatasheetCatalog([])));
         Services.AddSingleton<IArmyBuilderState>(_ownArmy);
         Services.AddSingleton<IMergedRulesDataProvider>(provider);
         Services.AddSingleton<IOpponentArmyState>(new OpponentArmyState(provider, new FakeDatasheetCatalog(RealData.Datasheets)));

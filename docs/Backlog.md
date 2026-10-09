@@ -337,7 +337,9 @@ As a player, I want to track wounds per model-role (leader, bodyguard, wargear-b
 - ✓ Marking a specific model-role destroyed is distinct from marking the whole unit destroyed, and correctly reflects which attached-unit abilities are lost as a result
 - ✓ A unit with no distinct model-roles (a plain squad with no attached character) falls back to one aggregate value, not a forced per-role breakdown
 - ✓ Add-token and Destroy actions are available per unit/role and reflected immediately in that unit's card
-- ✓ State survives a page reload mid-game (same persistence as E6.1)
+- ✓ State survives a page reload mid-game (same persistence as E6.1); the army Play works with is kept across a reload too, since wounds are only meaningful for the same units
+- ✓ **Scope decision (project owner):** Play lists every unit of the army as a datasheet card (stats, abilities, keywords, a leader and the unit it leads on one card). Only the weapons a unit is equipped with are shown, each with one dot per model carrying it; a dot fades when that model is destroyed. Models with the same equipment form a group, and wounds, kills, revives and healing are applied per group, which is how the model hit is chosen
+- ✓ The equipment comes from the imported list's weapon counts (the import now keeps them); for units built by hand it is derived from the wargear choices and the datasheet, which is an approximation
 
 ---
 

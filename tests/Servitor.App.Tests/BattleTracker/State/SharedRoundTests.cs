@@ -83,6 +83,7 @@ public class BattlePlaySessionTests
         var rules = new ArmyRuleState(store);
         var provider = new BattleTrackerFixtures.FakeRulesDataProvider(null);
         var opponent = new OpponentArmyState(provider, new FakeDatasheetCatalog([]));
+        var conditions = new UnitConditionState(store);
         var grenade = BattleTrackerFixtures.Stratagem("g", "GRENADE", "Shooting phase");
 
         await progress.SetFirstTurnAsync(Side.Enemy);
@@ -91,14 +92,16 @@ public class BattlePlaySessionTests
         await progress.SetPhaseAsync(BattlePhase.Shooting);
         await usage.UseAsync(grenade, null);
         await rules.PinAsync("r");
+        await conditions.AddTokenAsync("u|g0");
         await rules.SetShowAurasAsync(false);
 
-        await new BattlePlaySession(progress, usage, rules, opponent).ResetAsync();
+        await new BattlePlaySession(progress, usage, rules, opponent, conditions).ResetAsync();
 
         Assert.Equal((1, BattlePhase.Deployment, Side.You, Side.You), (progress.Round, progress.Phase, progress.FirstTurn, progress.ActiveTurn));
         Assert.Equal(0, progress.CommandPointsOf(Side.You));
         Assert.False(usage.IsUsedThisPhase("g"));
         Assert.False(rules.IsPinned("r"));
+        Assert.Equal(0, conditions.Of("u|g0").Tokens);
         Assert.False(rules.ShowAuras);
 
         var reloaded = new BattleProgressState(store);

@@ -1,0 +1,55 @@
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.BattleTracker.Units
+@inject IUnitConditionState Conditions
+
+@{
+    var total = Card.Groups.Sum(g => g.Models);
+    var alive = Card.Roles.SelectMany(r => r.Loadout.Groups.Select(g => (r, g))).Sum(x => GroupWounds.Alive(x.g, Conditions.Of(UnitKeys.GroupKey(x.r.UnitKey, x.g))));
+}
+
+<article class="unit-card @(alive == 0 ? "destroyed" : "")">
+    <header>
+        <h3>@Card.Title</h3>
+        <span class="badge unit-models">@alive / @total models</span>
+        @if (alive == 0)
+        {
+            <button type="button" class="restore-unit" @onclick="RestoreUnitAsync">Restore unit</button>
+        }
+        else
+        {
+            <button type="button" class="destroy-unit" @onclick="DestroyUnitAsync">Destroy unit</button>
+        }
+    </header>
+
+    @foreach (var role in Card.Roles)
+    {
+        <UnitRoleSection @key="role.UnitKey" Role="role" ShowRoleLabel="Card.Roles.Count > 1" />
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public UnitCardModel Card { get; set; } = default!;
+
+    private async Task DestroyUnitAsync()
+    {
+        foreach (var role in Card.Roles)
+        {
+            foreach (var group in role.Loadout.Groups)
+            {
+                await Conditions.DestroyGroupAsync(UnitKeys.GroupKey(role.UnitKey, group), group);
+            }
+        }
+    }
+
+    private async Task RestoreUnitAsync()
+    {
+        foreach (var role in Card.Roles)
+        {
+            foreach (var group in role.Loadout.Groups)
+            {
+                await Conditions.RestoreGroupAsync(UnitKeys.GroupKey(role.UnitKey, group));
+            }
+        }
+    }
+}

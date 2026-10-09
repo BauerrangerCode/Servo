@@ -60,13 +60,19 @@ public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = nul
 
     public void SetWargear(Guid unitId, WargearSelection wargear)
     {
-        Units = Units.Select(u => u.Id == unitId ? u with { Wargear = wargear } : u).ToList();
+        Units = Units.Select(u => u.Id == unitId ? u with { Wargear = wargear, DeclaredWeapons = null } : u).ToList();
         Changed?.Invoke();
     }
 
     public void SetEnhancement(Guid unitId, Enhancement? enhancement)
     {
         Units = Units.Select(u => u.Id == unitId ? u with { Enhancement = enhancement } : u).ToList();
+        Changed?.Invoke();
+    }
+
+    public void SetDeclaredWeapons(Guid unitId, IReadOnlyList<DeclaredWeapon>? weapons)
+    {
+        Units = Units.Select(u => u.Id == unitId ? u with { DeclaredWeapons = weapons } : u).ToList();
         Changed?.Invoke();
     }
 

@@ -7,6 +7,7 @@
 @implements IDisposable
 @inject IBattleProgressState Progress
 @inject IArmyBuilderState Army
+@inject IActiveArmyStore ActiveArmy
 
 <PageTitle>Play</PageTitle>
 
@@ -26,19 +27,24 @@ else
     <CommandPointsPanel />
 
     <nav class="play-nav">
-        <button type="button" class="chip view-queue @(_showCommands ? "" : "selected")" @onclick="() => _showCommands = false">Action Queue</button>
-        <button type="button" class="chip view-commands @(_showCommands ? "selected" : "")" @onclick="() => _showCommands = true">Commands</button>
+        <button type="button" class="chip view-queue @(_view == PlayView.Queue ? "selected" : "")" @onclick="() => _view = PlayView.Queue">Action Queue</button>
+        <button type="button" class="chip view-units @(_view == PlayView.Units ? "selected" : "")" @onclick="() => _view = PlayView.Units">Units</button>
+        <button type="button" class="chip view-commands @(_view == PlayView.Commands ? "selected" : "")" @onclick="() => _view = PlayView.Commands">Commands</button>
         <button type="button" class="chip open-opponent" @onclick="() => _showOpponent = true">Opponent's Army</button>
         <button type="button" class="chip open-scoring" @onclick="() => _showScoring = true">Scoring</button>
     </nav>
 
-    @if (_showCommands)
+    @switch (_view)
     {
-        <CommandsPanel />
-    }
-    else
-    {
-        <ActionQueuePanel />
+        case PlayView.Commands:
+            <CommandsPanel />
+            break;
+        case PlayView.Units:
+            <UnitsPanel />
+            break;
+        default:
+            <ActionQueuePanel />
+            break;
     }
 
     @if (_showOpponent)
@@ -55,7 +61,14 @@ else
 }
 
 @code {
-    private bool _showCommands;
+    private enum PlayView
+    {
+        Queue,
+        Units,
+        Commands,
+    }
+
+    private PlayView _view = PlayView.Queue;
     private bool _showOpponent;
     private bool _showScoring;
 
@@ -63,6 +76,14 @@ else
     {
         Army.Changed += OnArmyChanged;
         await Progress.LoadAsync();
+        if (Army.Units.Count == 0)
+        {
+            await ActiveArmy.RestoreAsync(Army);
+        }
+        else
+        {
+            await ActiveArmy.SaveAsync(Army);
+        }
     }
 
     public void Dispose() => Army.Changed -= OnArmyChanged;

@@ -78,6 +78,11 @@ public static class SavedArmyResolver
             {
                 state.SetEnhancement(unit.Id, enhancement);
             }
+
+            if (plannedUnit.DeclaredWeapons is { } declared)
+            {
+                state.SetDeclaredWeapons(unit.Id, declared);
+            }
         }
 
         // A second pass, since a leader can be listed after the unit it leads (or vice versa) and AddUnit only

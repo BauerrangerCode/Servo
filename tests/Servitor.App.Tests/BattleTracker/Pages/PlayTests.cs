@@ -27,6 +27,9 @@ public class PlayTests : BunitContext
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
+        Services.AddSingleton<IUnitConditionState, UnitConditionState>();
+        Services.AddSingleton<IActiveArmyStore>(sp => new ActiveArmyStore(
+            sp.GetRequiredService<IRulesDataStore>(), sp.GetRequiredService<IMergedRulesDataProvider>(), new FakeDatasheetCatalog([])));
         Services.AddSingleton<IOpponentArmyState>(sp => new OpponentArmyState(
             sp.GetRequiredService<IMergedRulesDataProvider>(), new FakeDatasheetCatalog([])));
         Services.AddSingleton<IArmyBuilderState>(BattleTrackerFixtures.OrkArmy());

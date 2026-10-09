@@ -37,5 +37,6 @@ public static class ArmySnapshot
         unit.Enhancement?.Name,
         unit.AlliedFaction,
         unit.IsWarlord,
-        unit.LeaderUnitId);
+        unit.LeaderUnitId,
+        unit.DeclaredWeapons);
 }
