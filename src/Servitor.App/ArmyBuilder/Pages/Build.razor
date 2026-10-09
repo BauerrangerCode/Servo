@@ -251,11 +251,5 @@ else
         }
     }
 
-    private static string ArchetypeLabel(MissionArchetype archetype) => archetype switch
-    {
-        MissionArchetype.TakeAndHold => "Take and Hold",
-        MissionArchetype.PriorityAssets => "Priority Assets",
-        MissionArchetype.PurgeTheFoe => "Purge the Foe",
-        _ => archetype.ToString(),
-    };
+    private static string ArchetypeLabel(MissionArchetype archetype) => MissionArchetypeLabels.Label(archetype);
 }

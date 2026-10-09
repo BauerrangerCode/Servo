@@ -1,0 +1,99 @@
+.setup-step {
+    margin-bottom: 1rem;
+}
+
+.chip {
+    border: 1px solid var(--crt-fg-dim);
+    background: transparent;
+    color: inherit;
+    border-radius: 0;
+    padding: 0.2rem 0.75rem;
+    margin: 0 0.25rem 0.25rem 0;
+    cursor: pointer;
+}
+
+.chip.selected {
+    border-color: var(--crt-fg);
+    background: var(--crt-selected);
+}
+
+.mission-legend {
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.scoring-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.5rem;
+}
+
+.scoring-condition {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.15rem 0;
+    border-bottom: 1px solid var(--crt-fg-dim);
+}
+
+.condition-when {
+    opacity: 0.8;
+    font-size: 0.85rem;
+}
+
+.condition-text {
+    flex: 1;
+}
+
+.condition-points {
+    font-weight: bold;
+}
+
+.condition-relation {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.mission-additional-rules {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+.deployment-select {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--crt-fg-dim);
+    border-radius: 0;
+    font-family: inherit;
+    padding: 0.2rem 0.4rem;
+}
+
+.deployment-detail {
+    margin-top: 0.5rem;
+}
+
+.deployment-detail dt {
+    font-weight: bold;
+}
+
+.deployment-detail dd {
+    margin: 0 0 0.5rem;
+}
+
+.setup-complete {
+    font-weight: bold;
+}
+
+.setup-warnings {
+    color: var(--crt-danger);
+}
+
+.reset-setup {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--crt-fg-dim);
+    border-radius: 0;
+    padding: 0.2rem 0.75rem;
+    cursor: pointer;
+}
