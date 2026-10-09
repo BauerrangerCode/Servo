@@ -126,6 +126,8 @@ public static class ArmyExportResolver
                 state.SetEnhancement(unit.Id, enhancement);
             }
 
+            SetDeclaredWeapons(state, unit, parsed.Wargear);
+
             if (parsed.IsWarlord)
             {
                 warlordUnitId = unit.Id;
@@ -148,6 +150,8 @@ public static class ArmyExportResolver
                 state.SetEnhancement(unit.Id, enhancement);
             }
 
+            SetDeclaredWeapons(state, unit, parsed.Wargear);
+
             if (parsed.LedByCharacterName is not null && characterUnitsByName.TryGetValue(parsed.LedByCharacterName, out var leader))
             {
                 state.SetLeader(unit.Id, leader.Id);
@@ -160,6 +164,14 @@ public static class ArmyExportResolver
         }
 
         return errors.Count > 0 ? ImportResolveResult.Failure(errors) : ImportResolveResult.Success(export.Warnings);
+    }
+
+    private static void SetDeclaredWeapons(IArmyBuilderState state, ArmyUnit unit, IReadOnlyList<ParsedWargearItem> wargear)
+    {
+        if (wargear.Count > 0)
+        {
+            state.SetDeclaredWeapons(unit.Id, [.. wargear.Select(w => new DeclaredWeapon(w.Name, w.Quantity))]);
+        }
     }
 
     // The header's FACTION KEYWORD is close to, but not always identical to, Datasheet.Faction: Warscribe drops

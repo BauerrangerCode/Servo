@@ -1,0 +1,119 @@
+.role-section {
+    margin-top: 0.8rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--crt-fg-dim);
+}
+
+.role-section.role-destroyed {
+    opacity: 0.55;
+}
+
+.role-title {
+    margin: 0 0 0.3rem;
+}
+
+.badge {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    font-size: 0.8rem;
+    margin-right: 0.3rem;
+}
+
+.stat-badges,
+.pills {
+    margin: 0.3rem 0;
+}
+
+.model-groups {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+}
+
+.model-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.3rem 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.model-group.group-destroyed .group-label {
+    text-decoration: line-through;
+}
+
+.group-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.model-dots {
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin: 0 0.15rem 0 0;
+    border-radius: 50%;
+    background: var(--crt-fg);
+}
+
+.weapon-name .model-dots {
+    margin-left: 0.5rem;
+}
+
+.dot.dead {
+    opacity: 0.2;
+}
+
+.weapon-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.weapon-table th {
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    border-bottom: 1px solid var(--crt-fg-dim);
+    padding: 0.2rem 0.6rem 0.2rem 0;
+}
+
+.weapon-table td {
+    padding: 0.2rem 0.6rem 0.2rem 0;
+    border-bottom: 1px solid var(--crt-fg-faint);
+    vertical-align: top;
+}
+
+.weapon-table tr.melee td:first-child {
+    border-left: 2px solid var(--crt-fg-dim);
+    padding-left: 0.4rem;
+}
+
+.weapon-unknown {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+}
+
+.role-abilities {
+    margin: 0.4rem 0;
+}
+
+.role-abilities h5 {
+    margin: 0.5rem 0 0.1rem;
+}
+
+.group-actions button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}

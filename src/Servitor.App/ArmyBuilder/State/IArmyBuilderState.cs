@@ -36,6 +36,9 @@ public interface IArmyBuilderState
 
     void SetEnhancement(Guid unitId, Enhancement? enhancement);
 
+    /// <summary>Records the weapons an imported list says the unit carries (null clears them).</summary>
+    void SetDeclaredWeapons(Guid unitId, IReadOnlyList<DeclaredWeapon>? weapons);
+
     /// <summary>Makes the given unit the army's Warlord, clearing the flag from any previously-set unit.</summary>
     void SetWarlord(Guid unitId);
 

@@ -54,15 +54,13 @@ public class BattleSetupStateTests
     }
 
     [Fact]
-    public void Role_and_first_turn_are_independent_manual_choices()
+    public void Role_is_a_manual_choice()
     {
         var state = PreparedState();
 
         state.SelectRole(BattleRole.Defender);
-        state.SelectFirstTurn(FirstTurn.Enemy);
 
         Assert.Equal(BattleRole.Defender, state.Role);
-        Assert.Equal(FirstTurn.Enemy, state.FirstTurn);
     }
 
     [Fact]
@@ -73,7 +71,6 @@ public class BattleSetupStateTests
         state.SelectOpponentDisposition(MissionArchetype.PurgeTheFoe);
         state.SelectDeploymentCard("Hammer and Anvil");
         state.SelectRole(BattleRole.Attacker);
-        state.SelectFirstTurn(FirstTurn.You);
 
         state.Reset();
 
@@ -82,7 +79,6 @@ public class BattleSetupStateTests
         Assert.Null(state.ResolvedMission);
         Assert.Null(state.SelectedDeploymentCard);
         Assert.Null(state.Role);
-        Assert.Null(state.FirstTurn);
     }
 
     [Fact]
@@ -96,10 +92,9 @@ public class BattleSetupStateTests
         state.SelectOpponentDisposition(MissionArchetype.PurgeTheFoe);
         state.SelectDeploymentCard("Hammer and Anvil");
         state.SelectRole(BattleRole.Attacker);
-        state.SelectFirstTurn(FirstTurn.You);
         state.Reset();
 
-        Assert.Equal(6, raised);
+        Assert.Equal(5, raised);
     }
 
     [Fact]

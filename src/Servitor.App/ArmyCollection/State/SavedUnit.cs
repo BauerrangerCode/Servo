@@ -16,4 +16,5 @@ public sealed record SavedUnit(
     string? EnhancementName,
     string? AlliedFaction,
     bool IsWarlord,
-    Guid? LeaderUnitId);
+    Guid? LeaderUnitId,
+    IReadOnlyList<DeclaredWeapon>? DeclaredWeapons = null);

@@ -47,33 +47,33 @@ public class ScoreTrackingStateTests
     }
 
     [Fact]
-    public void An_end_of_battle_condition_is_refused_until_the_last_round_is_reached()
+    public async Task An_end_of_battle_condition_is_refused_until_the_last_round_is_reached()
     {
         var tracking = Tracking();
 
         Assert.False(tracking.AdjustPrimary(Side.You, ScoringFixtures.EndOfBattleIndex, 1));
 
-        tracking.SetRound(5);
+        await tracking.SetRoundAsync(5);
         Assert.True(tracking.AdjustPrimary(Side.You, ScoringFixtures.EndOfBattleIndex, 1));
         Assert.Equal(8, tracking.ScoreOf(Side.You).PrimaryEndOfBattle);
     }
 
     [Fact]
-    public void A_condition_that_starts_in_round_two_is_refused_in_round_one()
+    public async Task A_condition_that_starts_in_round_two_is_refused_in_round_one()
     {
         var tracking = Tracking();
 
         Assert.False(tracking.AdjustPrimary(Side.You, ScoringFixtures.SecondRoundOnwardsIndex, 1));
 
-        tracking.SetRound(2);
+        await tracking.SetRoundAsync(2);
         Assert.True(tracking.AdjustPrimary(Side.You, ScoringFixtures.SecondRoundOnwardsIndex, 1));
     }
 
     [Fact]
-    public void Entries_are_recorded_in_the_selected_round()
+    public async Task Entries_are_recorded_in_the_selected_round()
     {
         var tracking = Tracking();
-        tracking.SetRound(3);
+        await tracking.SetRoundAsync(3);
 
         tracking.AdjustPrimary(Side.You, ScoringFixtures.CountableIndex, 1);
 
@@ -83,13 +83,13 @@ public class ScoreTrackingStateTests
     }
 
     [Fact]
-    public void An_unknown_condition_index_or_round_is_ignored()
+    public async Task An_unknown_condition_index_or_round_is_ignored()
     {
         var tracking = Tracking();
 
         Assert.False(tracking.AdjustPrimary(Side.You, 99, 1));
-        tracking.SetRound(6);
-        tracking.SetRound(0);
+        await tracking.SetRoundAsync(6);
+        await tracking.SetRoundAsync(0);
 
         Assert.Equal(1, tracking.CurrentRound);
     }
@@ -163,13 +163,13 @@ public class ScoreTrackingStateTests
     }
 
     [Fact]
-    public void A_secondary_condition_is_refused_outside_its_rounds()
+    public async Task A_secondary_condition_is_refused_outside_its_rounds()
     {
         var tracking = Tracking();
         tracking.AddCard(Side.You, "Delta");
 
         Assert.False(tracking.AdjustSecondary(Side.You, "Delta", 2, 1));
-        tracking.SetRound(2);
+        await tracking.SetRoundAsync(2);
         Assert.True(tracking.AdjustSecondary(Side.You, "Delta", 2, 1));
     }
 
@@ -264,17 +264,17 @@ public class ScoreTrackingStateTests
     // ---- resetting ---------------------------------------------------------------------------------------------
 
     [Fact]
-    public void Picking_different_dispositions_starts_the_scoring_clean()
+    public async Task Picking_different_dispositions_starts_the_scoring_clean_but_keeps_the_battle_round_of_play()
     {
         var (setup, tracking) = ScoringFixtures.Prepared();
         tracking.AdjustPrimary(Side.You, ScoringFixtures.CountableIndex, 1);
-        tracking.SetRound(3);
+        await tracking.SetRoundAsync(3);
         Assert.Equal(5, tracking.ScoreOf(Side.You).Total);
 
         setup.SelectOpponentDisposition(MissionArchetype.TakeAndHold);
 
         Assert.Equal(0, tracking.ScoreOf(Side.You).Total);
-        Assert.Equal(1, tracking.CurrentRound);
+        Assert.Equal(3, tracking.CurrentRound);
     }
 
     [Fact]

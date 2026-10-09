@@ -282,15 +282,18 @@ The most complex epic – integrates the army (E3/E4), rules data (E2), and Scor
 As a player, I want a battle round counter and a phase stepper (Deployment, Command, Movement, Shooting, Charge, Fight, End of Turn) with previous/next controls, so that the app always reflects where we are in the current game.
 
 - ✓ Phase order matches the sequence above exactly, both directions (next/previous), starting with Deployment before the round-based phases
+- ✓ A turn indicator shows "Your turn" / "Enemy turn"; it switches when End of Turn is stepped past, and the battle round advances after both turns of a round were played
+- ✓ During Deployment the player picks who takes the first turn (the single source for the first turn; the Scoring wizard no longer asks)
 - ✓ Round counter increments/decrements independently of phase state
 - ✓ State survives a page reload mid-game (persisted, not just in-memory)
 
 ### E6.2 Action Queue — 8 pts
 As a player, I want phase-relevant Core Stratagems, Army Rules, and Detachment Stratagems from my army surfaced automatically as the active phase changes, with an option to hide passive auras, so that I don't have to manually recall every timing-sensitive rule on my datasheets.
 
-- ✓ Queue content filters strictly by phase category (E6.1); the Your-Turn/Enemy-Turn tag is informational only, per confirmed Core Rules structure ([Reference-App-Analysis.md](Reference-App-Analysis.md) Section 11) — both tags are shown simultaneously during one player's turn, this is correct behavior
+- ✓ Queue content is filtered by phase category (E6.1) **and by whose turn it is**, using the stratagem's own timing (project owner decision, supersedes the earlier "turn tag is informational only" reading): "Your" shows only in the player's own turn, "Enemy" only in the opponent's turn, "Any" in both, and a phase-less ("any phase") stratagem in every phase. Timing tags read e.g. "Your Shooting phase", "Enemy Shooting phase", "Any Shooting phase"
+- ✓ A stratagem tied to a moment instead of a phase (start/end of the battle round, start/end of your or the enemy's turn) shows in the first or last phase of that round/turn only, recognised from the opening of its WHEN text
 - ✓ The three categories (Core Stratagems, Army Rules, Detachment Stratagems) are distinguishable
-- ✓ Each stratagem/rule renders CP cost (if any), category tag, turn-scope tag, WHEN/TARGET/EFFECT (or Passive text), and RESTRICTIONS/SECONDARY EFFECT when present
+- ✓ Each stratagem/rule renders CP cost (if any), category tag, timing tag, WHEN/TARGET/EFFECT (or Passive text), and RESTRICTIONS/SECONDARY EFFECT when present
 - ✓ A rule that presents multiple named sub-options (e.g. a doctrine-style choice with 2-3 alternatives) is supported as its own entry shape, not forced into the plain stratagem card layout
 - ✓ A rule whose effect persists across phases (e.g. an entered target that lasts until the next Command phase) stays visible/pinned across phase changes instead of disappearing outside its trigger phase
 - ✓ Auras toggle hides/shows aura-tagged abilities without affecting other queue entries
@@ -314,10 +317,10 @@ As a player, I want to view my opponent's army list and a commands/stratagems re
 - ✓ Each opponent unit supports a +Token action and a mark-destroyed toggle, independent of the player's own army state
 
 ### E6.4 Empty state — 2 pts
-As a player, I want a clear "Import Army" / "Try Demo" prompt instead of a broken tracker when no army is loaded, so that I understand why the tracker isn't showing anything yet.
+As a player, I want a clear "Import Army" prompt instead of a broken tracker when no army is loaded, so that I understand why the tracker isn't showing anything yet.
 
 - ✓ Play screen detects the no-army state and shows the prompt instead of the tracker UI
-- ✓ "Try Demo" loads the same fixture army as E4.1
+- ~~"Try Demo" loads the same fixture army as E4.1~~ — dropped by decision (like the E4.1 sample army); the prompt offers "Import Army" and "Build one instead", and a successful import now lands on Play
 
 ### E6.5 Scoring shortcut inside Play — 3 pts
 As a player, I want to reach Scoring (E5) from within Play without leaving the battle tracker context, so that I can update VP without losing my place in the game.
@@ -334,7 +337,9 @@ As a player, I want to track wounds per model-role (leader, bodyguard, wargear-b
 - ✓ Marking a specific model-role destroyed is distinct from marking the whole unit destroyed, and correctly reflects which attached-unit abilities are lost as a result
 - ✓ A unit with no distinct model-roles (a plain squad with no attached character) falls back to one aggregate value, not a forced per-role breakdown
 - ✓ Add-token and Destroy actions are available per unit/role and reflected immediately in that unit's card
-- ✓ State survives a page reload mid-game (same persistence as E6.1)
+- ✓ State survives a page reload mid-game (same persistence as E6.1); the army Play works with is kept across a reload too, since wounds are only meaningful for the same units
+- ✓ **Scope decision (project owner):** Play lists every unit of the army as a datasheet card (stats, abilities, keywords, a leader and the unit it leads on one card). Only the weapons a unit is equipped with are shown, each with one dot per model carrying it; a dot fades when that model is destroyed. Models with the same equipment form a group, and wounds, kills, revives and healing are applied per group, which is how the model hit is chosen
+- ✓ The equipment comes from the imported list's weapon counts (the import now keeps them); for units built by hand it is derived from the wargear choices and the datasheet, which is an approximation
 
 ---
 

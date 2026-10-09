@@ -1,0 +1,27 @@
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.Scoring.Tracking
+@implements IDisposable
+@inject IBattleProgressState Progress
+
+<section class="command-points">
+    @foreach (var side in Sides)
+    {
+        var current = side;
+        <div class="cp-side cp-@(side == Side.You ? "you" : "enemy")">
+            <span class="cp-label">@(side == Side.You ? "Your" : "Enemy") CP</span>
+            <button type="button" class="cp-minus" disabled="@(Progress.CommandPointsOf(current) == 0)" @onclick="() => Progress.AdjustCommandPointsAsync(current, -1)">−</button>
+            <strong class="cp-value">@Progress.CommandPointsOf(current)</strong>
+            <button type="button" class="cp-plus" @onclick="() => Progress.AdjustCommandPointsAsync(current, 1)">+</button>
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly Side[] Sides = [Side.You, Side.Enemy];
+
+    protected override void OnInitialized() => Progress.Changed += OnProgressChanged;
+
+    public void Dispose() => Progress.Changed -= OnProgressChanged;
+
+    private void OnProgressChanged() => InvokeAsync(StateHasChanged);
+}

@@ -1,0 +1,62 @@
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.BattleTracker.Units
+@implements IDisposable
+@inject IUnitConditionState Conditions
+
+@{
+    var total = Card.Groups.Sum(g => g.Models);
+    var alive = Card.Roles.SelectMany(r => r.Loadout.Groups.Select(g => (r, g))).Sum(x => GroupWounds.Alive(x.g, Conditions.Of(UnitKeys.GroupKey(x.r.UnitKey, x.g))));
+}
+
+<article class="unit-card @(alive == 0 ? "destroyed" : "") @(_collapsed ? "collapsed" : "")">
+    <header>
+        <h3>@Card.Title</h3>
+        <span class="badge unit-models">@alive / @total models</span>
+        @if (alive == 0)
+        {
+            <button type="button" class="restore-unit" @onclick="RestoreUnitAsync">Restore unit</button>
+        }
+        <button type="button" class="toggle-card" aria-expanded="@((!_collapsed).ToString().ToLowerInvariant())" @onclick="() => _collapsed = !_collapsed">
+            @(_collapsed ? "Expand" : "Collapse")
+        </button>
+    </header>
+
+    @if (!_collapsed)
+    {
+        @foreach (var role in Card.Roles)
+        {
+            <UnitRoleSection @key="role.UnitKey" Role="role" ShowRoleLabel="Card.Roles.Count > 1" />
+        }
+    }
+</article>
+
+@code {
+    private bool _collapsed;
+
+    [Parameter, EditorRequired]
+    public UnitCardModel Card { get; set; } = default!;
+
+    protected override void OnInitialized() => Conditions.Changed += OnConditionChanged;
+
+    public void Dispose() => Conditions.Changed -= OnConditionChanged;
+
+    // Only the card whose group changed is drawn again; the others keep what they show.
+    private void OnConditionChanged(string? groupKey)
+    {
+        if (groupKey is null || Card.Roles.Any(r => groupKey.StartsWith(r.UnitKey + "|", StringComparison.Ordinal)))
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task RestoreUnitAsync()
+    {
+        foreach (var role in Card.Roles)
+        {
+            foreach (var group in role.Loadout.Groups)
+            {
+                await Conditions.RestoreGroupAsync(UnitKeys.GroupKey(role.UnitKey, group));
+            }
+        }
+    }
+}

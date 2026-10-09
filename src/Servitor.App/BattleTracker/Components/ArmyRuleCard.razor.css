@@ -1,0 +1,60 @@
+.rule-card {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.5rem 0.8rem;
+    margin-bottom: 0.7rem;
+}
+
+.rule-card.pinned {
+    border-color: var(--crt-fg);
+    background: var(--crt-selected);
+}
+
+.rule-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.rule-card h4 {
+    margin: 0;
+}
+
+.rule-option .tag {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    margin-right: 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.rule-options {
+    list-style: none;
+    padding: 0;
+    margin: 0.4rem 0;
+}
+
+.rule-option {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.rule-option.active {
+    border-color: var(--crt-fg);
+    background: var(--crt-selected);
+}
+
+.rule-option.used:not(.active) {
+    opacity: 0.6;
+}
+
+.option-text {
+    display: block;
+    margin: 0.2rem 0;
+}
+
+.pin-note {
+    width: 100%;
+    margin-top: 0.4rem;
+    box-sizing: border-box;
+}

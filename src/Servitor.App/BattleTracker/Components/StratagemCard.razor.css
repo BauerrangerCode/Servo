@@ -1,0 +1,55 @@
+.stratagem-card {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.stratagem-card header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.stratagem-card h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.stratagem-cost {
+    font-weight: bold;
+}
+
+.stratagem-tags {
+    margin: 0.3rem 0;
+}
+
+.tag {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    margin-right: 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.stratagem-section ::deep p {
+    margin: 0.1rem 0 0.4rem;
+}
+
+.stratagem-card.used {
+    opacity: 0.7;
+}
+
+.stratagem-use {
+    margin-top: 0.4rem;
+}
+
+.use-blocked {
+    margin: 0.3rem 0;
+    border: 1px solid var(--crt-fg);
+    padding: 0.2rem 0.5rem;
+}
+
+.use-stratagem:disabled {
+    opacity: 0.4;
+    cursor: default;
+}

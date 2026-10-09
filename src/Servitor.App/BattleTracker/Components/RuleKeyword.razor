@@ -1,0 +1,36 @@
+@using Servitor.App.BattleTracker.Units
+@using Servitor.App.RulesData.Components
+@using Servitor.App.Shared.Dialogs
+
+@if (Rule is null)
+{
+    <span class="keyword plain @CssClass">@Text</span>
+}
+else
+{
+    <button type="button" class="keyword has-rule @CssClass" @onclick="() => _open = true">@Text</button>
+    @if (_open)
+    {
+        <ModalFrame Title="@Rule.Name" OnClose="() => _open = false">
+            <div class="keyword-rule-text">@MarkdownRenderer.Render(Rule.Markdown)</div>
+        </ModalFrame>
+    }
+}
+
+@code {
+    private bool _open;
+
+    /// <summary>The keyword as shown, e.g. "Fly" or "Rapid Fire 2".</summary>
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [CascadingParameter]
+    public KeywordRules Rules { get; set; } = KeywordRules.Empty;
+
+    private KeywordRule? Rule { get; set; }
+
+    protected override void OnParametersSet() => Rule = Rules.Find(Text);
+}

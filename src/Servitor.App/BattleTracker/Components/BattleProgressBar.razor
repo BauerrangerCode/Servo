@@ -1,0 +1,43 @@
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.Scoring.Tracking
+@implements IDisposable
+@inject IBattleProgressState Progress
+
+<section class="battle-progress">
+    <div class="round-counter">
+        <button type="button" class="round-previous" disabled="@(Progress.Round <= BattleProgressState.MinRound)" @onclick="Progress.DecrementRoundAsync">−</button>
+        <span class="round-label">Battle Round <strong>@Progress.Round</strong></span>
+        <button type="button" class="round-next" disabled="@(Progress.Round >= BattleProgressState.MaxRound)" @onclick="Progress.IncrementRoundAsync">+</button>
+    </div>
+
+    <p class="turn-indicator @(Progress.ActiveTurn == Side.You ? "your-turn" : "enemy-turn")">
+        @(Progress.ActiveTurn == Side.You ? "Your turn" : "Enemy turn")
+    </p>
+
+    @if (Progress.Phase == BattlePhase.Deployment)
+    {
+        <div class="first-turn-picker">
+            <span>First turn:</span>
+            <button type="button" class="chip first-turn-you @(Progress.FirstTurn == Side.You ? "selected" : "")" @onclick="() => Progress.SetFirstTurnAsync(Side.You)">You</button>
+            <button type="button" class="chip first-turn-enemy @(Progress.FirstTurn == Side.Enemy ? "selected" : "")" @onclick="() => Progress.SetFirstTurnAsync(Side.Enemy)">Enemy</button>
+        </div>
+    }
+
+    <div class="phase-stepper">
+        <button type="button" class="phase-previous" disabled="@(Progress.Phase == BattlePhase.Deployment)" @onclick="Progress.PreviousPhaseAsync">◀ Previous</button>
+        @foreach (var phase in Enum.GetValues<BattlePhase>())
+        {
+            var target = phase;
+            <button type="button" class="chip phase-chip @(Progress.Phase == target ? "selected" : "")" @onclick="() => Progress.SetPhaseAsync(target)">@BattlePhaseLabels.Label(target)</button>
+        }
+        <button type="button" class="phase-next" @onclick="Progress.NextPhaseAsync">Next ▶</button>
+    </div>
+</section>
+
+@code {
+    protected override void OnInitialized() => Progress.Changed += OnProgressChanged;
+
+    public void Dispose() => Progress.Changed -= OnProgressChanged;
+
+    private void OnProgressChanged() => InvokeAsync(StateHasChanged);
+}

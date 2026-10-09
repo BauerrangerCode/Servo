@@ -1,9 +1,12 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Servitor.App.BattleTracker.State;
 using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.BattleTracker;
+using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Tests.Scoring.History;
 using Servitor.App.Tests.Scoring.State;
 using Servitor.RulesData.Domain;
@@ -25,6 +28,7 @@ public class ScoringTests : BunitContext
 
     private readonly BattleSetupState _state;
     private readonly FakeScorecardStore _scorecards = new();
+    private readonly BattleProgressState _progress = new(new InMemoryRulesDataStore());
 
     public ScoringTests()
     {
@@ -37,10 +41,10 @@ public class ScoringTests : BunitContext
 
         Services.AddSingleton<IBattleSetupState>(_state);
         Services.AddSingleton<IMissionDeckProvider>(provider);
-        var tracking = new ScoreTrackingState(_state, provider);
+        var tracking = new ScoreTrackingState(_state, provider, _progress);
         Services.AddSingleton<IScoreTrackingState>(tracking);
         Services.AddSingleton<IScorecardStore>(_scorecards);
-        Services.AddSingleton<IGameRecorder>(new GameRecorder(_state, tracking, _scorecards, TimeProvider.System));
+        Services.AddSingleton<IGameRecorder>(new GameRecorder(_state, tracking, _progress, new FakeBattlePlaySession(), _scorecards, TimeProvider.System));
     }
 
     // Several disposition chips share the same label between the "Your Disposition" and "Opponent Disposition"
@@ -94,7 +98,7 @@ public class ScoringTests : BunitContext
     }
 
     [Fact]
-    public void Setup_is_only_marked_complete_once_role_and_first_turn_are_both_chosen()
+    public void Setup_is_only_marked_complete_once_the_role_is_chosen()
     {
         var cut = Render<Servitor.App.Scoring.Pages.Scoring>();
         SelectBothDispositions(cut);
@@ -102,9 +106,6 @@ public class ScoringTests : BunitContext
         Assert.DoesNotContain("Setup complete", cut.Markup);
 
         ClickInSection(cut, 4, "You are the Defender");
-        Assert.DoesNotContain("Setup complete", cut.Markup);
-
-        ClickInSection(cut, 5, "Enemy");
         Assert.Contains("Setup complete", cut.Markup);
     }
 
@@ -128,7 +129,6 @@ public class ScoringTests : BunitContext
         Assert.Contains("No finished games yet", cut.Markup);
         SelectBothDispositions(cut);
         ClickInSection(cut, 4, "You are the Attacker");
-        ClickInSection(cut, 5, "You");
         cut.Find(".side-you .paint-check").Change(true);
 
         cut.Find(".end-game-button").Click();

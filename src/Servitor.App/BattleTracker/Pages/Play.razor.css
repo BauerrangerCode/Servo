@@ -1,0 +1,11 @@
+.play-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.play-nav .chip.selected {
+    border-color: var(--crt-fg);
+    background: var(--crt-selected);
+}

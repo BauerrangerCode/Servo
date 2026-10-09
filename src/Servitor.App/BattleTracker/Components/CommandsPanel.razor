@@ -1,0 +1,51 @@
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.RulesData.Loading
+@using Servitor.RulesData.Merging
+@inject IArmyBuilderState Army
+@inject IMergedRulesDataProvider RulesData
+
+<section class="commands">
+    <h2>Commands</h2>
+
+    @if (_isLoading)
+    {
+        <p>Loading rules data…</p>
+    }
+    else if (_data is null)
+    {
+        <p class="queue-empty">No rules data loaded.</p>
+    }
+    else
+    {
+        var content = ActionQueueBuilder.BuildAll(_data, Army.Setup);
+
+        <h3 class="queue-heading">Core Stratagems</h3>
+        @foreach (var stratagem in content.CoreStratagems)
+        {
+            <StratagemCard @key="stratagem.Id" Stratagem="stratagem" Usable="false" />
+        }
+
+        <h3 class="queue-heading">Detachment Stratagems</h3>
+        @if (content.DetachmentStratagems.Count == 0)
+        {
+            <p class="queue-empty">No detachment stratagems.</p>
+        }
+
+        @foreach (var stratagem in content.DetachmentStratagems)
+        {
+            <StratagemCard @key="stratagem.Id" Stratagem="stratagem" Usable="false" />
+        }
+    }
+</section>
+
+@code {
+    private MergedRulesData? _data;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _data = await RulesData.GetAsync();
+        _isLoading = false;
+    }
+}

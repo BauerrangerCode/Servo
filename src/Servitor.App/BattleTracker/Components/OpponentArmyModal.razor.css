@@ -1,0 +1,31 @@
+.opponent-textarea {
+    display: block;
+    width: 100%;
+    min-height: 12rem;
+    margin: 0.5rem 0;
+    box-sizing: border-box;
+}
+
+.opponent-errors {
+    border: 1px solid var(--crt-fg);
+    padding: 0.5rem 1.5rem;
+}
+
+.opponent-rules {
+    margin: 1rem 0;
+}
+
+.rule-block {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0.4rem 0.7rem;
+    margin-bottom: 0.5rem;
+}
+
+.rule-block h5 {
+    margin: 0;
+}
+
+.opponent-roster {
+    padding: 0;
+    margin: 1rem 0 0;
+}

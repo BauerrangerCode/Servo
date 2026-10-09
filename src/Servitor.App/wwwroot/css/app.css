@@ -80,6 +80,12 @@ button, select, input, textarea {
     text-shadow: inherit;
 }
 
+/* A select with a transparent background would otherwise open a white native list. */
+option {
+    color: var(--crt-fg);
+    background: var(--crt-panel);
+}
+
 button { cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; }
 
 button:hover:not(:disabled) {

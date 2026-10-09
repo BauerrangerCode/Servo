@@ -1,0 +1,11 @@
+.rule-tags {
+    margin: 0.3rem 0;
+}
+
+.rule-tags ::deep .tag {
+    border: 1px solid var(--crt-fg-dim);
+    padding: 0 0.4rem;
+    margin-right: 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}

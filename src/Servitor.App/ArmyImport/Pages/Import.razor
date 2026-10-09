@@ -61,9 +61,6 @@
             return;
         }
 
-        // Play (E6) is still an empty placeholder page (built last, per the backlog's delivery order) — Build
-        // (E3) is the only screen that can currently show the imported list, so that's where a successful import
-        // lands; the button stays labelled "Import & Play" since that will resolve to /play once E6.4 exists.
-        Nav.NavigateTo("build");
+        Nav.NavigateTo("play");
     }
 }

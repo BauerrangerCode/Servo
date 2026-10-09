@@ -1,8 +1,11 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Servitor.App.BattleTracker.State;
 using Servitor.App.Scoring.Components;
 using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Tests.BattleTracker;
+using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Tests.Scoring.History;
 
 namespace Servitor.App.Tests.Scoring.Components;
@@ -20,7 +23,7 @@ public class ScoreTrackerTests : BunitContext
         _setup = setup;
         Services.AddSingleton<IScoreTrackingState>(_tracking);
         Services.AddSingleton<IScorecardStore>(_scorecards);
-        Services.AddSingleton<IGameRecorder>(new GameRecorder(setup, tracking, _scorecards, TimeProvider.System));
+        Services.AddSingleton<IGameRecorder>(new GameRecorder(setup, tracking, new BattleProgressState(new InMemoryRulesDataStore()), new FakeBattlePlaySession(), _scorecards, TimeProvider.System));
     }
 
     private IRenderedComponent<ScoreTracker> RenderTracker() => Render<ScoreTracker>();
