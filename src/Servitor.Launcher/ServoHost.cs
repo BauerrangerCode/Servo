@@ -15,6 +15,7 @@ public static class ServoHost
     public const string PingAnswer = "servo";
     public const string HeartbeatPath = "/servo-heartbeat";
     public const string ClosingPath = "/servo-closing";
+    public const string QuitPath = "/servo-quit";
 
     public static WebApplication Build(ServoOptions options, SessionMonitor monitor)
     {
@@ -61,6 +62,11 @@ public static class ServoHost
         app.MapPost(ClosingPath, () =>
         {
             monitor.Closing();
+            return Results.NoContent();
+        });
+        app.MapPost(QuitPath, () =>
+        {
+            monitor.Quit();
             return Results.NoContent();
         });
         app.MapUpdateApi(new UpdateOptions(

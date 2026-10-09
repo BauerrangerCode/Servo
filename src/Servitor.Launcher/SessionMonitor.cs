@@ -25,6 +25,7 @@ public sealed class SessionMonitor
     private readonly object _lock = new();
     private DateTimeOffset? _lastHeartbeat;
     private DateTimeOffset? _closingAt;
+    private bool _quitRequested;
 
     public SessionMonitor(TimeProvider time)
     {
@@ -49,10 +50,35 @@ public sealed class SessionMonitor
         }
     }
 
+    /// <summary>The user chose "Close app": stop at once, without waiting for the page to go quiet.</summary>
+    public void Quit()
+    {
+        lock (_lock)
+        {
+            _quitRequested = true;
+        }
+    }
+
+    public bool QuitRequested
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _quitRequested;
+            }
+        }
+    }
+
     public bool ShouldExit()
     {
         lock (_lock)
         {
+            if (_quitRequested)
+            {
+                return true;
+            }
+
             var now = _time.GetUtcNow();
             if (_lastHeartbeat is null)
             {

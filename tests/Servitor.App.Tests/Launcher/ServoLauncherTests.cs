@@ -36,6 +36,29 @@ public sealed class ServoOptionsTests
     }
 }
 
+public sealed class BrowserCloserTests
+{
+    [Fact]
+    public void TheWindowsScriptAsksTheMainProcessOfTheProfileToCloseAndThenStopsWhatIsLeft()
+    {
+        var script = BrowserCloser.WindowsArguments(@"C:\Users\a b\Servo\browser-profile")[^1];
+
+        Assert.Contains(@"C:\Users\a b\Servo\browser-profile", script);
+        Assert.Contains("-notlike '*--type=*'", script);
+        Assert.Contains("CloseMainWindow()", script);
+        Assert.Contains("Stop-Process", script);
+        Assert.Contains("$_.ProcessId -ne $PID", script);
+    }
+
+    [Fact]
+    public void ASingleQuoteInThePathCannotBreakOutOfTheScript()
+    {
+        var script = BrowserCloser.WindowsArguments(@"C:\Users\O'Neil\Servo")[^1];
+
+        Assert.Contains("O''Neil", script);
+    }
+}
+
 public sealed class BrowserLauncherTests
 {
     [Fact]
@@ -142,6 +165,18 @@ public sealed class ServoHostTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TheQuitRequestMakesTheMonitorEndTheSessionAtOnce()
+    {
+        await _client.GetAsync(ServoHost.HeartbeatPath);
+        Assert.False(_monitor.ShouldExit());
+
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.PostAsync(ServoHost.QuitPath, null)).StatusCode);
+
+        Assert.True(_monitor.ShouldExit());
+        Assert.True(_monitor.QuitRequested);
+    }
+
+    [Fact]
     public async Task HostsTheUpdateApi()
     {
         var response = await _client.GetAsync("/api/status");
@@ -228,6 +263,17 @@ public sealed class SessionMonitorTests
         time.Advance(SessionMonitor.CloseGrace);
 
         Assert.False(monitor.ShouldExit());
+    }
+
+    [Fact]
+    public void AQuitRequestEndsTheSessionAtOnce()
+    {
+        var monitor = new SessionMonitor(new ManualTime());
+        monitor.Heartbeat();
+
+        monitor.Quit();
+
+        Assert.True(monitor.ShouldExit());
     }
 
     [Fact]

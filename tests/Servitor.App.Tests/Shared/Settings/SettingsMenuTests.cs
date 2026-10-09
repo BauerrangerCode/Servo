@@ -5,6 +5,7 @@ using Servitor.App.RulesData.Updating;
 using Servitor.App.Shared.Effects;
 using Servitor.App.Shared.Files;
 using Servitor.App.Shared.Settings;
+using Servitor.App.Shared.Shell;
 using Servitor.RulesData.Merging;
 
 namespace Servitor.App.Tests.Shared.Settings;
@@ -22,6 +23,21 @@ public class SettingsMenuTests : BunitContext
         }
 
         public Task<CrtEffectsSettings> ApplyAsync(CrtEffectsSettings settings) => Task.FromResult(settings);
+    }
+
+    private sealed class FakeShutdown : IAppShutdownService
+    {
+        public bool Available { get; set; }
+
+        public int Shutdowns { get; private set; }
+
+        public Task<bool> IsAvailableAsync() => Task.FromResult(Available);
+
+        public Task ShutdownAsync()
+        {
+            Shutdowns++;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class UnusedMergeService : IRulesDataMergeService
@@ -44,11 +60,13 @@ public class SettingsMenuTests : BunitContext
     }
 
     private readonly FakeEffects _effects = new();
+    private readonly FakeShutdown _shutdown = new();
 
     public SettingsMenuTests()
     {
         Services.AddSingleton<ICrtEffectsService>(_effects);
         Services.AddSingleton<IRulesDataMergeService>(new UnusedMergeService());
+        Services.AddSingleton<IAppShutdownService>(_shutdown);
         Services.AddSingleton<IFileDownloadService>(new UnusedDownloads());
         Services.AddSingleton<IDataUpdateService>(new UnusedUpdateService());
     }
@@ -75,5 +93,36 @@ public class SettingsMenuTests : BunitContext
         Assert.Empty(cut.FindAll(".settings-panel button.merge-data-button"));
         Assert.Single(cut.FindAll(".settings-panel button.update-data-button"));
         Assert.Equal(1, _effects.LoadCount);
+    }
+
+    [Fact]
+    public void Without_servo_there_is_no_close_button()
+    {
+        var cut = Render<SettingsMenu>();
+
+        Assert.Empty(cut.FindAll("button.close-app-button"));
+    }
+
+    [Fact]
+    public async Task Inside_servo_the_close_button_stops_the_app()
+    {
+        _shutdown.Available = true;
+        var cut = Render<SettingsMenu>();
+
+        await cut.Find("button.close-app-button").ClickAsync();
+
+        Assert.Equal(1, _shutdown.Shutdowns);
+    }
+
+    [Fact]
+    public async Task After_the_close_request_the_user_is_told_that_servo_is_closing()
+    {
+        _shutdown.Available = true;
+        var cut = Render<SettingsMenu>();
+
+        await cut.Find("button.close-app-button").ClickAsync();
+
+        Assert.Contains("Closing Servo", cut.Find(".close-app-message").TextContent);
+        Assert.Empty(cut.FindAll("button.close-app-button"));
     }
 }

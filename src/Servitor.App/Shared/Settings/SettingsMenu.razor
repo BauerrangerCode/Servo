@@ -1,5 +1,7 @@
 @using Servitor.App.RulesData.Components
 @using Servitor.App.Shared.Effects
+@using Servitor.App.Shared.Shell
+@inject IAppShutdownService Shutdown
 
 <div class="settings-menu">
     <button type="button" class="settings-toggle" aria-label="Settings" aria-expanded="@_isOpen" title="Settings"
@@ -16,11 +18,39 @@
             <h3>Rules data</h3>
             <UpdateDataButton />
         </section>
+
+        @if (_canClose)
+        {
+            <section class="settings-section">
+                <h3>App</h3>
+                @if (_closing)
+                {
+                    <p class="close-app-message">Closing Servo… If this window stays open, you can close it now.</p>
+                }
+                else
+                {
+                    <button type="button" class="close-app-button" @onclick="CloseAppAsync">Close app</button>
+                }
+            </section>
+        }
     </div>
 </div>
 
 @code {
     private bool _isOpen;
+    private bool _canClose;
+    private bool _closing;
+
+    // The button only exists where the app can be closed from the page, i.e. inside the Servo launcher.
+    protected override async Task OnInitializedAsync() => _canClose = await Shutdown.IsAvailableAsync();
 
     private void Toggle() => _isOpen = !_isOpen;
+
+    private async Task CloseAppAsync()
+    {
+        await Shutdown.ShutdownAsync();
+
+        // Servo closes the window a moment later; the message stays for the case that it could not.
+        _closing = true;
+    }
 }

@@ -49,7 +49,7 @@ try
     {
         while (await timer.WaitForNextTickAsync(stopping))
         {
-            if (options.OpenBrowser && monitor.ShouldExit())
+            if (monitor.QuitRequested || (options.OpenBrowser && monitor.ShouldExit()))
             {
                 break;
             }
@@ -58,6 +58,12 @@ try
     catch (OperationCanceledException)
     {
         // Ctrl+C or a system shutdown: stop below like any other exit.
+    }
+
+    // "Close app" in the page: the window goes first, the server after it (the page's request has been answered by now).
+    if (monitor.QuitRequested && options.OpenBrowser)
+    {
+        BrowserCloser.Close(options.BrowserProfileDirectory);
     }
 
     await app.StopAsync();
