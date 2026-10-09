@@ -20,6 +20,7 @@ public class PlayTests : BunitContext
         Services.AddSingleton<IRulesDataStore>(_store);
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
+        Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
         Services.AddSingleton<IArmyBuilderState>(BattleTrackerFixtures.OrkArmy());
         Services.AddSingleton<IMergedRulesDataProvider>(new BattleTrackerFixtures.FakeRulesDataProvider(BattleTrackerFixtures.Data()));
     }
@@ -183,13 +184,10 @@ public class PlayTests : BunitContext
         Assert.True(cut.Find(".use-stratagem").HasAttribute("disabled"));
 
         cut.Find(".cp-you .cp-plus").Click();
-        cut.Find(".cp-you .cp-plus").Click();
         cut.Find(".use-stratagem").Click();
 
-        Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
-        cut.Find(".use-stratagem").Click();
         Assert.Equal("0", cut.Find(".cp-you .cp-value").TextContent.Trim());
-        Assert.True(cut.Find(".use-stratagem").HasAttribute("disabled"));
+        Assert.Contains("Used this phase", cut.Find(".stratagem-card").TextContent);
     }
 
     [Fact]
@@ -259,5 +257,74 @@ public class PlayTests : BunitContext
         cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Command").Click();
         cut.Find(".end-option").Click();
         Assert.Contains("used", cut.FindAll(".rule-option")[0].ClassList);
+    }
+
+    private void GoToShootingWithCp(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut, int cp)
+    {
+        for (var i = 0; i < cp; i++)
+        {
+            cut.Find(".cp-you .cp-plus").Click();
+        }
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
+    }
+
+    private static AngleSharp.Dom.IElement Card(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut, string name) =>
+        cut.FindAll(".stratagem-card").First(c => c.QuerySelector("h3")!.TextContent.Trim() == name);
+
+    [Fact]
+    public void ASecondUseOfTheSameStratagemInAPhaseIsBlockedUntilTheNextPhase()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".stratagem-card")));
+        GoToShootingWithCp(cut, 3);
+
+        Card(cut, "GRENADE").QuerySelector("button.use-stratagem")!.Click();
+
+        var used = Card(cut, "GRENADE");
+        Assert.Contains("Used this phase", used.TextContent);
+        Assert.Null(used.QuerySelector(".use-stratagem"));
+        Assert.Equal("2", cut.Find(".cp-you .cp-value").TextContent.Trim());
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Charge").Click();
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
+        Assert.Contains("Used this phase", Card(cut, "GRENADE").TextContent);
+    }
+
+    [Fact]
+    public void TargetingAnAlreadyTargetedUnitIsBlockedWithAReasonAndCanBeOverridden()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".stratagem-card")));
+        GoToShootingWithCp(cut, 3);
+        var unitId = cut.Find("select.use-target option:nth-child(2)").GetAttribute("value")!;
+
+        Card(cut, "GRENADE").QuerySelector("select.use-target")!.Change(unitId);
+        Card(cut, "GRENADE").QuerySelector("button.use-stratagem")!.Click();
+        Card(cut, "BIG KRUNCH").QuerySelector("select.use-target")!.Change(unitId);
+        Card(cut, "BIG KRUNCH").QuerySelector("button.use-stratagem")!.Click();
+
+        Assert.Contains("already targeted by GRENADE", Card(cut, "BIG KRUNCH").QuerySelector(".use-blocked")!.TextContent);
+        Assert.Equal("2", cut.Find(".cp-you .cp-value").TextContent.Trim());
+
+        Card(cut, "BIG KRUNCH").QuerySelector("button.use-anyway")!.Click();
+
+        Assert.Contains("Used this phase", Card(cut, "BIG KRUNCH").TextContent);
+        Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
+    }
+
+    [Fact]
+    public void UndoTakesAUseBackAndRefundsItsCost()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".stratagem-card")));
+        GoToShootingWithCp(cut, 1);
+        Card(cut, "GRENADE").QuerySelector("button.use-stratagem")!.Click();
+        Assert.Equal("0", cut.Find(".cp-you .cp-value").TextContent.Trim());
+
+        Card(cut, "GRENADE").QuerySelector("button.undo-stratagem")!.Click();
+
+        Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
+        Assert.NotNull(Card(cut, "GRENADE").QuerySelector("button.use-stratagem"));
     }
 }

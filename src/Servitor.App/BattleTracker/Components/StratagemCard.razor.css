@@ -35,6 +35,20 @@
     margin: 0.1rem 0 0.4rem;
 }
 
+.stratagem-card.used {
+    opacity: 0.7;
+}
+
+.stratagem-use {
+    margin-top: 0.4rem;
+}
+
+.use-blocked {
+    margin: 0.3rem 0;
+    border: 1px solid var(--crt-fg);
+    padding: 0.2rem 0.5rem;
+}
+
 .use-stratagem:disabled {
     opacity: 0.4;
     cursor: default;

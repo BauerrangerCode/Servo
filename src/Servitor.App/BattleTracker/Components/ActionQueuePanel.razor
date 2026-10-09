@@ -7,6 +7,7 @@
 @using Servitor.RulesData.Merging
 @implements IDisposable
 @inject IBattleProgressState Progress
+@inject IStratagemUsageState Usage
 @inject IArmyBuilderState Army
 @inject IMergedRulesDataProvider RulesData
 
@@ -46,14 +47,18 @@
 @code {
     private MergedRulesData? _data;
     private IReadOnlyList<ArmyRuleEntry> _rules = [];
+    private IReadOnlyList<UnitChoice> _units = [];
     private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         Progress.Changed += OnChanged;
         Army.Changed += OnArmyChanged;
+        Usage.Changed += OnChanged;
+        await Usage.LoadAsync();
         _data = await RulesData.GetAsync();
         _rules = ArmyRuleCollector.Collect(_data, Army.Setup, Army.Units);
+        _units = UnitChoice.From(Army.Units);
         _isLoading = false;
     }
 
@@ -61,18 +66,17 @@
     {
         Progress.Changed -= OnChanged;
         Army.Changed -= OnArmyChanged;
+        Usage.Changed -= OnChanged;
     }
 
     private RenderFragment Cards(IReadOnlyList<Stratagem> stratagems) => builder =>
     {
         foreach (var stratagem in stratagems)
         {
-            var cost = stratagem.CpCost ?? 0;
             builder.OpenComponent<StratagemCard>(0);
             builder.SetKey(stratagem.Id);
             builder.AddComponentParameter(1, nameof(StratagemCard.Stratagem), stratagem);
-            builder.AddComponentParameter(2, nameof(StratagemCard.CanAfford), Progress.CommandPointsOf(Side.You) >= cost);
-            builder.AddComponentParameter(3, nameof(StratagemCard.OnUse), EventCallback.Factory.Create(this, () => Progress.SpendCommandPointsAsync(cost)));
+            builder.AddComponentParameter(2, nameof(StratagemCard.Units), _units);
             builder.CloseComponent();
         }
     };
@@ -82,6 +86,7 @@
     private void OnArmyChanged()
     {
         _rules = ArmyRuleCollector.Collect(_data, Army.Setup, Army.Units);
+        _units = UnitChoice.From(Army.Units);
         OnChanged();
     }
 }

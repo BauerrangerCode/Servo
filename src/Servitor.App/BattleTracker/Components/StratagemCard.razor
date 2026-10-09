@@ -1,15 +1,23 @@
 @using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.BattleTracker.State
 @using Servitor.App.RulesData.Components
+@using Servitor.App.Scoring.Tracking
 @using Servitor.RulesData.Domain
+@inject IStratagemUsageState Usage
+@inject IBattleProgressState Progress
 
-<article class="stratagem-card">
+<article class="stratagem-card @(IsUsed ? "used" : "")">
     <header>
         <h3>@Stratagem.Name</h3>
-        <span class="stratagem-cost">@(Stratagem.CpCost ?? 0) CP</span>
+        <span class="stratagem-cost">@Cost CP</span>
     </header>
     <p class="stratagem-tags">
         <span class="tag tag-category">@StratagemLabels.Category(Stratagem.Category)</span>
         <span class="tag tag-timing">@TimingLabels.Timing(StratagemTiming.Of(Stratagem))</span>
+        @if (IsUsed)
+        {
+            <span class="tag tag-used">Used this phase</span>
+        }
     </p>
     @Section("When", Stratagem.When)
     @Section("Target", Stratagem.Target)
@@ -17,23 +25,59 @@
     @Section("Restrictions", Stratagem.Restrictions)
     @Section("Additional", Stratagem.AdditionalText)
 
-    @if (Stratagem.CpCost is > 0)
-    {
-        <button type="button" class="use-stratagem" disabled="@(!CanAfford)" title="@(CanAfford ? "" : "Not enough Command Points")" @onclick="OnUse">
-            Use (−@Stratagem.CpCost CP)
-        </button>
-    }
+    <div class="stratagem-use">
+        <select class="use-target" value="@_target" @onchange="e => _target = e.Value?.ToString() ?? string.Empty" disabled="@IsUsed" aria-label="Target unit">
+            <option value="">(no unit of mine)</option>
+            @foreach (var unit in Units)
+            {
+                <option value="@unit.Id">@unit.Label</option>
+            }
+        </select>
+
+        @if (IsUsed)
+        {
+            <button type="button" class="undo-stratagem" @onclick="() => Usage.UndoAsync(Stratagem.Id)">Undo</button>
+        }
+        else
+        {
+            <button type="button" class="use-stratagem" disabled="@(!CanAfford)" title="@(CanAfford ? "" : "Not enough Command Points")" @onclick="() => UseAsync(false)">
+                @(Cost == 0 ? "Use (free)" : $"Use (−{Cost} CP)")
+            </button>
+        }
+
+        @if (_blocked is not null)
+        {
+            <p class="use-blocked">@_blocked.Reason</p>
+            @if (_blocked.Result == StratagemUseResult.TargetAlreadyTargeted)
+            {
+                <button type="button" class="use-anyway" title="Only if the stratagem itself allows a unit that was already targeted" @onclick="() => UseAsync(true)">Use anyway</button>
+            }
+        }
+    </div>
 </article>
 
 @code {
+    private string _target = string.Empty;
+    private StratagemUseOutcome? _blocked;
+
     [Parameter, EditorRequired]
     public Stratagem Stratagem { get; set; } = default!;
 
     [Parameter]
-    public bool CanAfford { get; set; }
+    public IReadOnlyList<UnitChoice> Units { get; set; } = [];
 
-    [Parameter]
-    public EventCallback OnUse { get; set; }
+    private int Cost => Stratagem.CpCost ?? 0;
+
+    private bool IsUsed => Usage.IsUsedThisPhase(Stratagem.Id);
+
+    private bool CanAfford => Progress.CommandPointsOf(Side.You) >= Cost;
+
+    private async Task UseAsync(bool allowRetarget)
+    {
+        Guid? target = Guid.TryParse(_target, out var id) ? id : null;
+        var outcome = await Usage.UseAsync(Stratagem, target, allowRetarget);
+        _blocked = outcome.IsUsed ? null : outcome;
+    }
 
     private static RenderFragment Section(string title, string markdown) => builder =>
     {
