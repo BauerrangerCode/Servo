@@ -1,6 +1,8 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Servitor.App.ArmyBuilder.State;
 using Servitor.App.BattleTracker.State;
+using Servitor.App.RulesData.Loading;
 using Servitor.App.RulesData.Storage;
 using Servitor.App.Scoring.Tracking;
 using Servitor.App.Tests.RulesData.Loading;
@@ -15,6 +17,8 @@ public class PlayTests : BunitContext
     {
         Services.AddSingleton<IRulesDataStore>(_store);
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
+        Services.AddSingleton<IArmyBuilderState>(BattleTrackerFixtures.OrkArmy());
+        Services.AddSingleton<IMergedRulesDataProvider>(new BattleTrackerFixtures.FakeRulesDataProvider(BattleTrackerFixtures.Data()));
     }
 
     private static string SelectedPhase(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut) =>
@@ -114,5 +118,55 @@ public class PlayTests : BunitContext
 
         cut.Find(".phase-next").Click();
         Assert.Empty(cut.FindAll(".first-turn-picker"));
+    }
+
+    private static string[] CardNames(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut) =>
+        cut.FindAll(".stratagem-card h3").Select(h => h.TextContent.Trim()).ToArray();
+
+    [Fact]
+    public void TheQueueFollowsThePhaseAndShowsTheCardDetails()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.Equal(["COMMAND RE-ROLL"], CardNames(cut)));
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
+
+        Assert.Equal(["COMMAND RE-ROLL", "GRENADE", "BIG KRUNCH"], CardNames(cut));
+        var card = cut.FindAll(".stratagem-card").Last();
+        Assert.Contains("1 CP", card.QuerySelector(".stratagem-cost")!.TextContent);
+        Assert.Contains("Battle Tactic", card.QuerySelector(".tag-category")!.TextContent);
+        Assert.Contains("Your turn", card.QuerySelector(".tag-scope")!.TextContent);
+        Assert.Contains("When text.", card.QuerySelector(".section-when")!.TextContent);
+        Assert.Contains("Target text.", card.QuerySelector(".section-target")!.TextContent);
+        Assert.Contains("Effect text.", card.QuerySelector(".section-effect")!.TextContent);
+        Assert.Null(card.QuerySelector(".section-restrictions"));
+    }
+
+    [Fact]
+    public void UsingAStratagemSpendsCommandPointsAndIsRefusedWhenTheyAreMissing()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".stratagem-card")));
+        Assert.True(cut.Find(".use-stratagem").HasAttribute("disabled"));
+
+        cut.Find(".cp-you .cp-plus").Click();
+        cut.Find(".cp-you .cp-plus").Click();
+        cut.Find(".use-stratagem").Click();
+
+        Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
+        cut.Find(".use-stratagem").Click();
+        Assert.Equal("0", cut.Find(".cp-you .cp-value").TextContent.Trim());
+        Assert.True(cut.Find(".use-stratagem").HasAttribute("disabled"));
+    }
+
+    [Fact]
+    public void EnteringTheCommandPhaseCreditsBothPlayers()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+
+        cut.Find(".phase-next").Click();
+
+        Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
+        Assert.Equal("1", cut.Find(".cp-enemy .cp-value").TextContent.Trim());
     }
 }

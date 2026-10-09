@@ -1,0 +1,76 @@
+@using Servitor.App.ArmyBuilder.State
+@using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.RulesData.Loading
+@using Servitor.App.Scoring.Tracking
+@using Servitor.RulesData.Domain
+@using Servitor.RulesData.Merging
+@implements IDisposable
+@inject IBattleProgressState Progress
+@inject IArmyBuilderState Army
+@inject IMergedRulesDataProvider RulesData
+
+<section class="action-queue">
+    <h2>Action Queue — @BattlePhaseLabels.Label(Progress.Phase)</h2>
+
+    @if (_isLoading)
+    {
+        <p>Loading rules data…</p>
+    }
+    else if (_data is null)
+    {
+        <p class="queue-empty">No rules data loaded.</p>
+    }
+    else
+    {
+        var queue = ActionQueueBuilder.Build(_data, Army.Setup, Progress.Phase);
+
+        <h3 class="queue-heading">Core Stratagems</h3>
+        @Cards(queue.CoreStratagems)
+
+        <h3 class="queue-heading">Detachment Stratagems</h3>
+        @if (queue.DetachmentStratagems.Count == 0)
+        {
+            <p class="queue-empty">No detachment stratagems for this phase.</p>
+        }
+        else
+        {
+            @Cards(queue.DetachmentStratagems)
+        }
+    }
+</section>
+
+@code {
+    private MergedRulesData? _data;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Progress.Changed += OnChanged;
+        Army.Changed += OnChanged;
+        _data = await RulesData.GetAsync();
+        _isLoading = false;
+    }
+
+    public void Dispose()
+    {
+        Progress.Changed -= OnChanged;
+        Army.Changed -= OnChanged;
+    }
+
+    private RenderFragment Cards(IReadOnlyList<Stratagem> stratagems) => builder =>
+    {
+        foreach (var stratagem in stratagems)
+        {
+            var cost = stratagem.CpCost ?? 0;
+            builder.OpenComponent<StratagemCard>(0);
+            builder.SetKey(stratagem.Id);
+            builder.AddComponentParameter(1, nameof(StratagemCard.Stratagem), stratagem);
+            builder.AddComponentParameter(2, nameof(StratagemCard.CanAfford), Progress.CommandPointsOf(Side.You) >= cost);
+            builder.AddComponentParameter(3, nameof(StratagemCard.OnUse), EventCallback.Factory.Create(this, () => Progress.SpendCommandPointsAsync(cost)));
+            builder.CloseComponent();
+        }
+    };
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

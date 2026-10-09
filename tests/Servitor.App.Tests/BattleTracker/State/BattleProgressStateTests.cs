@@ -176,6 +176,79 @@ public class BattleProgressStateTests
         Assert.Equal(BattlePhase.Deployment, state.Phase);
     }
 
+    [Fact]
+    public async Task BothPlayersGainACommandPointWhenACommandPhaseBegins()
+    {
+        var state = NewState();
+
+        await state.NextPhaseAsync();
+        Assert.Equal((1, 1), (state.CommandPointsOf(Side.You), state.CommandPointsOf(Side.Enemy)));
+
+        await EndTurnsAsync(state, 1);
+        Assert.Equal((2, 2), (state.CommandPointsOf(Side.You), state.CommandPointsOf(Side.Enemy)));
+    }
+
+    [Fact]
+    public async Task SteppingBackAndForwardOverTheSameCommandPhaseGrantsOnlyOnce()
+    {
+        var state = NewState();
+        await state.NextPhaseAsync();
+
+        await state.PreviousPhaseAsync();
+        await state.NextPhaseAsync();
+
+        Assert.Equal(1, state.CommandPointsOf(Side.You));
+    }
+
+    [Fact]
+    public async Task ChangingTheRoundInsideTheCommandPhaseGrantsNothing()
+    {
+        var state = NewState();
+        await state.NextPhaseAsync();
+
+        await state.IncrementRoundAsync();
+
+        Assert.Equal(1, state.CommandPointsOf(Side.You));
+    }
+
+    [Fact]
+    public async Task SpendingPaysFromYourBalanceAndRefusesWhatIsNotThere()
+    {
+        var state = NewState();
+        await state.AdjustCommandPointsAsync(Side.You, 2);
+
+        Assert.True(await state.SpendCommandPointsAsync(1));
+        Assert.False(await state.SpendCommandPointsAsync(2));
+
+        Assert.Equal(1, state.CommandPointsOf(Side.You));
+        Assert.Equal(0, state.CommandPointsOf(Side.Enemy));
+    }
+
+    [Fact]
+    public async Task ABalanceNeverDropsBelowZero()
+    {
+        var state = NewState();
+
+        await state.AdjustCommandPointsAsync(Side.Enemy, -3);
+
+        Assert.Equal(0, state.CommandPointsOf(Side.Enemy));
+    }
+
+    [Fact]
+    public async Task CommandPointsSurviveAReloadWithoutBeingGrantedAgain()
+    {
+        var before = NewState();
+        await before.NextPhaseAsync();
+        await before.AdjustCommandPointsAsync(Side.Enemy, 4);
+
+        var after = NewState();
+        await after.LoadAsync();
+        await after.PreviousPhaseAsync();
+        await after.NextPhaseAsync();
+
+        Assert.Equal((1, 5), (after.CommandPointsOf(Side.You), after.CommandPointsOf(Side.Enemy)));
+    }
+
     private static async Task EndTurnsAsync(BattleProgressState state, int turns)
     {
         for (var i = 0; i < turns; i++)

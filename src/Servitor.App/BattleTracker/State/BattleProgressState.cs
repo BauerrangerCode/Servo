@@ -9,9 +9,10 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
     public const int MaxRound = ScoringRules.BattleRounds;
 
     private const string Key = "battle/progress";
-    private const BattlePhase FirstTurnPhase = BattlePhase.Command;
+    private const BattlePhase CommandPhase = BattlePhase.Command;
 
     private bool _isLoaded;
+    private CommandPointLedger _commandPoints = CommandPointLedger.Empty;
 
     public event Action? Changed;
 
@@ -22,6 +23,8 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
     public Side FirstTurn { get; private set; } = Side.You;
 
     public Side ActiveTurn { get; private set; } = Side.You;
+
+    public int CommandPointsOf(Side side) => _commandPoints.Of(side);
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -35,8 +38,10 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
             && stored.Round is >= MinRound and <= MaxRound
             && Enum.IsDefined(stored.Phase)
             && Enum.IsDefined(stored.FirstTurn)
-            && Enum.IsDefined(stored.ActiveTurn))
+            && Enum.IsDefined(stored.ActiveTurn)
+            && (stored.CommandPoints?.IsValid ?? true))
         {
+            _commandPoints = stored.CommandPoints ?? CommandPointLedger.Empty;
             (Round, Phase, FirstTurn, ActiveTurn) = (stored.Round, stored.Phase, stored.FirstTurn, stored.ActiveTurn);
             Changed?.Invoke();
         }
@@ -51,15 +56,15 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
 
         if (ActiveTurn == FirstTurn)
         {
-            return UpdateAsync(Round, FirstTurnPhase, FirstTurn, Other(FirstTurn));
+            return UpdateAsync(Round, CommandPhase, FirstTurn, Other(FirstTurn));
         }
 
-        return Round < MaxRound ? UpdateAsync(Round + 1, FirstTurnPhase, FirstTurn, FirstTurn) : Task.CompletedTask;
+        return Round < MaxRound ? UpdateAsync(Round + 1, CommandPhase, FirstTurn, FirstTurn) : Task.CompletedTask;
     }
 
     public Task PreviousPhaseAsync()
     {
-        if (Phase != FirstTurnPhase)
+        if (Phase != CommandPhase)
         {
             return Phase == BattlePhase.Deployment ? Task.CompletedTask : SetPhaseAsync(Phase - 1);
         }
@@ -83,6 +88,19 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
 
     public Task DecrementRoundAsync() => UpdateAsync(Round - 1, Phase, FirstTurn, ActiveTurn);
 
+    public Task AdjustCommandPointsAsync(Side side, int delta) => ApplyAsync(Round, Phase, FirstTurn, ActiveTurn, _commandPoints.Adjust(side, delta));
+
+    public async Task<bool> SpendCommandPointsAsync(int cost)
+    {
+        if (cost < 0 || !_commandPoints.CanSpend(Side.You, cost))
+        {
+            return false;
+        }
+
+        await ApplyAsync(Round, Phase, FirstTurn, ActiveTurn, _commandPoints.Spend(Side.You, cost));
+        return true;
+    }
+
     private static Side Other(Side side) => side == Side.You ? Side.Enemy : Side.You;
 
     private async Task UpdateAsync(int round, BattlePhase phase, Side firstTurn, Side activeTurn)
@@ -92,8 +110,15 @@ public sealed class BattleProgressState(IRulesDataStore store) : IBattleProgress
             return;
         }
 
-        (Round, Phase, FirstTurn, ActiveTurn) = (round, phase, firstTurn, activeTurn);
+        var enteringCommandPhase = phase == CommandPhase && Phase != CommandPhase;
+        var commandPoints = enteringCommandPhase ? _commandPoints.GrantForCommandPhase(round, activeTurn) : _commandPoints;
+        await ApplyAsync(round, phase, firstTurn, activeTurn, commandPoints);
+    }
+
+    private async Task ApplyAsync(int round, BattlePhase phase, Side firstTurn, Side activeTurn, CommandPointLedger commandPoints)
+    {
+        (Round, Phase, FirstTurn, ActiveTurn, _commandPoints) = (round, phase, firstTurn, activeTurn, commandPoints);
         Changed?.Invoke();
-        await store.SaveAsync(Key, new BattleProgress(round, phase, firstTurn, activeTurn));
+        await store.SaveAsync(Key, new BattleProgress(round, phase, firstTurn, activeTurn, commandPoints));
     }
 }

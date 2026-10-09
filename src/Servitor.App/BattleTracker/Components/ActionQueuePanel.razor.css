@@ -1,0 +1,8 @@
+.queue-heading {
+    margin-top: 1.2rem;
+    border-bottom: 1px solid var(--crt-fg-dim);
+}
+
+.queue-empty {
+    opacity: 0.7;
+}

@@ -1,0 +1,55 @@
+@using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.RulesData.Components
+@using Servitor.RulesData.Domain
+
+<article class="stratagem-card">
+    <header>
+        <h3>@Stratagem.Name</h3>
+        <span class="stratagem-cost">@(Stratagem.CpCost ?? 0) CP</span>
+    </header>
+    <p class="stratagem-tags">
+        <span class="tag tag-category">@StratagemLabels.Category(Stratagem.Category)</span>
+        <span class="tag tag-scope">@StratagemLabels.Scope(StratagemTiming.ScopeOf(Stratagem))</span>
+    </p>
+    @Section("When", Stratagem.When)
+    @Section("Target", Stratagem.Target)
+    @Section("Effect", Stratagem.Effect)
+    @Section("Restrictions", Stratagem.Restrictions)
+    @Section("Additional", Stratagem.AdditionalText)
+
+    @if (Stratagem.CpCost is > 0)
+    {
+        <button type="button" class="use-stratagem" disabled="@(!CanAfford)" title="@(CanAfford ? "" : "Not enough Command Points")" @onclick="OnUse">
+            Use (−@Stratagem.CpCost CP)
+        </button>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public Stratagem Stratagem { get; set; } = default!;
+
+    [Parameter]
+    public bool CanAfford { get; set; }
+
+    [Parameter]
+    public EventCallback OnUse { get; set; }
+
+    private static RenderFragment Section(string title, string markdown) => builder =>
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            return;
+        }
+
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", $"stratagem-section section-{title.ToLowerInvariant()}");
+        builder.OpenElement(2, "strong");
+        builder.AddContent(3, title.ToUpperInvariant());
+        builder.CloseElement();
+        builder.OpenElement(4, "div");
+        builder.AddContent(5, MarkdownRenderer.Render(markdown));
+        builder.CloseElement();
+        builder.CloseElement();
+    };
+}
