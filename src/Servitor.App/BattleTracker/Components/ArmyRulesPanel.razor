@@ -1,0 +1,70 @@
+@using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.BattleTracker.State
+@implements IDisposable
+@inject IArmyRuleState Rules
+
+<section class="army-rules">
+    <h3 class="queue-heading">Army Rules</h3>
+
+    <label class="aura-toggle">
+        <input type="checkbox" checked="@Rules.ShowAuras" @onchange="e => Rules.SetShowAurasAsync((bool)e.Value!)" />
+        Show auras
+    </label>
+
+    @{
+        var view = ArmyRuleFilter.Filter(Entries, Context, Rules);
+    }
+
+    @if (view.Active.Count == 0)
+    {
+        <p class="queue-empty">No army rules for this phase.</p>
+    }
+    else
+    {
+        @Grouped(view.Active)
+    }
+
+    @if (view.Passive.Count > 0)
+    {
+        <details class="passive-rules">
+            <summary>Passive abilities (@view.Passive.Count)</summary>
+            @Grouped(view.Passive)
+        </details>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ArmyRuleEntry> Entries { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public TurnContext Context { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Rules.Changed += OnChanged;
+        await Rules.LoadAsync();
+    }
+
+    public void Dispose() => Rules.Changed -= OnChanged;
+
+    private RenderFragment Grouped(IReadOnlyList<ArmyRuleEntry> entries) => builder =>
+    {
+        foreach (var group in entries.GroupBy(e => (e.Source, e.Owner)))
+        {
+            builder.OpenElement(0, "h4");
+            builder.AddAttribute(1, "class", "rule-owner");
+            builder.AddContent(2, group.Key.Owner);
+            builder.CloseElement();
+            foreach (var entry in group)
+            {
+                builder.OpenComponent<ArmyRuleCard>(3);
+                builder.SetKey(entry.Id);
+                builder.AddComponentParameter(4, nameof(ArmyRuleCard.Entry), entry);
+                builder.CloseComponent();
+            }
+        }
+    };
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

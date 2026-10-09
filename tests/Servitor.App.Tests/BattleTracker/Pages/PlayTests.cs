@@ -19,6 +19,7 @@ public class PlayTests : BunitContext
     {
         Services.AddSingleton<IRulesDataStore>(_store);
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
+        Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IArmyBuilderState>(BattleTrackerFixtures.OrkArmy());
         Services.AddSingleton<IMergedRulesDataProvider>(new BattleTrackerFixtures.FakeRulesDataProvider(BattleTrackerFixtures.Data()));
     }
@@ -200,5 +201,63 @@ public class PlayTests : BunitContext
 
         Assert.Equal("1", cut.Find(".cp-you .cp-value").TextContent.Trim());
         Assert.Equal("1", cut.Find(".cp-enemy .cp-value").TextContent.Trim());
+    }
+
+    private static string[] RuleTitles(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut) =>
+        cut.FindAll(".army-rules .rule-card h4").Select(h => h.TextContent.Trim()).ToArray();
+
+    [Fact]
+    public void ArmyRulesFollowThePhaseAndTheAurasToggleHidesAuras()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".army-rules")));
+        Assert.Contains("No army rules for this phase.", cut.Find(".army-rules").TextContent);
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
+
+        Assert.Equal(["Mob Rule", "Banner (Aura)", "Tough"], RuleTitles(cut));
+
+        cut.Find(".aura-toggle input").Change(false);
+
+        Assert.Equal(["Mob Rule", "Tough"], RuleTitles(cut));
+    }
+
+    [Fact]
+    public void PinningARuleKeepsItInEveryPhaseWithAnEditableNote()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".army-rules")));
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
+        cut.Find(".army-rules .rule-card .pin-rule").Click();
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Movement").Click();
+
+        Assert.Equal(["Mob Rule"], cut.FindAll(".army-rules > .rule-card h4").Select(h => h.TextContent.Trim()).ToArray());
+        cut.Find(".pin-note").Change("Enemy Boyz");
+        Assert.Equal("Enemy Boyz", cut.Find(".pin-note").GetAttribute("value"));
+
+        cut.Find(".army-rules .rule-card .pin-rule").Click();
+        Assert.Empty(cut.FindAll(".army-rules > .rule-card"));
+    }
+
+    [Fact]
+    public void ARuleWithAlternativesOffersThemAsItsOwnEntryShapeAndTracksTheActiveOne()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".army-rules")));
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Command").Click();
+
+        Assert.Contains("Choose one", cut.Find(".army-rules .tag-choice").TextContent);
+        Assert.Equal(2, cut.FindAll(".rule-option").Count);
+
+        cut.FindAll(".activate-option")[0].Click();
+        Assert.Contains("active", cut.FindAll(".rule-option")[0].ClassList);
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Fight").Click();
+        Assert.Single(cut.FindAll(".army-rules > .rule-card"));
+
+        cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Command").Click();
+        cut.Find(".end-option").Click();
+        Assert.Contains("used", cut.FindAll(".rule-option")[0].ClassList);
     }
 }

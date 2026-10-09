@@ -23,10 +23,13 @@
     }
     else
     {
-        var queue = ActionQueueBuilder.Build(_data, Army.Setup, new TurnContext(Progress.Phase, Progress.ActiveTurn, Progress.FirstTurn));
+        var context = new TurnContext(Progress.Phase, Progress.ActiveTurn, Progress.FirstTurn);
+        var queue = ActionQueueBuilder.Build(_data, Army.Setup, context);
 
         <h3 class="queue-heading">Core Stratagems</h3>
         @Cards(queue.CoreStratagems)
+
+        <ArmyRulesPanel Entries="_rules" Context="context" />
 
         <h3 class="queue-heading">Detachment Stratagems</h3>
         @if (queue.DetachmentStratagems.Count == 0)
@@ -42,20 +45,22 @@
 
 @code {
     private MergedRulesData? _data;
+    private IReadOnlyList<ArmyRuleEntry> _rules = [];
     private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         Progress.Changed += OnChanged;
-        Army.Changed += OnChanged;
+        Army.Changed += OnArmyChanged;
         _data = await RulesData.GetAsync();
+        _rules = ArmyRuleCollector.Collect(_data, Army.Setup, Army.Units);
         _isLoading = false;
     }
 
     public void Dispose()
     {
         Progress.Changed -= OnChanged;
-        Army.Changed -= OnChanged;
+        Army.Changed -= OnArmyChanged;
     }
 
     private RenderFragment Cards(IReadOnlyList<Stratagem> stratagems) => builder =>
@@ -73,4 +78,10 @@
     };
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnArmyChanged()
+    {
+        _rules = ArmyRuleCollector.Collect(_data, Army.Setup, Army.Units);
+        OnChanged();
+    }
 }

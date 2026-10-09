@@ -1,0 +1,73 @@
+@using Servitor.App.BattleTracker.ActionQueue
+@using Servitor.App.BattleTracker.State
+@using Servitor.App.RulesData.Components
+@inject IArmyRuleState Rules
+
+<article class="rule-card @(IsPinned ? "pinned" : "")">
+    <header>
+        <h4>@Entry.Title</h4>
+        <button type="button" class="pin-rule" aria-pressed="@IsPinned" @onclick="TogglePin">@(IsPinned ? "Unpin" : "Pin")</button>
+    </header>
+    <p class="rule-tags">
+        <span class="tag tag-timing">@(Entry.Timing is null ? "Passive" : TimingLabels.Timing(Entry.Timing))</span>
+        @if (Entry.IsAura)
+        {
+            <span class="tag tag-aura">Aura</span>
+        }
+        @if (Entry.IsChoice)
+        {
+            <span class="tag tag-choice">Choose one</span>
+        }
+        @if (IsPinned)
+        {
+            <span class="tag tag-pinned">Pinned</span>
+        }
+    </p>
+
+    @if (Entry.IsChoice)
+    {
+        <ul class="rule-options">
+            @foreach (var option in Entry.Options)
+            {
+                var current = option;
+                var isActive = Rules.ActiveOption(Entry.Id) == current.Name;
+                var isUsed = Rules.UsedOptions(Entry.Id).Contains(current.Name);
+                <li class="rule-option @(isActive ? "active" : "") @(isUsed ? "used" : "")">
+                    <strong>@current.Name</strong>
+                    @if (isUsed)
+                    {
+                        <span class="tag tag-used">Used</span>
+                    }
+                    <span class="option-text">@current.Text</span>
+                    @if (isActive)
+                    {
+                        <button type="button" class="end-option" @onclick="() => Rules.EndOptionAsync(Entry.Id)">End</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="activate-option" @onclick="() => Rules.ActivateOptionAsync(Entry.Id, current.Name)">Activate</button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="rule-text">@MarkdownRenderer.Render(Entry.Markdown)</div>
+    }
+
+    @if (IsPinned)
+    {
+        <input type="text" class="pin-note" placeholder="Note, e.g. the chosen target…" value="@Rules.PinNote(Entry.Id)"
+               @onchange="e => Rules.SetPinNoteAsync(Entry.Id, e.Value?.ToString() ?? string.Empty)" />
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public ArmyRuleEntry Entry { get; set; } = default!;
+
+    private bool IsPinned => Rules.IsPinned(Entry.Id);
+
+    private Task TogglePin() => IsPinned ? Rules.UnpinAsync(Entry.Id) : Rules.PinAsync(Entry.Id);
+}

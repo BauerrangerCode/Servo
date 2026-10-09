@@ -180,7 +180,7 @@ public class ActionQueueBuilderTests
     {
         var timing = StratagemTiming.Of(BattleTrackerFixtures.Stratagem("x", "X", phase, turn));
 
-        Assert.Equal(expected, StratagemLabels.Timing(timing));
+        Assert.Equal(expected, TimingLabels.Timing(timing));
     }
 
     [Theory]
@@ -191,6 +191,6 @@ public class ActionQueueBuilderTests
     {
         var timing = StratagemTiming.Of(BattleTrackerFixtures.Stratagem("x", "X", "Any phase", turn, when: when));
 
-        Assert.Equal(expected, StratagemLabels.Timing(timing));
+        Assert.Equal(expected, TimingLabels.Timing(timing));
     }
 }

@@ -34,9 +34,28 @@ internal static class BattleTrackerFixtures
             [
                 Stratagem("d1", "BIG KRUNCH", "Shooting or Charge phase", detachment: DetachmentName),
                 Stratagem("d2", "OTHER DETACHMENT", "Shooting phase", detachment: "Blitz Brigade"),
-            ], [], [], []),
+            ],
+            [
+                new DetachmentAbility("a1", "Da Doctrines", "", ChoiceHtml, DetachmentName),
+                new DetachmentAbility("a2", "Other Rule", "", "Nothing here.", "Blitz Brigade"),
+            ], [], []),
         ],
         []);
+
+    public const string ChoiceHtml =
+        "At the start of your Command phase, you can select one of the Doctrines listed below.<div></div>"
+        + "<div>Fast DoctrineGo <b>faster</b>.</div><div>Hard DoctrineHit harder.</div>";
+
+    public static Datasheet Boyz() => Units.Sheet("Boyz", factions: ["orks"]) with
+    {
+        NamedAbilities =
+        [
+            new Ability("Mob Rule", "In your Shooting phase, this unit can shoot twice.", AbilityCategory.Named),
+            new Ability("Banner (Aura)", "While a friendly unit is within 6\" of this unit, it is brave.", AbilityCategory.Named),
+            new Ability("Tough", "This unit has +1 Toughness.", AbilityCategory.Named),
+            new Ability("Leader", "This model can be attached to the following units:\n- BOYZ", AbilityCategory.Named),
+        ],
+    };
 
     public static ArmyBuilderState OrkArmy()
     {
@@ -44,7 +63,8 @@ internal static class BattleTrackerFixtures
         state.SelectBattleSize(BattleSizes.StrikeForce);
         state.SelectFaction("orks");
         state.AddDetachment(new Detachment("w", DetachmentName, "", 1, MissionArchetype.TakeAndHold, 4, GameMode.Standard));
-        state.AddUnit(Units.Sheet("Boyz", factions: ["orks"]), new UnitSize(10, 90));
+        state.AddUnit(Boyz(), new UnitSize(10, 90));
+        state.AddUnit(Boyz(), new UnitSize(10, 90));
         return state;
     }
 

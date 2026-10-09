@@ -34,6 +34,7 @@ builder.Services.AddScoped<IScorecardStore, ScorecardStore>();
 builder.Services.AddScoped<IGameRecorder, GameRecorder>();
 builder.Services.AddScoped<IArmyCollectionStore, ArmyCollectionStore>();
 builder.Services.AddScoped<IBattleProgressState, BattleProgressState>();
+builder.Services.AddScoped<IArmyRuleState, ArmyRuleState>();
 builder.Services.AddScoped<IRulesDataMergeService, RulesDataMergeService>();
 builder.Services.AddScoped<IDataUpdateService, HttpDataUpdateService>();
 builder.Services.AddScoped<IFileDownloadService, JsFileDownloadService>();
