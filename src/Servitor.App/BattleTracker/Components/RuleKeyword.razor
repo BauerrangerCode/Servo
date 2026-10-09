@@ -30,7 +30,7 @@ else
     [CascadingParameter]
     public KeywordRules Rules { get; set; } = KeywordRules.Empty;
 
-    private Servitor.RulesData.Domain.CoreRule? Rule { get; set; }
+    private KeywordRule? Rule { get; set; }
 
     protected override void OnParametersSet() => Rule = Rules.Find(Text);
 }

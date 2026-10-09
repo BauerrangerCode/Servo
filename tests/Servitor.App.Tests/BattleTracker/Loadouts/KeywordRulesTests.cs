@@ -5,7 +5,8 @@ namespace Servitor.App.Tests.BattleTracker.Loadouts;
 
 public class KeywordRulesTests
 {
-    private static CoreRule Rule(string name, CoreRuleKind kind = CoreRuleKind.WeaponRule) => new(name, name, null, $"Text of {name}.", CoreRuleSource.BsData, kind);
+    private static CoreRule Rule(string name, CoreRuleKind kind = CoreRuleKind.WeaponRule, string? number = null) =>
+        new(name, name, number, $"Text of {name}.", CoreRuleSource.BsData, kind);
 
     private static readonly KeywordRules Rules = new(
     [
@@ -44,6 +45,35 @@ public class KeywordRulesTests
     {
         var rules = new KeywordRules([Rule("Blast", CoreRuleKind.General), Rule("Blast")]);
 
-        Assert.Equal(CoreRuleKind.WeaponRule, rules.Find("Blast")!.Kind);
+        Assert.Equal("Text of Blast.", rules.Find("Blast")!.Markdown);
+    }
+
+    [Fact]
+    public void A_chapter_keyword_shows_the_introduction_and_every_numbered_section_of_the_chapter_in_order()
+    {
+        var rules = new KeywordRules(
+        [
+            Rule("Monsters and Vehicles", CoreRuleKind.General),
+            Rule("Shooting at Engaged Monsters and Vehicles", CoreRuleKind.General, "17.03"),
+            Rule("Moving Monsters and Vehicles", CoreRuleKind.General, "17.01"),
+            Rule("Transport Capacity", CoreRuleKind.General, "18.01"),
+        ]);
+
+        var rule = rules.Find("Vehicle")!;
+
+        Assert.Equal("Monsters and Vehicles", rule.Name);
+        var intro = rule.Markdown.IndexOf("Text of Monsters and Vehicles.", StringComparison.Ordinal);
+        var moving = rule.Markdown.IndexOf("### 17.01 Moving Monsters and Vehicles", StringComparison.Ordinal);
+        var shooting = rule.Markdown.IndexOf("### 17.03 Shooting at Engaged Monsters and Vehicles", StringComparison.Ordinal);
+        Assert.True(intro >= 0 && intro < moving && moving < shooting);
+        Assert.DoesNotContain("Transport Capacity", rule.Markdown);
+    }
+
+    [Fact]
+    public void A_chapter_named_directly_stays_its_own_entry_without_the_sections()
+    {
+        var rules = new KeywordRules([Rule("Aircraft", CoreRuleKind.General), Rule("Other", CoreRuleKind.General, "17.01")]);
+
+        Assert.Equal("Text of Aircraft.", rules.Find("Aircraft")!.Markdown);
     }
 }
