@@ -4,7 +4,7 @@ Servitor V0.1 – Epics & User Stories, ordered by delivery priority
 
 This backlog follows the delivery order set by the project owner: Scry first (built and tested standalone), then Build, Import, Scoring, and Play. Bootstrap work (E1) precedes Scry as its strict technical prerequisite. No sprint/calendar schedule is defined here – this is a priority-ordered backlog, not a timeline; sizing ("pts") is relative effort, not calendar time, for sequencing and capacity discussions only.
 
-**Scope:** 7 epics · 31 user stories · 146 points total. See [CLAUDE.md](../CLAUDE.md) for the project-wide Definition of Done, which applies to every story below and is not repeated per story.
+**Scope:** 6 epics · 29 user stories · 144 points total. See [CLAUDE.md](../CLAUDE.md) for the project-wide Definition of Done, which applies to every story below and is not repeated per story.
 
 ## Delivery order
 
@@ -14,7 +14,6 @@ This backlog follows the delivery order set by the project owner: Scry first (bu
 - E4 – Import – Army List Text Import
 - E5 – Scoring – Mission & VP Tracking
 - E6 – Play – Battle Tracker
-- E7 – Mockups & Placeholders (explicitly requested for V0.1)
 
 > **Scope note: Scry is limited to Datasheets for V0.1**
 > The reference app's Scry screen offers five searchable content kinds (Datasheets, Abilities, Weapons, Stratagems, Enhancements). Only "individual faction datasheets" was explicitly requested. E2 below covers Datasheets only; browsing Abilities/Weapons/Stratagems/Enhancements as their own searchable kinds is a plausible follow-up but is deliberately left out of this backlog rather than assumed in, per the project's Scope Discipline rule ([CLAUDE.md](../CLAUDE.md)).
@@ -119,7 +118,7 @@ As a player, I want to add an ad-hoc filter on a numeric characteristic (e.g. mi
 
 ## Data source merge between E2 and E3 — implemented, follow-ups open
 
-**Status: implemented (unsized, not part of the "7 epics · 31 stories · 146 points" total above). Not yet committed or independently reviewed.**
+**Status: implemented (unsized, not part of the "6 epics · 29 stories · 144 points" total above). Not yet committed or independently reviewed.**
 Raised by the project owner while reviewing E2 (Scry): the BSData wh40k-11e catalogues (E1.3), `core/` and `factions/<faction>/faction.json` (E1.3b) overlap on datasheet data without one replacing the other. They are now reconciled into one merged single source of truth that the app reads instead of the raw files. Design details: [CODING_GUIDELINES.md](../CODING_GUIDELINES.md) "Data & Assets"; current numbers: `merge-report.md` next to the generated data.
 
 **Delivered:**
@@ -215,7 +214,7 @@ As a player, I want a landing screen with a paste-army-list textarea, an "Import
 - ✓ Import screen is the default route (matches E1.5)
 - ✓ "Build one instead" routes to Build (E3)
 - ~~"Try with a sample army" loads a checked-in fixture army~~ — dropped by decision, not implemented
-- **Status / scope:** the paste textarea and "Import & Play" button are in place, but the button stays disabled until the parser (E4.2) exists — there is nothing yet to turn pasted text into an Army. The sample-army option was dropped rather than deferred.
+- **Status / scope:** the paste textarea and "Import & Play" button are in place. The button is enabled as soon as text is pasted, runs the E4.2 parser and the army resolver, shows parse/resolve errors inline, and on success navigates to Play. The sample-army option was dropped rather than deferred.
 
 ### E4.2 Parser for the Warscribe plain-text export format — 8 pts
 As a player, I want pasted text in Warscribe 40K's own plain-text export format (header block, Char/unit lines with wargear, Enhancement lines, Leading/Led-by cross-references, version footer) parsed into a valid Army using the E3 domain model, so that I can bring in a list exported from Warscribe instead of rebuilding it by hand.
@@ -343,35 +342,13 @@ As a player, I want to track wounds per model-role (leader, bodyguard, wargear-b
 
 ---
 
-## E7 — Mockups & Placeholders (explicitly requested for V0.1)
-
-2 stories · 2 pts · folder: Shell / RulesData
-
-Two items the project owner explicitly wants visible now, without working functionality behind them yet.
-
-### E7.1 "Warscribe Apps"-style app-switcher mockup — 1 pts
-As a user, I want a switch-app panel listing four other game/edition apps as buttons, so that the UI has the right shape ready for real app-switching later.
-
-- ✓ Panel is reachable from the app shell (header icon, per E1.5)
-- ✓ All four buttons are visibly present but perform no navigation or action
-- ✓ No other game/edition content or logic is implemented behind them
-
-### E7.2 Core Rules search – empty placeholder — 1 pts
-As a user, I want a reachable "search core rules" screen with a search box and no working search yet, so that the entry point exists and a later real implementation is a drop-in addition, not new navigation.
-
-- ✓ Screen is reachable from Play's sub-navigation (matches the reference app's Rules Search location, see [Reference-App-Analysis.md](Reference-App-Analysis.md) Section 7)
-- ✓ Search box accepts input but returns no results / shows a "coming soon" state
-- ✓ No search index or search logic implemented in this story
-
----
-
 ## EPIC — Deferred / Out of Scope for V0.1 (Traceability)
 
 Listed for traceability only – no stories exist for these, and none should be created for V0.1 without an explicit request.
 
 - **Visual theming** toward a Warhammer 40K-styled look. No placeholder requested; only implication for now is to avoid hardcoding styling in ways that would block a later theme layer.
 - **AI text-to-speech** reading of rules text on demand.
-- **AoS Edition, Spearhead, ToW Edition, Path to Glory** as real, functional apps/features (only their mockup buttons are in scope, E7.1).
+- **AoS Edition, Spearhead, ToW Edition, Path to Glory** as real, functional apps/features.
 - **Cloud sync** (observed as an unconfigured stub in the reference app).
 - **Display language switching.**
 - **Deployment map / layout tooling (visual editor only)** — the named-layout list itself is now in scope, backed by the Mission Deck's Deployment Cards (decision D13, [Open-Questions-Catalog.md](Open-Questions-Catalog.md), see E5.1). Building an actual visual battlefield/terrain editor (AlpacaSoft's role in the reference app) remains explicitly out of scope.

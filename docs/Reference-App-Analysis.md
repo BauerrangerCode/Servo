@@ -29,11 +29,10 @@ These decisions were made explicitly by the project owner and apply to everythin
 
 **In scope for Servitor V0.1**
 - Full feature parity with the 40K edition of Warscribe: Import, Build, Scry, Scoring, Play.
-- The "Warscribe Apps" app-switcher menu, rebuilt as non-functional mockup buttons only (no navigation, no other games implemented).
-- An empty placeholder screen/entry point for Core Rules full-text search (no working search behind it yet).
 
 **Explicitly excluded (not even as placeholders)**
-- AoS Edition, Spearhead, ToW Edition, Path to Glory – these are separate Warscribe apps for other game systems/formats. Only their entries in the app-switcher mockup are replicated as inert buttons; none of their functionality is analyzed or built.
+- The "Warscribe Apps" app-switcher menu and the Core Rules full-text search screen – neither is built, not even as a mockup or empty entry point.
+- AoS Edition, Spearhead, ToW Edition, Path to Glory – these are separate Warscribe apps for other game systems/formats. None of their functionality is analyzed or built.
 
 **Deferred (acknowledged now, not built now)**
 - Visual theming toward a Warhammer 40K-styled look & feel. No placeholder needed; the only actionable consequence now is to avoid hardcoding colors/styles in ways that would block a later theme layer (see CODING_GUIDELINES.md Style section on avoiding magic values).
@@ -50,13 +49,10 @@ These decisions were made explicitly by the project owner and apply to everythin
 A top tab bar exposes all five primary sections: Build, Import, Scry, Scoring, Play. A separate, narrower bottom navigation bar (used on small/mobile viewports) surfaces only four of these – Build, Import, Scry, Play – with Scoring reachable through Play's own internal sub-navigation instead of getting its own bottom-bar icon (see Section 7).
 
 **Header controls**
-- **Switch app** – opens the "Warscribe Apps" panel: links to AoS Edition, Spearhead, ToW Edition, Path to Glory (all excluded, see Section 1).
+- **Switch app** – opens the "Warscribe Apps" panel: links to AoS Edition, Spearhead, ToW Edition, Path to Glory (not replicated, see Section 1).
 - **Cloud sync** – shown as "tap to set up", i.e. an unconfigured/optional account-based sync feature. Not explored further; out of scope for Servitor's offline-first goal unless requested later.
 - **Display language** – a language switcher for the UI text.
 - **Settings** – not explored in depth during this pass.
-
-> **Implementation note: Warscribe Apps mockup**
-> Implement this as a static panel with four inert buttons/links labelled AoS Edition, Spearhead, ToW Edition, Path to Glory. No routing, no external navigation, no backing feature – purely visual, per the project owner's explicit instruction.
 
 ---
 
@@ -299,11 +295,8 @@ A row of layout options ("Modern", "3-Panel", "All-in-One", "War Organ") appears
 > **Implementation note: A concrete composition rule surfaced via the opponent's Army Rules block**
 > The Space Marines "Army Rules" block observed here includes a composition-constraint entry (tagged "Passive") describing Chapter-keyword mechanics: a unit can carry a second, Chapter-specific faction keyword, and including certain Chapter-specific units (e.g. from Black Templars, Blood Angels, Dark Angels, Deathwatch, Space Wolves) restricts what else the army may contain. This is the actual mechanism behind Build folding those chapters into a single "Space Marines" faction entry (Section 4) – it is enforced via keyword-based exclusion rules inside one faction, not by treating each chapter as a fully separate faction. Relevant to E3.4's composition rules engine (see [Backlog.md](Backlog.md)) as a concrete rule type to support, beyond points/DP/model-count checks.
 
-**Rules Search (the Core Rules search placeholder)**
-A dedicated sub-view with a search box, a "CORE RULES" quick-access chip (labelled with an edition/errata code, observed as "CA 25-26"), and placeholder copy: "Search rules, your army's abilities, or all factions." This is the direct analogue of the feature the project owner wants stubbed out now with no working search behind it yet.
-
-> **Implementation note: Core Rules search placeholder – scope for V0.1**
-> Build the entry point (a reachable, empty search screen with a search box and a "Core Rules" quick-access affordance) with no working search logic behind it. This keeps the later full-text search feature a drop-in addition rather than requiring new navigation/UI to be retrofitted.
+**Rules Search**
+A dedicated sub-view with a search box, a "CORE RULES" quick-access chip (labelled with an edition/errata code, observed as "CA 25-26"), and placeholder copy: "Search rules, your army's abilities, or all factions." Not replicated in V0.1, not even as an empty entry point (Section 1).
 
 ---
 

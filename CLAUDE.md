@@ -9,7 +9,7 @@ This document governs how Claude works on this project. It applies in addition t
 
 ## Project Context
 
-Servitor V0.1 is an offline-capable, locally-run reimplementation of [warscribe.app](https://40k.warscribe.app/) (a Warhammer 40K army list importer & battle tracker) as a Blazor WebAssembly app. Goal: full feature parity — import (NewRecruit/GW App/BattleScribe/Listforge), army building, battle tracker (phases, stratagems, wound tracking, action queue), scoring, rules search — fully usable offline.
+Servitor V0.1 is an offline-capable, locally-run reimplementation of [warscribe.app](https://40k.warscribe.app/) (a Warhammer 40K army list importer & battle tracker) as a Blazor WebAssembly app. Goal: full feature parity — import (NewRecruit/GW App/BattleScribe/Listforge), army building, battle tracker (phases, stratagems, wound tracking, action queue), scoring — fully usable offline.
 
 ## Role
 
