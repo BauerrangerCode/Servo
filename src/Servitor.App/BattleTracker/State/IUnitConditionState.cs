@@ -9,7 +9,8 @@ namespace Servitor.App.BattleTracker.State;
 /// </summary>
 public interface IUnitConditionState
 {
-    event Action? Changed;
+    /// <summary>Raised after a change; the argument names the group that changed, or is null when any group may have.</summary>
+    event Action<string?>? Changed;
 
     Task LoadAsync(CancellationToken cancellationToken = default);
 

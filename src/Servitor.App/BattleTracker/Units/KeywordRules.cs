@@ -9,8 +9,19 @@ namespace Servitor.App.BattleTracker.Units;
 /// "Anti-Infantry 4+"). The keyword is tried as written, then without its value or note, then up to its first hyphen,
 /// so a rule with a parameter still finds its rule. A few unit keywords are mapped to the section that explains them. A keyword without a core rule of that name has no rule to show.
 /// </summary>
-public sealed partial class KeywordRules(IReadOnlyList<CoreRule> rules)
+public sealed partial class KeywordRules
 {
+    private readonly Dictionary<string, CoreRule> _byName;
+    private readonly Dictionary<string, CoreRule?> _found = [];
+
+    public KeywordRules(IReadOnlyList<CoreRule> rules)
+    {
+        // A weapon or unit rule wins over a general section of the same name.
+        _byName = rules
+            .GroupBy(r => NameNormalizer.Normalize(r.Name))
+            .ToDictionary(g => g.Key, g => g.OrderBy(r => r.Kind is CoreRuleKind.WeaponRule or CoreRuleKind.UnitRule ? 0 : 1).First());
+    }
+
     public static KeywordRules Empty { get; } = new([]);
 
     // Unit keywords whose rule the core rules name differently (the keyword Fly is explained under "Flying Models").
@@ -28,24 +39,18 @@ public sealed partial class KeywordRules(IReadOnlyList<CoreRule> rules)
 
     public CoreRule? Find(string keyword)
     {
-        foreach (var candidate in Candidates(keyword))
+        if (_found.TryGetValue(keyword, out var known))
         {
-            var key = NameNormalizer.Normalize(candidate);
-            if (key.Length == 0)
-            {
-                continue;
-            }
-
-            var match = rules.Where(r => NameNormalizer.Normalize(r.Name) == key)
-                .OrderBy(r => r.Kind is CoreRuleKind.WeaponRule or CoreRuleKind.UnitRule ? 0 : 1)
-                .FirstOrDefault();
-            if (match is not null)
-            {
-                return match;
-            }
+            return known;
         }
 
-        return null;
+        var found = Candidates(keyword)
+            .Select(NameNormalizer.Normalize)
+            .Where(key => key.Length > 0 && _byName.ContainsKey(key))
+            .Select(key => _byName[key])
+            .FirstOrDefault();
+        _found[keyword] = found;
+        return found;
     }
 
     private static IEnumerable<string> Candidates(string keyword)

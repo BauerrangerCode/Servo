@@ -1,5 +1,6 @@
 @using Servitor.App.BattleTracker.State
 @using Servitor.App.BattleTracker.Units
+@implements IDisposable
 @inject IUnitConditionState Conditions
 
 @{
@@ -34,6 +35,19 @@
 
     [Parameter, EditorRequired]
     public UnitCardModel Card { get; set; } = default!;
+
+    protected override void OnInitialized() => Conditions.Changed += OnConditionChanged;
+
+    public void Dispose() => Conditions.Changed -= OnConditionChanged;
+
+    // Only the card whose group changed is drawn again; the others keep what they show.
+    private void OnConditionChanged(string? groupKey)
+    {
+        if (groupKey is null || Card.Roles.Any(r => groupKey.StartsWith(r.UnitKey + "|", StringComparison.Ordinal)))
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
 
     private async Task RestoreUnitAsync()
     {

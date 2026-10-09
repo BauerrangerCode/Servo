@@ -24,7 +24,6 @@
     protected override async Task OnInitializedAsync()
     {
         Army.Changed += OnArmyChanged;
-        Conditions.Changed += OnConditionsChanged;
         _cards = UnitCards.Build(Army.Units);
         await Conditions.LoadAsync();
         _keywordRules = new KeywordRules((await RulesData.GetAsync())?.CoreRules ?? []);
@@ -33,14 +32,11 @@
     public void Dispose()
     {
         Army.Changed -= OnArmyChanged;
-        Conditions.Changed -= OnConditionsChanged;
     }
 
     private void OnArmyChanged()
     {
         _cards = UnitCards.Build(Army.Units);
-        OnConditionsChanged();
+        InvokeAsync(StateHasChanged);
     }
-
-    private void OnConditionsChanged() => InvokeAsync(StateHasChanged);
 }

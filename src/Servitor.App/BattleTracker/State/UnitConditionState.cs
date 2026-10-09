@@ -10,7 +10,7 @@ public sealed class UnitConditionState(IRulesDataStore store) : IUnitConditionSt
     private bool _isLoaded;
     private Dictionary<string, GroupCondition> _conditions = [];
 
-    public event Action? Changed;
+    public event Action<string?>? Changed;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -23,7 +23,7 @@ public sealed class UnitConditionState(IRulesDataStore store) : IUnitConditionSt
         if (await store.LoadAsync<Dictionary<string, GroupCondition>>(Key, cancellationToken) is { } stored)
         {
             _conditions = stored;
-            Changed?.Invoke();
+            Changed?.Invoke(null);
         }
     }
 
@@ -41,7 +41,7 @@ public sealed class UnitConditionState(IRulesDataStore store) : IUnitConditionSt
     public Task ResetAsync()
     {
         _conditions = [];
-        return SaveAsync();
+        return SaveAsync(null);
     }
 
     private Task UpdateAsync(string groupKey, Func<GroupCondition, GroupCondition> change)
@@ -56,12 +56,12 @@ public sealed class UnitConditionState(IRulesDataStore store) : IUnitConditionSt
             _conditions[groupKey] = next;
         }
 
-        return SaveAsync();
+        return SaveAsync(groupKey);
     }
 
-    private async Task SaveAsync()
+    private async Task SaveAsync(string? changedGroupKey)
     {
-        Changed?.Invoke();
+        Changed?.Invoke(changedGroupKey);
         await store.SaveAsync(Key, new Dictionary<string, GroupCondition>(_conditions));
     }
 }
