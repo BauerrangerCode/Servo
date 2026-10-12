@@ -39,3 +39,7 @@ Thumbs.db
 
 # Servo packages built by scripts/publish_servo.py
 artifacts/
+
+# Generated launch-video output and the icon source image
+/brag-output*/
+/icon.png
