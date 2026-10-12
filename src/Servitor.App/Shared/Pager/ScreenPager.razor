@@ -1,0 +1,126 @@
+@implements IAsyncDisposable
+@inject IPagerInterop Interop
+
+<div class="screen-pager @(NoSplit ? "pager-paged" : null)" style="--pager-columns: @(WideColumns ?? $"repeat({_screens.Count}, minmax(0, 1fr))")">
+    <div class="pager-track" @ref="_track">
+        <CascadingValue Value="this" IsFixed="true">
+            @ChildContent
+        </CascadingValue>
+    </div>
+
+    <div class="pager-controls">
+        <button type="button" class="pager-prev" aria-label="Previous screen"
+                disabled="@(Current == 0)" @onclick="() => GoToAsync(Current - 1)">&#9664;</button>
+
+        <div class="pager-position">
+            <span class="pager-title">@CurrentTitle</span>
+            <div class="pager-dots">
+                @for (var i = 0; i < _screens.Count; i++)
+                {
+                    var index = i;
+                    if (_screens[index].Enabled)
+                    {
+                        <button type="button" class="pager-dot @(index == Current ? "active" : null)"
+                                aria-label="@_screens[index].Title" aria-current="@(index == Current ? "true" : null)"
+                                @onclick="() => GoToAsync(index)"></button>
+                    }
+                }
+            </div>
+        </div>
+
+        <button type="button" class="pager-next" aria-label="Next screen"
+                disabled="@(!IsReachable(Current + 1))" @onclick="() => GoToAsync(Current + 1)">&#9654;</button>
+    </div>
+</div>
+
+@code {
+    private readonly List<PagerScreen> _screens = [];
+    private ElementReference _track;
+    private IAsyncDisposable? _attachment;
+    private bool _scrollPending;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>CSS grid-template-columns used when the screens sit side by side; defaults to equal columns.</summary>
+    [Parameter]
+    public string? WideColumns { get; set; }
+
+    /// <summary>Keeps paging with arrows and swipes on wide screens too, for pages with too many screens to show side by side.</summary>
+    [Parameter]
+    public bool NoSplit { get; set; }
+
+    public int Current { get; private set; }
+
+    private string? CurrentTitle => Current < _screens.Count ? _screens[Current].Title : null;
+
+    internal void Register(PagerScreen screen)
+    {
+        _screens.Add(screen);
+        StateHasChanged();
+    }
+
+    internal void Unregister(PagerScreen screen)
+    {
+        _screens.Remove(screen);
+        Current = Math.Min(Current, LastReachableIndex);
+    }
+
+    /// <summary>A screen was enabled or disabled; if the current one is no longer reachable, fall back to the last that is.</summary>
+    internal void ScreenUpdated()
+    {
+        if (Current > LastReachableIndex)
+        {
+            Current = LastReachableIndex;
+            _scrollPending = true;
+        }
+
+        StateHasChanged();
+    }
+
+    private int LastReachableIndex => Math.Max(_screens.FindLastIndex(screen => screen.Enabled), 0);
+
+    private bool IsReachable(int index) => index >= 0 && index < _screens.Count && _screens[index].Enabled;
+
+    public async Task GoToAsync(int index)
+    {
+        if (!IsReachable(index))
+        {
+            return;
+        }
+
+        Current = index;
+        await Interop.ScrollToAsync(_track, index);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _attachment = await Interop.AttachAsync(_track, OnPageChangedAsync);
+        }
+
+        if (_scrollPending)
+        {
+            _scrollPending = false;
+            await Interop.ScrollToAsync(_track, Current);
+        }
+    }
+
+    private async Task OnPageChangedAsync(int index)
+    {
+        await InvokeAsync(() =>
+        {
+            Current = Math.Clamp(index, 0, LastReachableIndex);
+            StateHasChanged();
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_attachment is not null)
+        {
+            await _attachment.DisposeAsync();
+        }
+    }
+}

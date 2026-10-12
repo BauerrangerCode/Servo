@@ -9,6 +9,9 @@ using Servitor.App.RulesData.Storage;
 using Servitor.App.Tests.ArmyImport.Resolution;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.RulesData.Merging;
+using Servitor.App.Shared.Pager;
+using Servitor.App.Shared.Viewport;
+using Servitor.App.Tests.Shared.Pager;
 
 namespace Servitor.App.Tests.BattleTracker.Opponent;
 
@@ -84,6 +87,8 @@ public class OpponentArmyModalTests : BunitContext
         var provider = new BattleTrackerFixtures.FakeRulesDataProvider(RealData);
         Services.AddSingleton<IRulesDataStore>(new InMemoryRulesDataStore());
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
+        Services.AddSingleton<IPagerInterop, FakePagerInterop>();
+        Services.AddSingleton<IViewportInterop, FakeViewportInterop>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
         Services.AddSingleton<IUnitConditionState, UnitConditionState>();
@@ -190,19 +195,15 @@ public class OpponentArmyModalTests : BunitContext
         Services.AddSingleton<IMergedRulesDataProvider>(new BattleTrackerFixtures.FakeRulesDataProvider(BattleTrackerFixtures.Data()));
         var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
 
-        cut.Find(".view-commands").Click();
-
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".stratagem-card")));
-        var names = cut.FindAll(".stratagem-card h3").Select(h => h.TextContent.Trim()).ToList();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".commands .stratagem-card")));
+        var names = cut.FindAll(".commands .stratagem-card h3").Select(h => h.TextContent.Trim()).ToList();
         Assert.Contains("GRENADE", names);
         Assert.Contains("FIRE OVERWATCH", names);
         Assert.Contains("SMOKESCREEN", names);
         Assert.Contains("BIG KRUNCH", names);
         Assert.DoesNotContain("BOARDING ONLY", names);
         Assert.DoesNotContain("OTHER DETACHMENT", names);
-        Assert.Empty(cut.FindAll(".use-stratagem"));
-
-        cut.Find(".view-queue").Click();
+        Assert.Empty(cut.FindAll(".commands .use-stratagem"));
         Assert.NotNull(cut.Find(".action-queue"));
     }
 }

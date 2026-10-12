@@ -83,13 +83,14 @@ public class WargearEditorTests : BunitContext
     public void Picking_a_weapon_updates_the_loadout_and_the_points_of_the_unit_and_the_army()
     {
         var cut = RenderList(Squad, new UnitSize(10, 90));
+        var summary = Render<ArmySummary>();
         cut.Find(".edit-wargear").Click();
 
         cut.FindAll(".wargear-slot")[1].QuerySelectorAll("input")[1].Change(true); // Power fist, +10 pts
 
         Assert.Equal("Bolt rifle, Power fist (wargear +10 pts)", cut.Find(".army-unit-loadout").TextContent.Trim());
         Assert.Contains("100 pts", cut.Find(".army-unit-points").TextContent);
-        Assert.Contains("100 / 2000", cut.Find(".army-total-points dd").TextContent);
+        Assert.Contains("100 / 2000", summary.Find(".army-total-points dd").TextContent);
     }
 
     [Fact]

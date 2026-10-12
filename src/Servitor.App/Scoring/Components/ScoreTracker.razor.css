@@ -1,18 +1,14 @@
-.score-tracker {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--crt-fg-dim);
-    padding-top: 1rem;
-}
-
 .history-scroll {
     overflow-x: auto;
 }
 
-.side-panels {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
+/* Stays at the top of its screen while the side panel scrolls, so totals and round are always in view. */
+.score-tracker ::deep .score-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-bottom: 0.5rem;
+    background: var(--crt-bg);
 }
 
 .score-tracker ::deep .score-line {
@@ -31,8 +27,8 @@
     background: transparent;
     color: inherit;
     border-radius: 0;
-    padding: 0.1rem 0.6rem;
-    margin: 0 0.25rem 0.25rem 0;
+    padding: 0.3rem 0.8rem;
+    margin: 0 0.35rem 0.35rem 0;
     cursor: pointer;
     font-family: inherit;
 }

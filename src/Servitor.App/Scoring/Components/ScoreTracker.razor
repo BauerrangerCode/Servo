@@ -1,14 +1,27 @@
 @using Servitor.App.Scoring.Tracking
+@using Servitor.App.Shared.Pager
 
-<section class="score-tracker">
-    <h2>Scoring</h2>
-    <ScoreHeader />
-    <EndGameButton />
-    <div class="history-scroll">
-        <RoundHistory />
-    </div>
-    <div class="side-panels">
+@* Emits the tracker screens into the enclosing ScreenPager; each repeats the score header so totals and round stay in view. *@
+<PagerScreen Title="You">
+    <div class="score-tracker">
+        <ScoreHeader />
         <SideScorePanel Side="Side.You" Title="You" />
+    </div>
+</PagerScreen>
+
+<PagerScreen Title="Enemy">
+    <div class="score-tracker">
+        <ScoreHeader />
         <SideScorePanel Side="Side.Enemy" Title="Enemy" />
     </div>
-</section>
+</PagerScreen>
+
+<PagerScreen Title="Overview">
+    <div class="score-tracker">
+        <ScoreHeader />
+        <EndGameButton />
+        <div class="history-scroll">
+            <RoundHistory />
+        </div>
+    </div>
+</PagerScreen>

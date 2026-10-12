@@ -4,11 +4,12 @@
 @inject IBattleProgressState Progress
 
 <section class="command-points">
+    <span class="cp-title">CP</span>
     @foreach (var side in Sides)
     {
         var current = side;
         <div class="cp-side cp-@(side == Side.You ? "you" : "enemy")">
-            <span class="cp-label">@(side == Side.You ? "Your" : "Enemy") CP</span>
+            <span class="cp-label">@(side == Side.You ? "You" : "Enemy")</span>
             <button type="button" class="cp-minus" disabled="@(Progress.CommandPointsOf(current) == 0)" @onclick="() => Progress.AdjustCommandPointsAsync(current, -1)">−</button>
             <strong class="cp-value">@Progress.CommandPointsOf(current)</strong>
             <button type="button" class="cp-plus" @onclick="() => Progress.AdjustCommandPointsAsync(current, 1)">+</button>

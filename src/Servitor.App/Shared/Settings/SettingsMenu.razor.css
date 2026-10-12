@@ -6,6 +6,7 @@
 .settings-toggle {
     font-size: 1.2rem;
     line-height: 1;
+    min-width: 3rem;
     padding: 0.15rem 0.5rem;
 }
 
@@ -18,6 +19,16 @@
     padding: 0.75rem 1rem;
     background: var(--crt-panel);
     border: 1px solid var(--crt-fg);
+}
+
+/* The nav is a bottom bar below the wide breakpoint (1000px, see wwwroot/css/app.css), so the panel opens upwards. */
+@media (max-width: 999.98px) {
+    .settings-panel {
+        top: auto;
+        bottom: calc(100% + 0.5rem);
+        max-height: 70dvh;
+        overflow-y: auto;
+    }
 }
 
 .settings-panel[hidden] {

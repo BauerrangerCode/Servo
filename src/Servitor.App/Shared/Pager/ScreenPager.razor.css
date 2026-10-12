@@ -1,0 +1,93 @@
+.screen-pager {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.pager-track {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+
+.pager-track::-webkit-scrollbar {
+    display: none;
+}
+
+.pager-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+.pager-prev,
+.pager-next {
+    min-width: 3.5rem;
+    min-height: 3rem;
+}
+
+.pager-position {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pager-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.pager-dots {
+    display: flex;
+    gap: 0.25rem;
+    width: 100%;
+    justify-content: center;
+}
+
+/* The dots share the space between the arrows, so many screens never push the arrows out of view. */
+.pager-dot {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 2.75rem;
+    min-height: 2.25rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.pager-dot::before {
+    content: "";
+    display: block;
+    width: 0.7rem;
+    height: 0.7rem;
+    margin: auto;
+    border: 1px solid var(--crt-fg-dim);
+}
+
+.pager-dot.active::before {
+    background: var(--crt-fg);
+}
+
+/* Must match the wide breakpoint in wwwroot/css/app.css (1000px). */
+@media (min-width: 1000px) {
+    .screen-pager:not(.pager-paged) .pager-track {
+        display: grid;
+        grid-template-columns: var(--pager-columns);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 1rem;
+        overflow: visible;
+    }
+
+    .screen-pager:not(.pager-paged) .pager-controls {
+        display: none;
+    }
+}

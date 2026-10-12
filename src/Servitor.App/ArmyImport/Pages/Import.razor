@@ -10,30 +10,34 @@
 
 <PageTitle>Import</PageTitle>
 
-<h1>Import</h1>
+<div class="import-page">
+    <h1>Import</h1>
 
-<section class="import-step">
-    <label for="import-text">Paste your army list</label>
-    <textarea id="import-text" class="import-textarea" @bind="_pastedText" @bind:event="oninput"
-              placeholder="Paste a Warscribe army list export here…"></textarea>
+    <section class="import-step">
+        <label for="import-text">Paste your army list</label>
+        <textarea id="import-text" class="import-textarea" @bind="_pastedText" @bind:event="oninput"
+                  placeholder="Paste a Warscribe army list export here…"></textarea>
 
-    <button type="button" class="import-play" disabled="@(_isImporting || string.IsNullOrWhiteSpace(_pastedText))" @onclick="ImportAndPlay">
-        @(_isImporting ? "Importing…" : "Import & Play")
-    </button>
+        @if (_errors.Count > 0)
+        {
+            <ul class="import-errors">
+                @foreach (var error in _errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
 
-    @if (_errors.Count > 0)
-    {
-        <ul class="import-errors">
-            @foreach (var error in _errors)
-            {
-                <li>@error</li>
-            }
-        </ul>
-    }
-</section>
+        <button type="button" class="import-play" disabled="@(_isImporting || string.IsNullOrWhiteSpace(_pastedText))" @onclick="ImportAndPlay">
+            @(_isImporting ? "Importing…" : "Import & Play")
+        </button>
+    </section>
 
-<a href="build" class="build-fallback">Build one instead</a>
-<a href="collection" class="collection-link">My Collection</a>
+    <nav class="import-links">
+        <a href="build" class="build-fallback">Build one instead</a>
+        <a href="collection" class="collection-link">My Collection</a>
+    </nav>
+</div>
 
 @code {
     private string _pastedText = "";

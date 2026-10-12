@@ -24,21 +24,32 @@
     text-align: center;
 }
 
+/* Content-sized columns: fixed name/keyword shares would leave the numeric columns too narrow on a phone. */
 .weapon-profiles table {
-    table-layout: fixed;
+    table-layout: auto;
     width: 100%;
+    font-size: 0.8rem;
+}
+
+.weapon-profiles th,
+.weapon-profiles td {
+    padding: 0.15rem 0.3rem;
 }
 
 .weapon-profiles th:first-child {
-    width: 26%;
+    min-width: 5rem;
 }
 
 .weapon-profiles th:last-child {
-    width: 26%;
+    min-width: 4rem;
 }
 
 .weapon-profiles td {
     overflow-wrap: anywhere;
+}
+
+.weapon-profiles td:not(:first-child):not(:last-child) {
+    white-space: nowrap;
 }
 
 .datasheet-detail-header h2 {

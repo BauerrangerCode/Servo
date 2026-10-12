@@ -1,3 +1,15 @@
+/* In the page and in the Play modal alike, the panel takes the height its parent hands down and the pager fills it. */
+.scoring-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.scoring-panel > .screen-pager {
+    flex: 1;
+}
+
 .setup-step {
     margin-bottom: 1rem;
 }
@@ -7,8 +19,8 @@
     background: transparent;
     color: inherit;
     border-radius: 0;
-    padding: 0.2rem 0.75rem;
-    margin: 0 0.25rem 0.25rem 0;
+    padding: 0.3rem 0.9rem;
+    margin: 0 0.35rem 0.35rem 0;
     cursor: pointer;
 }
 
@@ -94,6 +106,6 @@
     color: inherit;
     border: 1px solid var(--crt-fg-dim);
     border-radius: 0;
-    padding: 0.2rem 0.75rem;
+    padding: 0.3rem 0.9rem;
     cursor: pointer;
 }

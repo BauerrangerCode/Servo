@@ -112,18 +112,21 @@ public class ArmyListPanelTests : BunitContext
     }
 
     [Fact]
-    public void A_broken_composition_rule_shows_up_as_its_own_issue_in_the_summary()
+    public void A_broken_composition_rule_shows_up_as_its_own_issue_and_makes_the_army_invalid()
     {
         Ready();
         var boss = Units.Sheet("Warboss", ["Character"], sizes: [new UnitSize(1, 80)]);
         _state.AddUnit(boss, new UnitSize(1, 80));
         _state.AddUnit(boss, new UnitSize(1, 80));
         var cut = Render<ArmyListPanel>(p => p.Add(x => x.Enhancements, [Kit]));
+        var summary = Render<ArmySummary>(p => p.Add(x => x.ShowIssues, false));
 
         cut.FindAll(".enhancement-select")[0].Change("e1");
         cut.FindAll(".enhancement-select")[1].Change("e1");
 
         Assert.Contains("Kit is taken 2 times", cut.Find(".army-issues").TextContent);
-        Assert.Contains("INVALID", cut.Find(".army-validity").TextContent);
+        Assert.Contains("INVALID", summary.Find(".army-validity").TextContent);
+        Assert.Empty(cut.FindAll(".army-totals"));
+        Assert.Empty(summary.FindAll(".army-issues"));
     }
 }

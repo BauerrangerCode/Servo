@@ -1,36 +1,73 @@
+/* One screen: the textarea takes whatever height is left, so nothing here has to scroll. */
+.import-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.import-page h1 {
+    margin: 0 0 0.5rem 0;
+}
+
+/* The active nav tab already names the page; on a phone the title row is worth more as room for the list. */
+@media (max-width: 999.98px) {
+    .import-page h1 {
+        display: none;
+    }
+}
+
 .import-step {
-    margin-bottom: 1rem;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 60rem;
 }
 
 .import-textarea {
-    display: block;
+    flex: 1;
+    min-height: 8rem;
     width: 100%;
-    max-width: 40rem;
-    height: 12rem;
-    margin: 0.5rem 0;
+    box-sizing: border-box;
     background: transparent;
     color: inherit;
     border: 1px solid var(--crt-fg-dim);
     border-radius: 0;
     font-family: inherit;
-    resize: vertical;
-}
-
-.import-note {
-    font-size: 0.8rem;
-    opacity: 0.8;
+    resize: none;
 }
 
 .import-errors {
-    max-width: 40rem;
-    margin: 0.5rem 0;
+    flex: none;
+    max-height: 30%;
+    overflow-y: auto;
+    margin: 0;
     padding-left: 1.25rem;
     color: var(--crt-danger);
     font-size: 0.85rem;
 }
 
+.import-play {
+    flex: none;
+    min-height: 3.25rem;
+}
+
+.import-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+/* Links as tap-sized buttons. */
 .build-fallback,
 .collection-link {
-    display: inline-block;
-    margin-right: 1rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border: 1px solid var(--crt-fg-dim);
+    text-decoration: none;
 }

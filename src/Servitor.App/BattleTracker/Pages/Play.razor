@@ -4,6 +4,7 @@
 @using Servitor.App.BattleTracker.State
 @using Servitor.App.Scoring.Components
 @using Servitor.App.Shared.Dialogs
+@using Servitor.App.Shared.Pager
 @implements IDisposable
 @inject IBattleProgressState Progress
 @inject IArmyBuilderState Army
@@ -11,64 +12,65 @@
 
 <PageTitle>Play</PageTitle>
 
-<h1>Play</h1>
+<div class="play-page">
+    <h1>Play</h1>
 
-@if (Army.Units.Count == 0)
-{
-    <section class="play-empty">
-        <p>No army loaded — the battle tracker needs an army to follow.</p>
-        <a href="" class="import-link">Import Army</a>
-        <a href="build" class="build-link">Build one instead</a>
-    </section>
-}
-else
-{
-    <BattleProgressBar />
-    <CommandPointsPanel />
-
-    <nav class="play-nav">
-        <button type="button" class="chip view-queue @(_view == PlayView.Queue ? "selected" : "")" @onclick="() => _view = PlayView.Queue">Action Queue</button>
-        <button type="button" class="chip view-units @(_view == PlayView.Units ? "selected" : "")" @onclick="() => _view = PlayView.Units">Units</button>
-        <button type="button" class="chip view-commands @(_view == PlayView.Commands ? "selected" : "")" @onclick="() => _view = PlayView.Commands">Commands</button>
-        <button type="button" class="chip open-opponent" @onclick="() => _showOpponent = true">Opponent's Army</button>
-        <button type="button" class="chip open-scoring" @onclick="() => _showScoring = true">Scoring</button>
-    </nav>
-
-    @switch (_view)
+    @if (Army.Units.Count == 0)
     {
-        case PlayView.Commands:
-            <CommandsPanel />
-            break;
-        case PlayView.Units:
-            <UnitsPanel />
-            break;
-        default:
-            <ActionQueuePanel />
-            break;
+        <section class="play-empty">
+            <p>No army loaded — the battle tracker needs an army to follow.</p>
+            <a href="" class="import-link">Import Army</a>
+            <a href="build" class="build-link">Build one instead</a>
+        </section>
     }
-
-    @if (_showOpponent)
+    else
     {
-        <OpponentArmyModal OnClose="() => _showOpponent = false" />
-    }
+        <div class="play-header">
+            <BattleProgressBar />
 
-    @if (_showScoring)
-    {
-        <ModalFrame Title="Scoring" OnClose="() => _showScoring = false">
-            <ScoringPanel />
-        </ModalFrame>
+            <div class="play-tools">
+                <CommandPointsPanel />
+
+                <div class="play-actions">
+                    <button type="button" class="open-opponent" @onclick="() => _showOpponent = true">Opponent's Army</button>
+                    <button type="button" class="open-scoring" @onclick="() => _showScoring = true">Scoring</button>
+                </div>
+            </div>
+        </div>
+
+        <ScreenPager WideColumns="@WideColumns">
+            <PagerScreen Title="Action Queue">
+                <ActionQueuePanel />
+            </PagerScreen>
+            <PagerScreen Title="Units">
+                <UnitsPanel />
+            </PagerScreen>
+            <PagerScreen Title="Commands" WideDrawer="true" DrawerOpen="_commandsOpen">
+                <CommandsPanel />
+            </PagerScreen>
+        </ScreenPager>
+
+        <div class="commands-drawer-backdrop @(_commandsOpen ? "open" : null)" @onclick="() => _commandsOpen = false"></div>
+        <button type="button" class="commands-toggle" aria-expanded="@(_commandsOpen ? "true" : "false")" @onclick="() => _commandsOpen = !_commandsOpen">Commands</button>
+
+        @if (_showOpponent)
+        {
+            <OpponentArmyModal OnClose="() => _showOpponent = false" />
+        }
+
+        @if (_showScoring)
+        {
+            <ModalFrame Title="Scoring" Fill="true" OnClose="() => _showScoring = false">
+                <ScoringPanel />
+            </ModalFrame>
+        }
     }
-}
+</div>
 
 @code {
-    private enum PlayView
-    {
-        Queue,
-        Units,
-        Commands,
-    }
+    private const string WideColumns = "minmax(0, 1fr) minmax(0, 2fr)";
 
-    private PlayView _view = PlayView.Queue;
+    private bool _commandsOpen;
     private bool _showOpponent;
     private bool _showScoring;
 

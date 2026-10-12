@@ -1,0 +1,49 @@
+@implements IDisposable
+
+<section class="pager-screen @(Enabled ? null : "pager-screen-disabled") @(Pager.NoSplit ? "pager-screen-paged" : null) @(WideDrawer ? "pager-screen-drawer" : null) @(WideDrawer && DrawerOpen ? "open" : null)" aria-label="@Title">
+    @ChildContent
+</section>
+
+@code {
+    private bool? _notifiedEnabled;
+
+    [CascadingParameter]
+    public required ScreenPager Pager { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    /// <summary>
+    /// A disabled screen cannot be reached (arrow, dot or swipe) while the screens are paged; side by side it stays visible.
+    /// Only trailing screens may be disabled, because a hidden screen in the middle would shift the page positions.
+    /// </summary>
+    [Parameter]
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Side by side, the screen is not a column but an overlay panel docked to the right edge, shown while
+    /// <see cref="DrawerOpen"/> is set. The page provides the button that toggles it and must leave the screen out of the
+    /// pager's wide columns. Paged, it is an ordinary screen.
+    /// </summary>
+    [Parameter]
+    public bool WideDrawer { get; set; }
+
+    [Parameter]
+    public bool DrawerOpen { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized() => Pager.Register(this);
+
+    protected override void OnParametersSet()
+    {
+        if (_notifiedEnabled != Enabled)
+        {
+            _notifiedEnabled = Enabled;
+            Pager.ScreenUpdated();
+        }
+    }
+
+    public void Dispose() => Pager.Unregister(this);
+}

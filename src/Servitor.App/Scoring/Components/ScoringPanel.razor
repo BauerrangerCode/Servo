@@ -1,138 +1,153 @@
 @using Servitor.App.Scoring.History
 @using Servitor.App.Scoring.MissionDeck
 @using Servitor.App.Scoring.State
+@using Servitor.App.Shared.Pager
 @using Servitor.RulesData.Domain
 @implements IDisposable
 @inject IBattleSetupState State
 @inject IMissionDeckProvider DeckProvider
 @inject IGameRecorder Recorder
 
-@if (!_isLoaded)
-{
-    <p>Loading Mission Deck…</p>
-}
-else
-{
-    @if (DeckProvider.Current.Warnings.Count > 0)
+<div class="scoring-panel">
+    @if (!_isLoaded)
     {
-        <ul class="setup-warnings">
-            @foreach (var warning in DeckProvider.Current.Warnings)
-            {
-                <li>@warning</li>
-            }
-        </ul>
+        <p>Loading Mission Deck…</p>
     }
-
-    @if (Recorder.LastEnded is { } ended && State.YourDisposition is null)
+    else
     {
-        <p class="game-ended">Game ended — scorecard saved: @ended.Result, You @ended.You.Total — Enemy @ended.Enemy.Total.</p>
-    }
-
-    <section class="setup-step">
-        <h2>Your Disposition</h2>
-        @foreach (var archetype in Archetypes)
-        {
-            <button type="button" class="chip @(State.YourDisposition == archetype ? "selected" : "")" @onclick="() => State.SelectYourDisposition(archetype)">
-                @MissionArchetypeLabels.Label(archetype)
-            </button>
-        }
-    </section>
-
-    @if (State.YourDisposition is not null)
-    {
-        <section class="setup-step">
-            <h2>Opponent Disposition</h2>
-            @foreach (var archetype in Archetypes)
-            {
-                <button type="button" class="chip @(State.OpponentDisposition == archetype ? "selected" : "")" @onclick="() => State.SelectOpponentDisposition(archetype)">
-                    @MissionArchetypeLabels.Label(archetype)
-                </button>
-            }
-        </section>
-    }
-
-    @if (State.ResolvedMission is { } mission)
-    {
-        <section class="setup-step mission-card">
-            <h2>@mission.Name</h2>
-            <p class="mission-legend">@mission.Legend</p>
-
-            @foreach (var group in mission.ScoringConditions.GroupBy(c => c.RoundScope))
-            {
-                <h4>@group.Key</h4>
-                <ul class="scoring-list">
-                    @foreach (var condition in group)
-                    {
-                        <li class="scoring-condition">
-                            @if (!string.IsNullOrEmpty(condition.When))
-                            {
-                                <span class="condition-when">WHEN: @condition.When</span>
-                            }
-                            <span class="condition-text">@condition.Condition</span>
-                            <span class="condition-points">@(condition.Relation == ScoringRelation.Cumulative ? "+" : "")@(condition.Points)VP</span>
-                            @if (condition.Relation != ScoringRelation.Standalone)
-                            {
-                                <span class="condition-relation">@condition.Relation.ToString().ToUpperInvariant()</span>
-                            }
-                        </li>
-                    }
-                </ul>
-            }
-
-            @if (mission.AdditionalRules.Count > 0)
-            {
-                <div class="mission-additional-rules">
-                    <h4>Additional Rules</h4>
-                    @foreach (var rule in mission.AdditionalRules)
-                    {
-                        <p>@rule</p>
-                    }
-                </div>
-            }
-        </section>
-
-        <section class="setup-step">
-            <h2>Deployment &amp; Layout</h2>
-            <select class="deployment-select" value="@State.DeploymentCardName" @onchange="OnDeploymentCardChanged">
-                <option value="">(choose a layout)</option>
-                @foreach (var option in State.DeploymentCards)
+        <ScreenPager NoSplit="true">
+            <PagerScreen Title="Setup">
+                @if (DeckProvider.Current.Warnings.Count > 0)
                 {
-                    <option value="@option.Name">@option.Name</option>
+                    <ul class="setup-warnings">
+                        @foreach (var warning in DeckProvider.Current.Warnings)
+                        {
+                            <li>@warning</li>
+                        }
+                    </ul>
                 }
-            </select>
 
-            @if (State.SelectedDeploymentCard is { } card)
+                @if (Recorder.LastEnded is { } ended && State.YourDisposition is null)
+                {
+                    <p class="game-ended">Game ended — scorecard saved: @ended.Result, You @ended.You.Total — Enemy @ended.Enemy.Total.</p>
+                }
+
+                <section class="setup-step">
+                    <h2>Your Disposition</h2>
+                    @foreach (var archetype in Archetypes)
+                    {
+                        <button type="button" class="chip @(State.YourDisposition == archetype ? "selected" : "")" @onclick="() => State.SelectYourDisposition(archetype)">
+                            @MissionArchetypeLabels.Label(archetype)
+                        </button>
+                    }
+                </section>
+
+                @if (State.YourDisposition is not null)
+                {
+                    <section class="setup-step">
+                        <h2>Opponent Disposition</h2>
+                        @foreach (var archetype in Archetypes)
+                        {
+                            <button type="button" class="chip @(State.OpponentDisposition == archetype ? "selected" : "")" @onclick="() => State.SelectOpponentDisposition(archetype)">
+                                @MissionArchetypeLabels.Label(archetype)
+                            </button>
+                        }
+                    </section>
+                }
+
+                <button type="button" class="reset-setup" @onclick="State.Reset">Reset</button>
+
+                <ScorecardHistory />
+            </PagerScreen>
+
+            @if (State.ResolvedMission is { } mission)
             {
-                <dl class="deployment-detail">
-                    <dt>Attacker's Zone</dt>
-                    <dd>@card.AttackerZone</dd>
-                    <dt>Defender's Zone</dt>
-                    <dd>@card.DefenderZone</dd>
-                    <dt>Objectives</dt>
-                    <dd>@card.Objectives</dd>
-                </dl>
+                <PagerScreen Title="Mission">
+                    <section class="setup-step mission-card">
+                        <h2>@mission.Name</h2>
+                        <p class="mission-legend">@mission.Legend</p>
+
+                        @foreach (var group in mission.ScoringConditions.GroupBy(c => c.RoundScope))
+                        {
+                            <h4>@group.Key</h4>
+                            <ul class="scoring-list">
+                                @foreach (var condition in group)
+                                {
+                                    <li class="scoring-condition">
+                                        @if (!string.IsNullOrEmpty(condition.When))
+                                        {
+                                            <span class="condition-when">WHEN: @condition.When</span>
+                                        }
+                                        <span class="condition-text">@condition.Condition</span>
+                                        <span class="condition-points">@(condition.Relation == ScoringRelation.Cumulative ? "+" : "")@(condition.Points)VP</span>
+                                        @if (condition.Relation != ScoringRelation.Standalone)
+                                        {
+                                            <span class="condition-relation">@condition.Relation.ToString().ToUpperInvariant()</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                        @if (mission.AdditionalRules.Count > 0)
+                        {
+                            <div class="mission-additional-rules">
+                                <h4>Additional Rules</h4>
+                                @foreach (var rule in mission.AdditionalRules)
+                                {
+                                    <p>@rule</p>
+                                }
+                            </div>
+                        }
+                    </section>
+                </PagerScreen>
+
+                <PagerScreen Title="Deployment">
+                    <section class="setup-step">
+                        <h2>Deployment &amp; Layout</h2>
+                        <select class="deployment-select" value="@State.DeploymentCardName" @onchange="OnDeploymentCardChanged">
+                            <option value="">(choose a layout)</option>
+                            @foreach (var option in State.DeploymentCards)
+                            {
+                                <option value="@option.Name">@option.Name</option>
+                            }
+                        </select>
+
+                        @if (State.SelectedDeploymentCard is { } card)
+                        {
+                            <dl class="deployment-detail">
+                                <dt>Attacker's Zone</dt>
+                                <dd>@card.AttackerZone</dd>
+                                <dt>Defender's Zone</dt>
+                                <dd>@card.DefenderZone</dd>
+                                <dt>Objectives</dt>
+                                <dd>@card.Objectives</dd>
+                            </dl>
+                        }
+                    </section>
+
+                    <section class="setup-step">
+                        <h2>Step 1 — Attacker / Defender</h2>
+                        <button type="button" class="chip @(State.Role == BattleRole.Attacker ? "selected" : "")" @onclick="() => State.SelectRole(BattleRole.Attacker)">You are the Attacker</button>
+                        <button type="button" class="chip @(State.Role == BattleRole.Defender ? "selected" : "")" @onclick="() => State.SelectRole(BattleRole.Defender)">You are the Defender</button>
+                    </section>
+
+                    @if (State.Role is not null)
+                    {
+                        <p class="setup-complete">
+                            Setup complete — @MissionArchetypeLabels.Label(State.YourDisposition!.Value) vs @MissionArchetypeLabels.Label(State.OpponentDisposition!.Value): @mission.Name.
+                        </p>
+                    }
+                </PagerScreen>
+
+                @if (State.Role is not null)
+                {
+                    <ScoreTracker />
+                }
             }
-        </section>
-
-        <section class="setup-step">
-            <h2>Step 1 — Attacker / Defender</h2>
-            <button type="button" class="chip @(State.Role == BattleRole.Attacker ? "selected" : "")" @onclick="() => State.SelectRole(BattleRole.Attacker)">You are the Attacker</button>
-            <button type="button" class="chip @(State.Role == BattleRole.Defender ? "selected" : "")" @onclick="() => State.SelectRole(BattleRole.Defender)">You are the Defender</button>
-        </section>
-
-        @if (State.Role is not null)
-        {
-            <p class="setup-complete">
-                Setup complete — @MissionArchetypeLabels.Label(State.YourDisposition!.Value) vs @MissionArchetypeLabels.Label(State.OpponentDisposition!.Value): @mission.Name.
-            </p>
-            <ScoreTracker />
-        }
+        </ScreenPager>
     }
-
-    <button type="button" class="reset-setup" @onclick="State.Reset">Reset</button>
-
-    <ScorecardHistory />
-}
+</div>
 
 @code {
     private static readonly MissionArchetype[] Archetypes = Enum.GetValues<MissionArchetype>();

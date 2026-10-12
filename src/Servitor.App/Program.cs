@@ -17,7 +17,9 @@ using Servitor.App.Scoring.Tracking;
 using Servitor.App.Shared.Backdrop;
 using Servitor.App.Shared.Effects;
 using Servitor.App.Shared.Files;
+using Servitor.App.Shared.Pager;
 using Servitor.App.Shared.Shell;
+using Servitor.App.Shared.Viewport;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -48,6 +50,8 @@ builder.Services.AddScoped<IFileDownloadService, JsFileDownloadService>();
 builder.Services.AddScoped<IAppShutdownService, HttpAppShutdownService>();
 builder.Services.AddScoped<IFactionBackdrop, FactionBackdrop>();
 builder.Services.AddScoped<ICrtEffectsService, JsCrtEffectsService>();
+builder.Services.AddScoped<IPagerInterop, JsPagerInterop>();
+builder.Services.AddScoped<IViewportInterop, JsViewportInterop>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 await builder.Build().RunAsync();

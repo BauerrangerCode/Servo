@@ -5,6 +5,8 @@ using Servitor.App.Scoring.History;
 using Servitor.App.Scoring.MissionDeck;
 using Servitor.App.Scoring.State;
 using Servitor.App.Scoring.Tracking;
+using Servitor.App.Shared.Pager;
+using Servitor.App.Tests.Shared.Pager;
 using Servitor.App.Tests.BattleTracker;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Tests.Scoring.History;
@@ -40,6 +42,7 @@ public class ScoringTests : BunitContext
         var provider = new FakeMissionDeckProvider(new MissionDeckSet(deck, []));
 
         Services.AddSingleton<IBattleSetupState>(_state);
+        Services.AddSingleton<IPagerInterop, FakePagerInterop>();
         Services.AddSingleton<IMissionDeckProvider>(provider);
         var tracking = new ScoreTrackingState(_state, provider, _progress);
         Services.AddSingleton<IScoreTrackingState>(tracking);
@@ -143,4 +146,31 @@ public class ScoringTests : BunitContext
         ClickInSection(cut, 0, "Take and Hold");
         Assert.Empty(cut.FindAll(".game-ended"));
     }
+
+    [Fact]
+    public void The_pages_follow_the_setup_and_grow_as_it_progresses()
+    {
+        var cut = Render<Servitor.App.Scoring.Pages.Scoring>();
+        Assert.Equal(["Setup"], Screens(cut));
+
+        SelectBothDispositions(cut);
+        Assert.Equal(["Setup", "Mission", "Deployment"], Screens(cut));
+
+        ClickInSection(cut, 4, "You are the Attacker");
+        Assert.Equal(["Setup", "Mission", "Deployment", "You", "Enemy", "Overview"], Screens(cut));
+
+        cut.Find("button.reset-setup").Click();
+        Assert.Equal(["Setup"], Screens(cut));
+    }
+
+    [Fact]
+    public void The_scoring_pages_never_split_side_by_side()
+    {
+        var cut = Render<Servitor.App.Scoring.Pages.Scoring>();
+
+        Assert.Contains("pager-paged", cut.Find(".screen-pager").ClassList);
+    }
+
+    private static string[] Screens(IRenderedComponent<Servitor.App.Scoring.Pages.Scoring> cut) =>
+        cut.FindAll(".pager-screen").Select(s => s.GetAttribute("aria-label")!).ToArray();
 }

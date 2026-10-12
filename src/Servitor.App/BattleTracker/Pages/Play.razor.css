@@ -1,11 +1,77 @@
-.play-nav {
+.play-page {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 1rem 0;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
 }
 
-.play-nav .chip.selected {
-    border-color: var(--crt-fg);
-    background: var(--crt-selected);
+.play-page h1 {
+    margin: 0 0 0.5rem 0;
+}
+
+.play-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.play-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+}
+
+.play-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* The pager is a child component; its root element carries this page's scope attribute. */
+.play-page > .screen-pager {
+    flex: 1;
+}
+
+/* The active nav tab already names the page; on a phone the title row is worth more as room for the tracker. */
+@media (max-width: 999.98px) {
+    .play-page h1 {
+        display: none;
+    }
+}
+
+/* Side by side, Commands is an overlay drawer (see PagerScreen.WideDrawer); this tab on the right edge opens it. */
+.commands-toggle,
+.commands-drawer-backdrop {
+    display: none;
+}
+
+@media (min-width: 1000px) {
+    /* Keeps the page content clear of the tab (3rem wide, minus the 1rem padding of main). */
+    .play-page {
+        padding-right: 2rem;
+    }
+
+    .commands-toggle {
+        display: block;
+        position: fixed;
+        top: 50%;
+        right: 0;
+        z-index: 51;
+        width: 3rem;
+        height: 9rem;
+        padding: 0;
+        transform: translateY(-50%);
+        writing-mode: vertical-rl;
+        rotate: 180deg;
+        letter-spacing: 0.12em;
+    }
+
+    .commands-drawer-backdrop.open {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 49;
+    }
 }

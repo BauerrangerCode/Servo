@@ -11,6 +11,9 @@ using Servitor.App.RulesData.Storage;
 using Servitor.App.Tests.ArmyImport.Resolution;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.RulesData.Merging;
+using Servitor.App.Shared.Pager;
+using Servitor.App.Shared.Viewport;
+using Servitor.App.Tests.Shared.Pager;
 
 namespace Servitor.App.Tests.BattleTracker.Loadouts;
 
@@ -142,6 +145,8 @@ public class UnitsPanelTests : BunitContext
 
         Services.AddSingleton<IRulesDataStore>(new InMemoryRulesDataStore());
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
+        Services.AddSingleton<IPagerInterop, FakePagerInterop>();
+        Services.AddSingleton<IViewportInterop, FakeViewportInterop>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
         Services.AddSingleton<IUnitConditionState, UnitConditionState>();
@@ -153,9 +158,7 @@ public class UnitsPanelTests : BunitContext
 
     private IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> OpenUnits()
     {
-        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
-        cut.Find(".view-units").Click();
-        return cut;
+        return Render<Servitor.App.BattleTracker.Pages.Play>();
     }
 
     private static AngleSharp.Dom.IElement Card(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut, string title) =>

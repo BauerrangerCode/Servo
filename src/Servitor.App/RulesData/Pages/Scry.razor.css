@@ -1,14 +1,39 @@
+.scry-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.scry-page h1 {
+    margin: 0 0 0.5rem 0;
+}
+
+/* The pager is a child component; its root element carries this page's scope attribute. */
+.scry-page > .screen-pager {
+    flex: 1;
+}
+
+.scry-units {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 .scry-search {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+}
+
+.scry-search input {
+    flex: 1;
+    min-width: 0;
 }
 
 .scry-facets {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    margin-bottom: 0.75rem;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .facet-group h4 {
@@ -23,10 +48,10 @@
     background: transparent;
     color: inherit;
     border-radius: 0;
-    padding: 0.15rem 0.6rem;
-    margin: 0 0.25rem 0.25rem 0;
+    padding: 0.3rem 0.9rem;
+    margin: 0 0.35rem 0.35rem 0;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
 }
 
 .chip-include {
@@ -44,16 +69,22 @@
     text-decoration: line-through;
 }
 
+.result-count {
+    margin: 0.5rem 0;
+}
+
+/* The list is the one place that scrolls vertically; it takes whatever height the screen has left. */
 .result-list {
-    height: 480px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     border: 1px solid var(--crt-fg-dim);
+    container-type: inline-size;
 }
 
 /* Fixed layout: column widths come from the <col> elements, never from the current content, so they cannot jump. */
 .result-list table {
     width: 100%;
-    min-width: 640px;
     table-layout: fixed;
     border-collapse: collapse;
 }
@@ -80,15 +111,33 @@
 .result-list th, .result-list td {
     text-align: left;
     padding: 0 0.5rem;
-    height: 32px;
+    height: 48px;
     box-sizing: border-box;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.result-list tbody tr:hover {
-    background: var(--crt-hover);
+.result-list .unit-name,
+.result-list .unit-faction {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-list .unit-faction {
+    display: none;
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+@media (hover: hover) {
+    .result-list tbody tr:hover {
+        background: var(--crt-hover);
+    }
+}
+
+.result-list tbody tr {
     cursor: pointer;
 }
 
@@ -97,8 +146,8 @@
 }
 
 /* Terminal-style block cursor in front of the selected unit. */
-.result-list tbody tr.selected .cell-name::before {
-    content: "88";
+.result-list tbody tr.selected .unit-name::before {
+    content: "88";
     margin-right: 0.35rem;
     animation: cursor-blink 1s steps(1) infinite;
 }
@@ -110,12 +159,50 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .result-list tbody tr.selected .cell-name::before {
+    .result-list tbody tr.selected .unit-name::before {
         animation: none;
     }
 }
 
-/* DatasheetDetail is a separate component; its own markup is styled in DatasheetDetail.razor.css. */
-::deep .datasheet-detail {
-    margin-top: 1rem;
+/* A narrow list (phone, or one column of the wide split) trades the faction column for a second line under the name.
+   Columns are hidden by position (1 name, 2 faction, 3 points, 4-9 M T Sv W Ld OC) in <col>, <th> and <td> alike,
+   because a hidden cell would otherwise keep the width its <col> reserves. */
+@container (max-width: 560px) {
+    .result-list col:nth-child(2),
+    .result-list col:nth-child(n+8),
+    .result-list th:nth-child(2),
+    .result-list td:nth-child(2),
+    .result-list th:nth-child(n+8),
+    .result-list td:nth-child(n+8) {
+        display: none;
+    }
+
+    .result-list .unit-faction {
+        display: block;
+    }
+
+    .result-list .col-stat {
+        width: 44px;
+    }
+}
+
+@container (max-width: 420px) {
+    .result-list col:nth-child(4),
+    .result-list th:nth-child(4),
+    .result-list td:nth-child(4) {
+        display: none;
+    }
+}
+
+/* DatasheetDetail is a separate component; the screen scrolls, so drop its fixed-height box here (Build still uses it). */
+.scry-page ::deep .datasheet-detail {
+    height: auto;
+    overflow: visible;
+}
+
+/* The active nav tab already names the page; on a phone the title row is worth more as room for the lists. */
+@media (max-width: 999.98px) {
+    .scry-page h1 {
+        display: none;
+    }
 }

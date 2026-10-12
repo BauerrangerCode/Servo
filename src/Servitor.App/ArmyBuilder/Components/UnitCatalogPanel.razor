@@ -3,6 +3,7 @@
 @using Servitor.App.ArmyBuilder.State
 @using Servitor.App.RulesData.Components
 @using Servitor.App.RulesData.Loading
+@using Servitor.App.Shared.Dialogs
 @using Servitor.RulesData.Domain
 @implements IDisposable
 @inject IArmyBuilderState State
@@ -91,7 +92,11 @@
 
     @if (_detail is not null)
     {
-        <DatasheetDetail Datasheet="_detail" />
+        <ModalFrame Title="Datasheet" OnClose="() => _detail = null">
+            <div class="catalog-datasheet">
+                <DatasheetDetail Datasheet="_detail" />
+            </div>
+        </ModalFrame>
     }
 }
 

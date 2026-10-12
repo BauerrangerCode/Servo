@@ -4,107 +4,134 @@
 @using Servitor.RulesData.Domain
 @using Servitor.App.RulesData.Loading
 @using Servitor.App.RulesData.Search
+@using Servitor.App.Shared.Pager
 @implements IDisposable
 @inject IDatasheetCatalog Catalog
 @inject Servitor.App.Shared.Backdrop.IFactionBackdrop Backdrop
 
 <PageTitle>Scry</PageTitle>
 
-<h1>Scry</h1>
+<div class="scry-page">
+    <h1>Scry</h1>
 
-@if (_allDatasheets is null)
-{
-    <p>Loading rules data…</p>
-}
-else if (_allDatasheets.Count == 0)
-{
-    <p class="scry-empty">No rules data yet. Use “Update data” in the settings menu to build it.</p>
-}
-else
-{
-    <div class="scry-search">
-        <input type="text" placeholder="Search…" value="@_query" @oninput="OnQueryChanged" />
+    @if (_allDatasheets is null)
+    {
+        <p>Loading rules data…</p>
+    }
+    else if (_allDatasheets.Count == 0)
+    {
+        <p class="scry-empty">No rules data yet. Use “Update data” in the settings menu to build it.</p>
+    }
+    else
+    {
+        <ScreenPager @ref="_pager" WideColumns="@WideColumns">
+            <PagerScreen Title="Filters">
+                <div class="scry-facets">
+                    <div class="facet-group">
+                        <h4>Edition</h4>
+                        <button type="button" class="legends-toggle" @onclick="ToggleLegends">@(_showLegends ? "Legends" : "Current")</button>
+                    </div>
 
-        <select value="@_mode" @onchange="OnModeChanged">
-            <option value="@DatasheetSearchMode.All">All</option>
-            <option value="@DatasheetSearchMode.Name">Name</option>
-            <option value="@DatasheetSearchMode.RulesText">Rules text</option>
-        </select>
+                    <div class="facet-group">
+                        <h4>Faction</h4>
+                        @foreach (var faction in _factions)
+                        {
+                            <button type="button" class="chip @ChipClass(GetState(_factionFilters, faction))" @onclick="() => OnFactionChipClicked(faction)">
+                                @faction
+                            </button>
+                        }
+                    </div>
 
-        <button @onclick="ToggleLegends">@(_showLegends ? "Legends" : "Current")</button>
-    </div>
+                    <div class="facet-group">
+                        <h4>Role</h4>
+                        @foreach (var role in RoleFilterOptions.All)
+                        {
+                            <button type="button" class="chip @ChipClass(GetState(_roleFilters, role))" @onclick="() => CycleFacet(_roleFilters, role)">
+                                @role
+                            </button>
+                        }
+                    </div>
 
-    <div class="scry-facets">
-        <div class="facet-group">
-            <h4>Role</h4>
-            @foreach (var role in RoleFilterOptions.All)
-            {
-                <button type="button" class="chip @ChipClass(GetState(_roleFilters, role))" @onclick="() => CycleFacet(_roleFilters, role)">
-                    @role
-                </button>
-            }
-        </div>
+                    <div class="facet-group">
+                        <h4>Characteristics</h4>
+                        <select value="@_characteristicKindValue" @onchange="OnCharacteristicKindChanged">
+                            <option value="">(none)</option>
+                            <option value="@nameof(CharacteristicKind.Toughness)">Toughness</option>
+                            <option value="@nameof(CharacteristicKind.Wounds)">Wounds</option>
+                        </select>
+                        @if (_characteristicKind is not null)
+                        {
+                            <span>&ge;</span>
+                            <input type="number" min="0" value="@_characteristicMinimum" @oninput="OnCharacteristicMinimumChanged" />
+                        }
+                    </div>
+                </div>
+            </PagerScreen>
 
-        <div class="facet-group">
-            <h4>Faction</h4>
-            @foreach (var faction in _factions)
-            {
-                <button type="button" class="chip @ChipClass(GetState(_factionFilters, faction))" @onclick="() => OnFactionChipClicked(faction)">
-                    @faction
-                </button>
-            }
-        </div>
+            <PagerScreen Title="Units">
+                <div class="scry-units">
+                    <div class="scry-search">
+                        <input type="text" placeholder="Search…" value="@_query" @oninput="OnQueryChanged" />
 
-        <div class="facet-group">
-            <h4>Characteristics</h4>
-            <select value="@_characteristicKindValue" @onchange="OnCharacteristicKindChanged">
-                <option value="">(none)</option>
-                <option value="@nameof(CharacteristicKind.Toughness)">Toughness</option>
-                <option value="@nameof(CharacteristicKind.Wounds)">Wounds</option>
-            </select>
-            @if (_characteristicKind is not null)
-            {
-                <span>&ge;</span>
-                <input type="number" min="0" value="@_characteristicMinimum" @oninput="OnCharacteristicMinimumChanged" />
-            }
-        </div>
-    </div>
+                        <select value="@_mode" @onchange="OnModeChanged">
+                            <option value="@DatasheetSearchMode.All">All</option>
+                            <option value="@DatasheetSearchMode.Name">Name</option>
+                            <option value="@DatasheetSearchMode.RulesText">Rules text</option>
+                        </select>
+                    </div>
 
-    <p class="result-count">@_filtered.Count result@(_filtered.Count == 1 ? "" : "s")</p>
+                    <p class="result-count">@_filtered.Count result@(_filtered.Count == 1 ? "" : "s")</p>
 
-    <div class="result-list">
-        <table>
-            <colgroup>
-                <col class="col-name" />
-                <col class="col-faction" />
-                <col class="col-points" />
-                <col span="6" class="col-stat" />
-            </colgroup>
-            <thead>
-                <tr><th>Name</th><th>Faction</th><th>Pts</th><th>M</th><th>T</th><th>Sv</th><th>W</th><th>Ld</th><th>OC</th></tr>
-            </thead>
-            <tbody>
-                <Virtualize Items="_filtered" Context="sheet" ItemSize="32" SpacerElement="tr">
-                    <tr @onclick="() => _selected = sheet" class="@(ReferenceEquals(_selected, sheet) ? "selected" : "")">
-                        <td class="cell-name" title="@sheet.Name">@sheet.Name</td>
-                        <td title="@sheet.Faction">@sheet.Faction</td>
-                        <td>@sheet.Points</td>
-                        <td>@sheet.StatLine.Movement</td>
-                        <td>@sheet.StatLine.Toughness</td>
-                        <td>@sheet.StatLine.Save</td>
-                        <td>@sheet.StatLine.Wounds</td>
-                        <td>@sheet.StatLine.Leadership</td>
-                        <td>@sheet.StatLine.ObjectiveControl</td>
-                    </tr>
-                </Virtualize>
-            </tbody>
-        </table>
-    </div>
+                    <div class="result-list">
+                        <table>
+                            <colgroup>
+                                <col class="col-name" />
+                                <col class="col-faction" />
+                                <col class="col-points" />
+                                @for (var i = 0; i < StatColumnCount; i++)
+                                {
+                                    <col class="col-stat" />
+                                }
+                            </colgroup>
+                            <thead>
+                                <tr><th>Name</th><th>Faction</th><th>Pts</th><th>M</th><th>T</th><th>Sv</th><th>W</th><th>Ld</th><th>OC</th></tr>
+                            </thead>
+                            <tbody>
+                                <Virtualize Items="_filtered" Context="sheet" ItemSize="RowHeight" SpacerElement="tr">
+                                    <tr @onclick="() => Select(sheet)" class="@(ReferenceEquals(_selected, sheet) ? "selected" : "")">
+                                        <td class="cell-name" title="@sheet.Name">
+                                            <span class="unit-name">@sheet.Name</span>
+                                            <span class="unit-faction">@sheet.Faction</span>
+                                        </td>
+                                        <td title="@sheet.Faction">@sheet.Faction</td>
+                                        <td>@sheet.Points</td>
+                                        <td>@sheet.StatLine.Movement</td>
+                                        <td>@sheet.StatLine.Toughness</td>
+                                        <td>@sheet.StatLine.Save</td>
+                                        <td>@sheet.StatLine.Wounds</td>
+                                        <td>@sheet.StatLine.Leadership</td>
+                                        <td>@sheet.StatLine.ObjectiveControl</td>
+                                    </tr>
+                                </Virtualize>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </PagerScreen>
 
-    <DatasheetDetail Datasheet="_selected" />
-}
+            <PagerScreen Title="Datasheet" Enabled="@(_selected is not null)">
+                <DatasheetDetail Datasheet="_selected" />
+            </PagerScreen>
+        </ScreenPager>
+    }
+</div>
 
 @code {
+    private const int RowHeight = 48;
+    private const int StatColumnCount = 6;
+    private const int DatasheetScreenIndex = 2;
+    private const string WideColumns = "minmax(0, 20rem) minmax(0, 1fr) minmax(0, 1.2fr)";
+
     private IReadOnlyList<Datasheet>? _allDatasheets;
     private IReadOnlyList<string> _factions = [];
 
@@ -116,6 +143,8 @@ else
     private CharacteristicKind? _characteristicKind;
     private int _characteristicMinimum = 1;
 
+    private ScreenPager? _pager;
+    private bool _showDatasheetAfterRender;
     private Datasheet? _selected;
     private List<Datasheet> _filtered = [];
 
@@ -137,7 +166,6 @@ else
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        _selected = null;
         RunSearch();
     }
 
@@ -156,6 +184,21 @@ else
         TriState.Exclude => "chip-exclude",
         _ => "chip-neutral",
     };
+
+    private void Select(Datasheet sheet)
+    {
+        _selected = sheet;
+        _showDatasheetAfterRender = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_showDatasheetAfterRender && _pager is not null)
+        {
+            _showDatasheetAfterRender = false;
+            await _pager.GoToAsync(DatasheetScreenIndex);
+        }
+    }
 
     private void CycleFacet(Dictionary<string, TriState> filters, string key)
     {
@@ -212,6 +255,8 @@ else
         {
             return;
         }
+
+        _selected = null;
 
         var criteria = new DatasheetSearchCriteria(
             _query,

@@ -23,6 +23,9 @@ public interface IArmyBuilderState
     /// <param name="allyFactionIds">The factions whose units this faction may take as allies.</param>
     void SelectFaction(string factionId, IReadOnlyList<string>? allyFactionIds = null);
 
+    /// <summary>Leaving the faction unchosen discards the selected detachments and the units, like switching faction does.</summary>
+    void ClearFaction();
+
     DetachmentAddResult AddDetachment(Detachment detachment);
 
     void RemoveDetachment(string detachmentId);

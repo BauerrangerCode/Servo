@@ -1,4 +1,5 @@
 using Servitor.App.ArmyBuilder.State;
+using Servitor.App.Tests.ArmyBuilder.Catalog;
 using Servitor.RulesData.Domain;
 
 namespace Servitor.App.Tests.ArmyBuilder.State;
@@ -99,5 +100,33 @@ public class ArmyBuilderStateTests
 
         state.SelectFaction("necrons");
         Assert.Empty(state.Setup.Detachments);
+    }
+
+    [Fact]
+    public void Clearing_the_faction_discards_the_detachments_the_units_and_the_allies()
+    {
+        var state = Ready(BattleSizes.StrikeForce);
+        state.AddDetachment(Det("a", 1));
+        state.AddUnit(Units.Sheet("Boyz", factions: ["orks"]), new UnitSize(10, 90));
+
+        state.ClearFaction();
+
+        Assert.Null(state.Setup.FactionId);
+        Assert.Empty(state.Setup.Detachments);
+        Assert.Empty(state.Setup.AllyFactionIds);
+        Assert.Empty(state.Units);
+        Assert.Equal(BattleSizes.StrikeForce, state.Setup.BattleSize);
+    }
+
+    [Fact]
+    public void Clearing_an_unset_faction_changes_nothing_and_raises_no_event()
+    {
+        var state = new ArmyBuilderState();
+        var raised = 0;
+        state.Changed += () => raised++;
+
+        state.ClearFaction();
+
+        Assert.Equal(0, raised);
     }
 }

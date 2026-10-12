@@ -9,6 +9,8 @@ using Servitor.App.RulesData.Loading;
 using Servitor.App.Tests.ArmyCollection;
 using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Shared.Backdrop;
+using Servitor.App.Shared.Pager;
+using Servitor.App.Tests.Shared.Pager;
 using Servitor.RulesData.Domain;
 using Servitor.RulesData.Merging;
 
@@ -24,6 +26,7 @@ public class BuildTests : BunitContext
     public BuildTests()
     {
         Services.AddSingleton<IFactionBackdrop>(_backdrop);
+        Services.AddSingleton<IPagerInterop, FakePagerInterop>();
         Services.AddSingleton<IDatasheetCatalog>(new FakeDatasheetCatalog());
         Services.AddSingleton<IDetachmentRuleProvider>(_rules);
         Services.AddSingleton<IArmyCollectionStore>(_collectionStore);
@@ -68,6 +71,123 @@ public class BuildTests : BunitContext
         Services.AddSingleton<IMergedRulesDataProvider>(new FakeProvider(data));
         Services.AddSingleton<IArmyBuilderState>(_state);
         return Render<Build>();
+    }
+
+    private static string[] Screens(IRenderedComponent<Build> cut) =>
+        cut.FindAll(".pager-screen").Select(s => s.GetAttribute("aria-label")!).ToArray();
+
+    [Fact]
+    public void The_builder_pages_grow_as_size_and_faction_are_chosen_and_never_split_side_by_side()
+    {
+        var cut = RenderBuild(Data());
+        Assert.Equal(["Setup"], Screens(cut));
+        Assert.Contains("pager-paged", cut.Find(".screen-pager").ClassList);
+
+        cut.Find(".chip").Click();
+        Assert.Equal(["Setup"], Screens(cut));
+
+        cut.Find(".faction-select").Change("orks");
+        Assert.Equal(["Setup", "Units", "Army"], Screens(cut));
+    }
+
+    [Fact]
+    public void The_totals_and_validity_sit_above_the_screens_instead_of_inside_one()
+    {
+        var cut = RenderBuild(Data());
+        cut.Find(".chip").Click();
+        cut.Find(".faction-select").Change("orks");
+
+        Assert.Empty(cut.FindAll(".pager-screen .army-totals"));
+        Assert.NotNull(cut.Find(".build-summary .army-total-points"));
+        Assert.NotNull(cut.Find(".build-summary .army-total-units"));
+        Assert.NotNull(cut.Find(".build-summary .army-total-models"));
+        Assert.NotNull(cut.Find(".build-summary .army-total-wounds"));
+        Assert.NotNull(cut.Find(".build-summary .army-validity"));
+        Assert.Empty(cut.FindAll(".build-summary .army-issues"));
+        Assert.Empty(cut.FindAll(".pager-screen[aria-label=Army] .army-totals"));
+    }
+
+    [Fact]
+    public void Detachments_are_part_of_the_setup_screen_and_only_appear_once_a_faction_is_chosen()
+    {
+        var cut = RenderBuild(Data());
+        cut.Find(".chip").Click();
+        Assert.Empty(cut.FindAll(".detachment-list"));
+
+        cut.Find(".faction-select").Change("orks");
+
+        Assert.NotNull(cut.Find(".pager-screen[aria-label=Setup] .detachment-list"));
+    }
+
+    private static bool Locked(IRenderedComponent<Build> cut, string screen) =>
+        cut.Find($".pager-screen[aria-label={screen}]").ClassList.Contains("pager-screen-disabled");
+
+    [Fact]
+    public void Units_and_army_stay_locked_until_the_detachments_fill_every_detachment_point()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click(); // Strike Force: 3 DP
+        cut.Find(".faction-select").Change("orks");
+
+        Assert.True(Locked(cut, "Units"));
+        Assert.True(Locked(cut, "Army"));
+        Assert.Contains("Fill all 3 DP", cut.Find(".dp-hint").TextContent);
+        Assert.Single(cut.FindAll(".pager-dot"));
+
+        cut.FindAll(".detachment-action")[1].Click(); // Blitz Brigade: 1 of 3 DP
+        Assert.True(Locked(cut, "Units"));
+
+        cut.FindAll(".detachment-action")[1].Click(); // removes it again
+        cut.FindAll(".detachment-action")[0].Click(); // Waaagh Tribe: 3 of 3 DP
+
+        Assert.False(Locked(cut, "Units"));
+        Assert.False(Locked(cut, "Army"));
+        Assert.Empty(cut.FindAll(".dp-hint"));
+        Assert.Equal(3, cut.FindAll(".pager-dot").Count);
+    }
+
+    [Fact]
+    public void Removing_a_detachment_locks_units_and_army_again()
+    {
+        var cut = RenderBuild(Data());
+        cut.FindAll(".chip")[1].Click();
+        cut.Find(".faction-select").Change("orks");
+        cut.FindAll(".detachment-action")[0].Click();
+        Assert.False(Locked(cut, "Units"));
+
+        cut.FindAll(".detachment-action")[0].Click();
+
+        Assert.True(Locked(cut, "Units"));
+        Assert.True(Locked(cut, "Army"));
+    }
+
+    [Fact]
+    public void Deselecting_the_faction_removes_the_detachments_and_the_pages_that_depend_on_it()
+    {
+        var cut = RenderBuild(Data());
+        cut.Find(".chip").Click();
+        cut.Find(".faction-select").Change("orks");
+        cut.Find(".detachment-action").Click();
+        Assert.Single(_state.Setup.Detachments);
+
+        cut.Find(".faction-select").Change("");
+
+        Assert.Null(_state.Setup.FactionId);
+        Assert.Empty(_state.Setup.Detachments);
+        Assert.Empty(cut.FindAll(".detachment-list"));
+        Assert.Equal(["Setup"], Screens(cut));
+    }
+
+    [Fact]
+    public void Save_comes_before_the_army_list_on_the_army_screen()
+    {
+        var cut = RenderBuild(Data());
+        cut.Find(".chip").Click();
+        cut.Find(".faction-select").Change("orks");
+
+        var children = cut.Find(".pager-screen[aria-label=Army]").Children.Select(c => c.ClassList.Contains("save-step") ? "save" : c.ClassList.Contains("army-list") ? "list" : "other").ToList();
+
+        Assert.True(children.IndexOf("save") >= 0 && children.IndexOf("save") < children.IndexOf("list"));
     }
 
     [Fact]

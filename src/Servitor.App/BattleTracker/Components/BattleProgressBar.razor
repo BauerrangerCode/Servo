@@ -1,7 +1,9 @@
 @using Servitor.App.BattleTracker.State
 @using Servitor.App.Scoring.Tracking
+@using Servitor.App.Shared.Viewport
 @implements IDisposable
 @inject IBattleProgressState Progress
+@inject IViewportInterop Viewport
 
 <section class="battle-progress">
     <div class="round-counter">
@@ -24,18 +26,32 @@
     }
 
     <div class="phase-stepper">
-        <button type="button" class="phase-previous" disabled="@(Progress.Phase == BattlePhase.Deployment)" @onclick="Progress.PreviousPhaseAsync">◀ Previous</button>
-        @foreach (var phase in Enum.GetValues<BattlePhase>())
-        {
-            var target = phase;
-            <button type="button" class="chip phase-chip @(Progress.Phase == target ? "selected" : "")" @onclick="() => Progress.SetPhaseAsync(target)">@BattlePhaseLabels.Label(target)</button>
-        }
-        <button type="button" class="phase-next" @onclick="Progress.NextPhaseAsync">Next ▶</button>
+        <button type="button" class="phase-previous" aria-label="Previous phase" disabled="@(Progress.Phase == BattlePhase.Deployment)" @onclick="Progress.PreviousPhaseAsync">◀</button>
+        <div class="phase-chips" @ref="_phaseChips">
+            @foreach (var phase in Enum.GetValues<BattlePhase>())
+            {
+                var target = phase;
+                <button type="button" class="chip phase-chip @(Progress.Phase == target ? "selected" : "")" @onclick="() => Progress.SetPhaseAsync(target)">@BattlePhaseLabels.Label(target)</button>
+            }
+        </div>
+        <button type="button" class="phase-next" aria-label="Next phase" @onclick="Progress.NextPhaseAsync">▶</button>
     </div>
 </section>
 
 @code {
+    private ElementReference _phaseChips;
+    private BattlePhase? _centeredPhase;
+
     protected override void OnInitialized() => Progress.Changed += OnProgressChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_centeredPhase != Progress.Phase)
+        {
+            _centeredPhase = Progress.Phase;
+            await Viewport.ScrollSelectedIntoViewAsync(_phaseChips);
+        }
+    }
 
     public void Dispose() => Progress.Changed -= OnProgressChanged;
 

@@ -17,7 +17,13 @@
     padding: 1rem 1.2rem;
 }
 
+/* Stays in reach while a long dialog scrolls, so Close never has to be hunted for. */
 .modal-dialog header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-bottom: 0.5rem;
+    background: var(--crt-bg);
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -26,4 +32,37 @@
 
 .modal-dialog h2 {
     margin: 0;
+}
+
+/* Fill: a fixed-height dialog whose body hands its whole height to the content. */
+.modal-dialog-fill {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 4rem);
+}
+
+.modal-dialog-fill .modal-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Below the wide breakpoint (1000px, see wwwroot/css/app.css) a dialog fills the screen instead of floating on it. */
+@media (max-width: 999.98px) {
+    .modal-backdrop {
+        padding: 0;
+    }
+
+    .modal-dialog {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 100%;
+        border-width: 0;
+    }
+
+    .modal-dialog-fill {
+        height: 100%;
+    }
 }

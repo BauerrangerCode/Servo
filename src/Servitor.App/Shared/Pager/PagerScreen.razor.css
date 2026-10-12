@@ -1,0 +1,50 @@
+/* overscroll-behavior only: touch-action here would also block the horizontal swipe that pages the track. */
+.pager-screen {
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    min-width: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+/* Must match the wide breakpoint in wwwroot/css/app.css (1000px). Side by side, a disabled screen stays visible. */
+@media (max-width: 999.98px) {
+    .pager-screen-disabled {
+        display: none;
+    }
+}
+
+.pager-screen-disabled.pager-screen-paged {
+    display: none;
+}
+
+/* Flush with the right edge; the right padding keeps the content clear of the page's 3rem toggle tab, which stays on top. */
+@media (min-width: 1000px) {
+    .pager-screen-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+        width: min(37rem, 90vw);
+        padding: 1rem 4rem 1rem 1rem;
+        background: var(--crt-bg);
+        border-left: 1px solid var(--crt-fg);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition: transform 0.2s ease-out, visibility 0.2s;
+    }
+
+    .pager-screen-drawer.open {
+        transform: none;
+        visibility: visible;
+    }
+}
+
+@media (min-width: 1000px) and (prefers-reduced-motion: reduce) {
+    .pager-screen-drawer {
+        transition: none;
+    }
+}

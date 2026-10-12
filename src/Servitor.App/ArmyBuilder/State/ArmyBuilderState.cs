@@ -32,6 +32,17 @@ public sealed class ArmyBuilderState(IDetachmentRuleProvider? ruleProvider = nul
         Update(Setup with { FactionId = factionId, Detachments = [], AllyFactionIds = allies });
     }
 
+    public void ClearFaction()
+    {
+        if (Setup.FactionId is null)
+        {
+            return;
+        }
+
+        Units = [];
+        Update(Setup with { FactionId = null, Detachments = [], AllyFactionIds = [] });
+    }
+
     public DetachmentAddResult AddDetachment(Detachment detachment)
     {
         var result = DetachmentRules.CanAdd(Setup, detachment);

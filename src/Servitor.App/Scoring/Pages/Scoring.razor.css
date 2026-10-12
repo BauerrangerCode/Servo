@@ -1,0 +1,17 @@
+.scoring-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.scoring-page h1 {
+    margin: 0 0 0.5rem 0;
+}
+
+/* The active nav tab already names the page; on a phone the title row is worth more as room for the tracker. */
+@media (max-width: 999.98px) {
+    .scoring-page h1 {
+        display: none;
+    }
+}

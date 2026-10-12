@@ -14,6 +14,9 @@ using Servitor.App.Tests.ArmyBuilder.Catalog;
 using Servitor.RulesData.Domain;
 using Servitor.App.RulesData.Storage;
 using Servitor.App.Tests.RulesData.Loading;
+using Servitor.App.Shared.Pager;
+using Servitor.App.Shared.Viewport;
+using Servitor.App.Tests.Shared.Pager;
 
 namespace Servitor.App.Tests.BattleTracker.Pages;
 
@@ -25,6 +28,8 @@ public class PlayTests : BunitContext
     {
         Services.AddSingleton<IRulesDataStore>(_store);
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
+        Services.AddSingleton<IPagerInterop, FakePagerInterop>();
+        Services.AddSingleton<IViewportInterop, FakeViewportInterop>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
         Services.AddSingleton<IUnitConditionState, UnitConditionState>();
@@ -46,6 +51,57 @@ public class PlayTests : BunitContext
 
         Assert.Equal("Deployment", SelectedPhase(cut));
         Assert.Contains("Battle Round 1", cut.Find(".round-label").TextContent);
+    }
+
+    [Fact]
+    public void The_tracker_is_split_into_action_queue_units_and_commands_screens()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+
+        Assert.Equal(["Action Queue", "Units", "Commands"], cut.FindAll(".pager-screen").Select(s => s.GetAttribute("aria-label")));
+        Assert.NotNull(cut.Find(".pager-screen[aria-label='Action Queue'] .action-queue"));
+        Assert.NotNull(cut.Find(".pager-screen[aria-label=Units] .units-panel"));
+        Assert.NotNull(cut.Find(".pager-screen[aria-label=Commands] .commands"));
+    }
+
+    [Fact]
+    public void Commands_is_a_drawer_when_wide_that_the_edge_tab_opens_and_the_backdrop_closes()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        var drawer = () => cut.Find(".pager-screen[aria-label=Commands]");
+        Assert.Contains("pager-screen-drawer", drawer().ClassList);
+        Assert.DoesNotContain("open", drawer().ClassList);
+        Assert.Empty(cut.FindAll(".pager-screen[aria-label='Action Queue'].pager-screen-drawer"));
+
+        cut.Find(".commands-toggle").Click();
+        Assert.Contains("open", drawer().ClassList);
+        Assert.Equal("true", cut.Find(".commands-toggle").GetAttribute("aria-expanded"));
+
+        cut.Find(".commands-drawer-backdrop").Click();
+        Assert.DoesNotContain("open", drawer().ClassList);
+    }
+
+    [Fact]
+    public void The_progress_header_stays_outside_the_screens()
+    {
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+
+        Assert.Empty(cut.FindAll(".pager-screen .battle-progress"));
+        Assert.Empty(cut.FindAll(".pager-screen .command-points"));
+        Assert.NotNull(cut.Find(".play-header .battle-progress"));
+        Assert.NotNull(cut.Find(".play-header .command-points"));
+    }
+
+    [Fact]
+    public void Changing_the_phase_scrolls_the_selected_phase_chip_into_view()
+    {
+        var viewport = (FakeViewportInterop)Services.GetRequiredService<IViewportInterop>();
+        var cut = Render<Servitor.App.BattleTracker.Pages.Play>();
+        var before = viewport.Centerings;
+
+        cut.Find(".phase-next").Click();
+
+        Assert.Equal(before + 1, viewport.Centerings);
     }
 
     [Fact]
@@ -166,7 +222,7 @@ public class PlayTests : BunitContext
     }
 
     private static string[] CardNames(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut) =>
-        cut.FindAll(".stratagem-card h3").Select(h => h.TextContent.Trim()).ToArray();
+        cut.FindAll(".action-queue .stratagem-card h3").Select(h => h.TextContent.Trim()).ToArray();
 
     [Fact]
     public void TheQueueFollowsThePhaseAndShowsTheCardDetails()
@@ -177,7 +233,7 @@ public class PlayTests : BunitContext
         cut.FindAll(".phase-chip").First(c => c.TextContent.Trim() == "Shooting").Click();
 
         Assert.Equal(["COMMAND RE-ROLL", "GRENADE", "BIG KRUNCH"], CardNames(cut));
-        var card = cut.FindAll(".stratagem-card").Last();
+        var card = cut.FindAll(".action-queue .stratagem-card").Last();
         Assert.Contains("1 CP", card.QuerySelector(".stratagem-cost")!.TextContent);
         Assert.Contains("Battle Tactic", card.QuerySelector(".tag-category")!.TextContent);
         Assert.Contains("Your Shooting or Charge phase", card.QuerySelector(".tag-timing")!.TextContent);
@@ -281,7 +337,7 @@ public class PlayTests : BunitContext
     }
 
     private static AngleSharp.Dom.IElement Card(IRenderedComponent<Servitor.App.BattleTracker.Pages.Play> cut, string name) =>
-        cut.FindAll(".stratagem-card").First(c => c.QuerySelector("h3")!.TextContent.Trim() == name);
+        cut.FindAll(".action-queue .stratagem-card").First(c => c.QuerySelector("h3")!.TextContent.Trim() == name);
 
     [Fact]
     public void ASecondUseOfTheSameStratagemInAPhaseIsBlockedUntilTheNextPhase()

@@ -76,9 +76,13 @@ button, select, input, textarea {
     background: var(--crt-bg);
     border: 1px solid var(--crt-fg-dim);
     border-radius: 0;
-    padding: 0.2rem 0.6rem;
+    min-height: 2.75rem;
+    padding: 0.3rem 0.8rem;
     text-shadow: inherit;
 }
+
+/* 16px minimum keeps iOS from zooming into a focused field. */
+input, select, textarea { font-size: max(1rem, 16px); }
 
 /* A select with a transparent background would otherwise open a white native list. */
 option {
@@ -88,7 +92,16 @@ option {
 
 button { cursor: pointer; text-transform: uppercase; letter-spacing: 0.06em; }
 
-button:hover:not(:disabled) {
+/* Hover only where a pointer can hover; on touch it would stay "stuck" after a tap. */
+@media (hover: hover) {
+    button:hover:not(:disabled) {
+        background: var(--crt-fg);
+        color: var(--crt-bg);
+        text-shadow: none;
+    }
+}
+
+button:active:not(:disabled) {
     background: var(--crt-fg);
     color: var(--crt-bg);
     text-shadow: none;
@@ -111,34 +124,64 @@ hr { border: 0; border-top: 1px solid var(--crt-fg-faint); }
 
 * { scrollbar-color: var(--crt-fg-dim) var(--crt-bg); }
 
+/* The page fills the viewport exactly; <main> scrolls on its own, so screen pagers can use its full height. */
 .page {
     position: relative;
     z-index: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
 }
 
 .top-nav {
     display: flex;
+    align-items: center;
     gap: 1rem;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
     background: var(--nav-background);
     border-bottom: 1px solid var(--crt-fg-dim);
 }
 
     .top-nav a {
+        display: flex;
+        align-items: center;
+        min-height: 2.75rem;
         color: var(--nav-foreground);
         text-decoration: none;
         font-weight: 600;
         letter-spacing: 0.05em;
         text-transform: uppercase;
+        border-bottom: 2px solid transparent;
     }
 
     .top-nav a.active {
         color: var(--nav-foreground-active);
-        border-bottom: 2px solid var(--nav-accent);
+        border-bottom-color: var(--nav-accent);
     }
+
+/* Below the wide breakpoint (1000px; keep in sync with the pager and settings menu CSS) the nav is a bottom tab bar. */
+@media (max-width: 999.98px) {
+    .top-nav {
+        order: 2;
+        gap: 0;
+        padding: 0 0.25rem;
+        border-bottom: 0;
+        border-top: 1px solid var(--crt-fg-dim);
+    }
+
+    .top-nav a {
+        flex: 1;
+        justify-content: center;
+        min-height: 3.25rem;
+        border-bottom: 0;
+        border-top: 2px solid transparent;
+    }
+
+    .top-nav a.active {
+        border-top-color: var(--nav-accent);
+    }
+}
 
 #crt-glitch {
     position: fixed;
@@ -227,6 +270,8 @@ hr { border: 0; border-top: 1px solid var(--crt-fg-faint); }
 
 main {
     flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     padding: 1rem;
 }
 

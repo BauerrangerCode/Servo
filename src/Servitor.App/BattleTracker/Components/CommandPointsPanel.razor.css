@@ -1,13 +1,23 @@
 .command-points {
     display: flex;
-    gap: 2rem;
-    margin: 1rem 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.cp-title {
+    font-weight: 600;
+    letter-spacing: 0.08em;
 }
 
 .cp-side {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.35rem;
+}
+
+.cp-side button {
+    padding-inline: 0.6rem;
 }
 
 .cp-value {

@@ -1,13 +1,15 @@
-.army-summary {
-    margin-top: 1rem;
-    border-top: 1px solid var(--crt-fg-dim);
-    padding-top: 0.5rem;
+.army-headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
 }
 
 .army-totals {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 0.25rem 1.25rem;
     margin: 0;
 }
 
@@ -27,7 +29,7 @@
 }
 
 .army-validity {
-    margin: 0.5rem 0 0 0;
+    margin: 0;
     font-weight: 600;
     letter-spacing: 0.08em;
 }
