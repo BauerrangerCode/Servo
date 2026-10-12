@@ -14,6 +14,8 @@ using Servitor.RulesData.Merging;
 using Servitor.App.Shared.Pager;
 using Servitor.App.Shared.Viewport;
 using Servitor.App.Tests.Shared.Pager;
+using Servitor.App.Shared.WakeLock;
+using Servitor.App.Tests.Shared.WakeLock;
 
 namespace Servitor.App.Tests.BattleTracker.Loadouts;
 
@@ -147,6 +149,7 @@ public class UnitsPanelTests : BunitContext
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
         Services.AddSingleton<IPagerInterop, FakePagerInterop>();
         Services.AddSingleton<IViewportInterop, FakeViewportInterop>();
+        Services.AddSingleton<IWakeLockService, FakeWakeLockService>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
         Services.AddSingleton<IUnitConditionState, UnitConditionState>();

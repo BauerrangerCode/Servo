@@ -17,6 +17,8 @@ using Servitor.App.Tests.RulesData.Loading;
 using Servitor.App.Shared.Pager;
 using Servitor.App.Shared.Viewport;
 using Servitor.App.Tests.Shared.Pager;
+using Servitor.App.Shared.WakeLock;
+using Servitor.App.Tests.Shared.WakeLock;
 
 namespace Servitor.App.Tests.BattleTracker.Pages;
 
@@ -30,6 +32,7 @@ public class PlayTests : BunitContext
         Services.AddSingleton<IBattleProgressState, BattleProgressState>();
         Services.AddSingleton<IPagerInterop, FakePagerInterop>();
         Services.AddSingleton<IViewportInterop, FakeViewportInterop>();
+        Services.AddSingleton<IWakeLockService, FakeWakeLockService>();
         Services.AddSingleton<IArmyRuleState, ArmyRuleState>();
         Services.AddSingleton<IStratagemUsageState, StratagemUsageState>();
         Services.AddSingleton<IUnitConditionState, UnitConditionState>();
@@ -79,6 +82,20 @@ public class PlayTests : BunitContext
 
         cut.Find(".commands-drawer-backdrop").Click();
         Assert.DoesNotContain("open", drawer().ClassList);
+    }
+
+    [Fact]
+    public async Task Play_keeps_the_screen_awake_while_it_is_open_and_lets_go_when_it_closes()
+    {
+        var wakeLock = (FakeWakeLockService)Services.GetRequiredService<IWakeLockService>();
+
+        Render<Servitor.App.BattleTracker.Pages.Play>();
+        Assert.Equal(1, wakeLock.Acquisitions);
+        Assert.Equal(0, wakeLock.Releases);
+
+        await DisposeComponentsAsync();
+
+        Assert.Equal(1, wakeLock.Releases);
     }
 
     [Fact]

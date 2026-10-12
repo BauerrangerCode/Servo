@@ -20,6 +20,7 @@ using Servitor.App.Shared.Files;
 using Servitor.App.Shared.Pager;
 using Servitor.App.Shared.Shell;
 using Servitor.App.Shared.Viewport;
+using Servitor.App.Shared.WakeLock;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -52,6 +53,7 @@ builder.Services.AddScoped<IFactionBackdrop, FactionBackdrop>();
 builder.Services.AddScoped<ICrtEffectsService, JsCrtEffectsService>();
 builder.Services.AddScoped<IPagerInterop, JsPagerInterop>();
 builder.Services.AddScoped<IViewportInterop, JsViewportInterop>();
+builder.Services.AddScoped<IWakeLockService, JsWakeLockService>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 await builder.Build().RunAsync();

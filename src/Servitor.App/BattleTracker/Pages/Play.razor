@@ -5,10 +5,12 @@
 @using Servitor.App.Scoring.Components
 @using Servitor.App.Shared.Dialogs
 @using Servitor.App.Shared.Pager
-@implements IDisposable
+@using Servitor.App.Shared.WakeLock
+@implements IAsyncDisposable
 @inject IBattleProgressState Progress
 @inject IArmyBuilderState Army
 @inject IActiveArmyStore ActiveArmy
+@inject IWakeLockService WakeLock
 
 <PageTitle>Play</PageTitle>
 
@@ -88,7 +90,19 @@
         }
     }
 
-    public void Dispose() => Army.Changed -= OnArmyChanged;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await WakeLock.AcquireAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Army.Changed -= OnArmyChanged;
+        await WakeLock.ReleaseAsync();
+    }
 
     private void OnArmyChanged() => InvokeAsync(StateHasChanged);
 }
